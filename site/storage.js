@@ -12,7 +12,11 @@
   'use strict';
 
   var KEY = 'tasme3_v1';
-  var SCHEMA_VERSION = 1;
+  // v2 adds progressByPage[page].contextRevealed (see repairProgressByPage) --
+  // purely additive: a v1 blob (or any entry missing the field) repairs to
+  // contextRevealed: [] below, so no migration branch is needed beyond the
+  // repair defaulting -- old data loads and works exactly as it did.
+  var SCHEMA_VERSION = 2;
 
   // Kept in sync with site/listen.js's CHAINS keys (not read from there
   // directly — this file loads before listen.js and must validate/repair
@@ -90,8 +94,20 @@
       var revealed = Array.isArray(entry.revealed)
         ? entry.revealed.filter(function (n) { return Number.isFinite(n) && n >= 0; })
         : [];
+      // contextRevealed: word indices shown unveiled as printed CONTEXT
+      // (the tail of a preceding surah, unveiled so the reader can see it
+      // sits before the chosen surah) after a surah-start jump from the
+      // drawer -- see site/app.js's applyPageData(). Tracked separately
+      // from `revealed` on purpose and validated the same defensive way:
+      // CRITICAL that these two sets are never merged anywhere, since
+      // context words were never actually recited and must stay excluded
+      // from every completion/counter/certificate/sync computation that
+      // reads `revealed`. Missing on any pre-v2 entry -> defaults to [].
+      var contextRevealed = Array.isArray(entry.contextRevealed)
+        ? entry.contextRevealed.filter(function (n) { return Number.isFinite(n) && n >= 0; })
+        : [];
       var completedAt = typeof entry.completedAt === 'string' ? entry.completedAt : null;
-      out[key] = { pointer: pointer, revealed: revealed, completedAt: completedAt };
+      out[key] = { pointer: pointer, revealed: revealed, contextRevealed: contextRevealed, completedAt: completedAt };
     }
     return out;
   }
@@ -197,6 +213,10 @@
     return state;
   }
 
+  // Lifetime word count for the progress panel. Deliberately sums only
+  // `.revealed` (genuinely recited) and never `.contextRevealed` (printed
+  // context unveiled by a surah-start jump, never actually recited) --
+  // see repairProgressByPage's contextRevealed comment.
   function totalWordsRevealed(state) {
     var total = 0;
     for (var k in state.progressByPage) {

@@ -46,44 +46,98 @@
     return pages;
   }
 
+  // ------------------------------------- context-word completion integrity
+  // site/app.js's drawer "select a surah" fix can land a reader mid-page,
+  // at the CHOSEN surah's first word, with every word before it (the tail
+  // of a PRECEDING surah still printed on that same page) unveiled as
+  // CONTEXT rather than genuinely recited (site/storage.js's
+  // progressByPage[page].contextRevealed). A page's `completedAt` only
+  // ever means "the pointer reached the end of the page" -- reciting the
+  // chosen surah through to the end of a shared page still sets it, even
+  // though the preceding surah's own words never entered `revealed`. So
+  // `completedAt` alone is no longer sufficient proof a given SURAH is
+  // complete: for any page that ever had a context jump on it
+  // (contextRevealed non-empty), completion is re-checked at the WORD
+  // level -- every one of that surah's own word indices on that page (read
+  // from the same page-NNN.json tokens app.js loads, via token key `k`)
+  // must actually be in `revealed`. Pages that never had a context jump
+  // skip this fetch entirely and keep the original, cheap completedAt-only
+  // check. On any failure to load a page's tokens this fails CLOSED
+  // (treated as incomplete) -- a missed celebration costs nothing, a false
+  // certificate would not be acceptable.
+  var _pageSurahByWordCache = {};
+  function loadPageWordSurahs(pageNum) {
+    if (_pageSurahByWordCache[pageNum]) return _pageSurahByWordCache[pageNum];
+    var nnn = String(pageNum).padStart(3, '0');
+    var p = fetch('pages/page-' + nnn + '.json').then(function (r) {
+      if (!r.ok) throw new Error('page fetch failed');
+      return r.json();
+    }).then(function (data) {
+      var out = [];
+      (data.tokens || []).forEach(function (tk) {
+        if (tk.e) return; // ayah-marker token, not a word
+        var n = tk.k ? parseInt(String(tk.k).split(':')[0], 10) : NaN;
+        out.push(Number.isFinite(n) ? n : null);
+      });
+      return out;
+    }).catch(function () { return null; });
+    _pageSurahByWordCache[pageNum] = p;
+    return p;
+  }
+
+  function pageSurahWordsGenuinelyRevealed(entry, pageNum, surahNumber) {
+    return loadPageWordSurahs(pageNum).then(function (bySurah) {
+      if (!bySurah) return false; // couldn't verify -- fail closed
+      var revealedSet = {};
+      (entry.revealed || []).forEach(function (i) { revealedSet[i] = true; });
+      for (var i = 0; i < bySurah.length; i++) {
+        if (bySurah[i] === surahNumber && !revealedSet[i]) return false;
+      }
+      return true;
+    });
+  }
+
+  // Returns Promise<boolean>.
   function isSurahComplete(state, surahIndexData, surahNumber) {
     var pages = surahPageRange(surahIndexData, surahNumber);
-    if (!pages.length) return false;
-    for (var i = 0; i < pages.length; i++) {
-      var entry = state.progressByPage[String(pages[i])];
-      if (!entry || !entry.completedAt) return false;
-    }
-    return true;
+    if (!pages.length) return Promise.resolve(false);
+    var checks = pages.map(function (p) {
+      var entry = state.progressByPage[String(p)];
+      if (!entry || !entry.completedAt) return Promise.resolve(false);
+      if (!entry.contextRevealed || !entry.contextRevealed.length) return Promise.resolve(true);
+      return pageSurahWordsGenuinelyRevealed(entry, p, surahNumber);
+    });
+    return Promise.all(checks).then(function (results) {
+      return results.every(function (ok) { return ok; });
+    });
   }
 
   // Surahs whose range includes pageNum and that are complete right now --
   // call once right after Tasme3Storage.markPageCompleted(state, pageNum)
-  // to find out what to celebrate.
+  // to find out what to celebrate. Returns Promise<surah[]>.
   function newlyCompletedSurahs(state, surahIndexData, pageNum) {
     var surahs = (surahIndexData && surahIndexData.surahs) || [];
-    var out = [];
-    for (var i = 0; i < surahs.length; i++) {
-      var s = surahs[i];
-      var pages = surahPageRange(surahIndexData, s.number);
-      if (pages.indexOf(pageNum) === -1) continue;
-      if (isSurahComplete(state, surahIndexData, s.number)) out.push(s);
-    }
-    return out;
+    var candidates = surahs.filter(function (s) {
+      return surahPageRange(surahIndexData, s.number).indexOf(pageNum) !== -1;
+    });
+    return Promise.all(candidates.map(function (s) {
+      return isSurahComplete(state, surahIndexData, s.number).then(function (done) { return done ? s : null; });
+    })).then(function (results) { return results.filter(Boolean); });
   }
 
   // Every currently-complete surah, for the "شهاداتي" (My Certificates)
-  // list -- {number, name, completedAt}, sorted by surah number.
+  // list -- {number, name, completedAt}, sorted by surah number. Returns
+  // Promise<item[]>.
   function completedSurahList(state, surahIndexData) {
     var surahs = (surahIndexData && surahIndexData.surahs) || [];
-    var out = [];
-    for (var i = 0; i < surahs.length; i++) {
-      var s = surahs[i];
-      if (!isSurahComplete(state, surahIndexData, s.number)) continue;
-      var pages = surahPageRange(surahIndexData, s.number);
-      var lastEntry = state.progressByPage[String(pages[pages.length - 1])];
-      out.push({ number: s.number, name: s.name, completedAt: lastEntry ? lastEntry.completedAt : null });
-    }
-    return out;
+    return Promise.all(surahs.map(function (s) {
+      return isSurahComplete(state, surahIndexData, s.number).then(function (done) {
+        if (!done) return null;
+        var pages = surahPageRange(surahIndexData, s.number);
+        var lastEntry = state.progressByPage[String(pages[pages.length - 1])];
+        return { number: s.number, name: s.name, completedAt: lastEntry ? lastEntry.completedAt : null };
+      });
+    })).then(function (results) { return results.filter(Boolean); });
   }
 
   // ------------------------------------------------ background templates

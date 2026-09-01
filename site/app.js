@@ -24,6 +24,13 @@
   var ratio = 1, currentVeil = SHEET;
   var tokens = [], words = [], expected = [], markersByWord = {};
   var pointer = 0, revealed = new Set();
+  // Words on the current page BEFORE a surah-start jump's target index --
+  // printed CONTEXT (the tail of a preceding surah), rendered unveiled so
+  // the reader can see it, but NEVER counted as recited (see applyPageData,
+  // draw(), and updateCounter()). Always empty except right after a drawer
+  // "surah" selection landed mid-page; juz selection and go-to-page never
+  // populate it.
+  var contextRevealed = new Set();
   var pageImage = null;
   var evalInFlight = false;
   var surahIndex = null; // { surahs:[], juz:[], pageCount }
@@ -92,7 +99,11 @@
     ctx.drawImage(pageImage, 0, 0, cssW, cssH);
     var px = 0.005 * cssW, py = 0.004 * cssH;
     words.forEach(function (w, i) {
-      if (revealed.has(i)) return;
+      // A context word is printed text the reader can already see (it's
+      // never "revealed" by recitation) -- it and its ayah markers render
+      // unveiled exactly like a genuinely-recited word, just never counted
+      // as one (see updateCounter()/applyMatches()).
+      if (revealed.has(i) || contextRevealed.has(i)) return;
       ctx.fillStyle = currentVeil;
       ctx.fillRect(w.x * cssW - px, w.y * cssH - py, w.w * cssW + 2 * px, w.h * cssH + 2 * py);
       if (markersByWord[i]) markersByWord[i].forEach(function (m) {
@@ -124,12 +135,47 @@
   window.addEventListener('orientationchange', function () { setTimeout(draw, 250); });
   document.addEventListener('fullscreenchange', function () { setTimeout(draw, 50); });
 
-  // Word-progress bar: mirrored in two places -- the always-visible 3px
-  // strip under the top bar, and the fuller counter inside the setup sheet.
-  function setProgress(pointerN, totalN) {
-    var pct = (100 * pointerN / Math.max(1, totalN)) + '%';
+  // Word-progress counter: mirrored in two places -- the always-visible 3px
+  // strip under the top bar, and the fuller "N/total" counter inside the
+  // setup sheet. Both read straight off `revealed`/`contextRevealed`/
+  // `expected`, so this is the ONE place the counter is computed -- call it
+  // after anything that can change any of those three.
+  //
+  // Counter-semantics choice (founder spec, surah-start-jump bug fix):
+  // context words are excluded from BOTH the numerator and the denominator,
+  // not just hidden from the veil. So after a surah-start jump, the counter
+  // reads recited/(words from the jump's pointer-start onward) -- e.g.
+  // النصر+المسد's own word count on page 603, never 68 (page total
+  // including الكافرون's context words) and never inflated by them.
+  // `recited` is deliberately `revealed` words that are NOT also in
+  // `contextRevealed` (rather than just `revealed.size`) so this stays
+  // correct even in the rare case a page's `revealed` set already held
+  // some indices below the jump target from before the jump happened.
+  // With no jump ever made on this page, contextRevealed is empty and this
+  // reduces to the original recited/total-on-page behavior.
+  function updateCounter() {
+    var total = Math.max(0, expected.length - contextRevealed.size);
+    var recited = 0;
+    revealed.forEach(function (i) { if (!contextRevealed.has(i)) recited++; });
+    el.total.textContent = digits(total);
+    el.count.textContent = digits(recited);
+    var pct = (100 * recited / Math.max(1, total)) + '%';
     el.pbar.style.width = pct;
     el.pbarTop.style.width = pct;
+  }
+
+  // Writes the live pointer/revealed/contextRevealed for the current page
+  // into state.progressByPage and saves -- the one place that does so, used
+  // both after a match and right after a surah-start jump computes its
+  // pointer/contextRevealed (so an immediate reload, before any recitation,
+  // still restores the jump correctly -- req. "lastPage restore").
+  function persistPageProgress() {
+    var entry = state.progressByPage[String(pageNum)] || { pointer: 0, revealed: [], contextRevealed: [], completedAt: null };
+    entry.pointer = pointer;
+    entry.revealed = Array.from(revealed);
+    entry.contextRevealed = Array.from(contextRevealed);
+    state.progressByPage[String(pageNum)] = entry;
+    Storage.save(state);
   }
 
   // -------------------------------------------------------------- paging
@@ -145,7 +191,10 @@
     return pageBoxesPromise;
   }
 
-  function applyPageData(data) {
+  // opts.surahNumber: set only when the drawer's SURAH tab was used to get
+  // here (never juz / go-to-page / lastPage restore, per founder spec) --
+  // see applySurahStartJump() below for what it does to pointer/contextRevealed.
+  function applyPageData(data, opts) {
     ratio = data.ratio || 1;
     currentVeil = data.veil || SHEET;
     tokens = data.tokens || [];
@@ -159,15 +208,48 @@
     if (saved) {
       pointer = Math.min(saved.pointer || 0, expected.length);
       revealed = new Set((saved.revealed || []).filter(function (i) { return i >= 0 && i < expected.length; }));
+      contextRevealed = new Set((saved.contextRevealed || []).filter(function (i) { return i >= 0 && i < expected.length; }));
     } else {
-      pointer = 0; revealed = new Set();
+      pointer = 0; revealed = new Set(); contextRevealed = new Set();
     }
-    el.total.textContent = digits(expected.length);
-    el.count.textContent = digits(pointer);
-    setProgress(pointer, expected.length);
+    applySurahStartJump(opts);
+    updateCounter();
     el.doneBanner.style.display = (pointer >= expected.length && expected.length > 0) ? 'block' : 'none';
     el.shareBar.style.display = 'none';
     updatePageChip(); // words[]/pointer for this page are ready now -- safe to derive the surah
+  }
+
+  // Founder-reported bug: choosing سورة النصر from the drawer landed on its
+  // page (603) with the pointer at the TOP of the page, on الكافرون's first
+  // word -- forcing the user to recite a surah they never chose. The fix:
+  // when a surah was chosen (drawer SURAH tab only), find its first word on
+  // this page by its token key `k` ("surah:ayah") and park the pointer
+  // there instead of at page-top; every word before it is already printed
+  // on the page, so it's shown unveiled as CONTEXT (contextRevealed) rather
+  // than left veiled -- but it is NOT added to `revealed`, so it can never
+  // be counted as recited (see updateCounter() and the certificate.js audit
+  // in celebrateNewlyCompletedSurahs()/renderCertList()).
+  //
+  // Only rewinds-forward, never back: if this page already has genuine
+  // progress at or past the chosen surah's start (a earlier visit already
+  // recited that far for real), the existing pointer/revealed are left
+  // exactly as they are -- selecting a surah you've already passed must
+  // never erase real progress or manufacture context for words already
+  // legitimately revealed.
+  function applySurahStartJump(opts) {
+    if (!opts || !Number.isFinite(opts.surahNumber)) return;
+    var startIdx = -1;
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      var sNum = w && w.k ? parseInt(String(w.k).split(':')[0], 10) : NaN;
+      if (sNum === opts.surahNumber) { startIdx = i; break; }
+    }
+    if (startIdx <= 0 || pointer >= startIdx) return; // not found, or already past it -- nothing to do
+    pointer = startIdx;
+    var ctxSet = new Set();
+    for (var j = 0; j < startIdx; j++) ctxSet.add(j);
+    contextRevealed = ctxSet;
+    persistPageProgress(); // so an immediate reload (before any recitation) restores the jump too
   }
 
   function pageLabel(p) { return t('recite.page', { count: digits(p) }); }
@@ -233,7 +315,12 @@
   }
   function showPageError() { pageImage = null; el.pageError.style.display = 'flex'; }
 
-  function loadPage(p) {
+  // opts.surahNumber: passed straight through to applyPageData()'s
+  // surah-start jump -- ONLY the drawer's SURAH tab sets this (see
+  // renderDrawerList()); juz selection, go-to-page, deep links, and the
+  // lastPage restore on startup all call loadPage() with no opts, keeping
+  // their existing top-of-page behavior (founder spec, req. 6).
+  function loadPage(p, opts) {
     // Pages 1-2 are ornamental and excluded from the standard flow until
     // built properly (founder decision) -- every caller of loadPage funnels
     // through this one clamp, so no path can ever land on page 1 or 2.
@@ -251,18 +338,18 @@
       if (!r.ok) throw new Error('404');
       return r.json();
     }).then(function (data) {
-      applyPageData(data);
-      loadPageImage('pages/page-' + nnn + '.webp', function () { legacyFallback(p, nnn); });
+      applyPageData(data, opts);
+      loadPageImage('pages/page-' + nnn + '.webp', function () { legacyFallback(p, nnn, opts); });
       renderStatusIdle();
-    }).catch(function () { legacyFallback(p, nnn); });
+    }).catch(function () { legacyFallback(p, nnn, opts); });
   }
 
-  function legacyFallback(p, nnn) {
+  function legacyFallback(p, nnn, opts) {
     if (!LEGACY_PAGES.has(p)) { showPageError(); return; }
     ensureBoxesLoaded().then(function (boxes) {
       var info = boxes[String(p)];
       if (!info) { showPageError(); return; }
-      applyPageData(info);
+      applyPageData(info, opts);
       loadPageImage('img/page-' + nnn + '.png', showPageError);
       renderStatusIdle();
     });
@@ -367,14 +454,15 @@
     (r.matched || []).forEach(function (i) { revealed.add(i); });
     pointer = r.pointer;
     var newlyRevealed = revealed.size - before;
-    el.count.textContent = digits(pointer);
-    setProgress(pointer, expected.length);
+    updateCounter();
     updatePageChip(); // cheap -- catches the pointer crossing a surah boundary mid-page
     draw();
 
-    state.progressByPage[String(pageNum)] = state.progressByPage[String(pageNum)] || { pointer: 0, revealed: [], completedAt: null };
-    state.progressByPage[String(pageNum)].pointer = pointer;
-    state.progressByPage[String(pageNum)].revealed = Array.from(revealed);
+    persistPageProgress();
+    // newlyRevealed comes from `revealed` only (never contextRevealed), so
+    // today's word count -- and everything derived from it (streak/today
+    // panel, server sync tallies) -- only ever credits genuinely recited
+    // words, exactly like the certificate completion checks below.
     if (newlyRevealed > 0) Storage.addWordsRevealedToday(state, newlyRevealed);
     renderProgressPanel();
 
@@ -785,23 +873,27 @@
 
   function renderCertList() {
     if (!surahIndex || !surahIndex.surahs || !surahIndex.surahs.length) return;
-    var list = window.Tasme3Certificate.completedSurahList(state, surahIndex);
-    el.certList.innerHTML = '';
-    el.certListEmpty.hidden = !!list.length;
-    list.forEach(function (item) {
-      var row = document.createElement('button');
-      row.type = 'button';
-      row.className = 'cert-item';
-      var nameSpan = document.createElement('span');
-      nameSpan.className = 'cert-name';
-      nameSpan.textContent = item.name;
-      var dateSpan = document.createElement('span');
-      dateSpan.className = 'cert-date';
-      dateSpan.textContent = item.completedAt || '';
-      row.appendChild(nameSpan);
-      row.appendChild(dateSpan);
-      row.onclick = function () { openCertificateFor({ number: item.number, name: item.name }); };
-      el.certList.appendChild(row);
+    // completedSurahList() is async (see certificate.js) -- it must verify
+    // word-level completion, not just a page's completedAt flag, for any
+    // page a surah-start jump ever touched (context-word integrity audit).
+    window.Tasme3Certificate.completedSurahList(state, surahIndex).then(function (list) {
+      el.certList.innerHTML = '';
+      el.certListEmpty.hidden = !!list.length;
+      list.forEach(function (item) {
+        var row = document.createElement('button');
+        row.type = 'button';
+        row.className = 'cert-item';
+        var nameSpan = document.createElement('span');
+        nameSpan.className = 'cert-name';
+        nameSpan.textContent = item.name;
+        var dateSpan = document.createElement('span');
+        dateSpan.className = 'cert-date';
+        dateSpan.textContent = item.completedAt || '';
+        row.appendChild(nameSpan);
+        row.appendChild(dateSpan);
+        row.onclick = function () { openCertificateFor({ number: item.number, name: item.name }); };
+        el.certList.appendChild(row);
+      });
     });
   }
 
@@ -812,15 +904,22 @@
   // from the "شهاداتي" list, so missing this banner costs nothing.
   function celebrateNewlyCompletedSurahs(justCompletedPageNum) {
     if (!surahIndex || !surahIndex.surahs || !surahIndex.surahs.length) return;
-    var newlyDone = window.Tasme3Certificate.newlyCompletedSurahs(state, surahIndex, justCompletedPageNum);
-    if (!newlyDone.length) return;
-    renderCertList();
-    var surah = newlyDone[0];
-    el.surahCelebrate.style.display = 'block';
-    el.viewCertBtn.onclick = function () {
-      el.surahCelebrate.style.display = 'none';
-      openCertificateFor(surah);
-    };
+    // newlyCompletedSurahs() is async (see certificate.js) -- a page can
+    // complete (pointer reaching its end) via a surah-start jump without
+    // ever genuinely reciting a preceding surah shown only as context, so
+    // completion is verified at the word level for any page a jump ever
+    // touched, not just via the page's completedAt flag. A surah shown as
+    // context must never trigger this celebration or earn a certificate.
+    window.Tasme3Certificate.newlyCompletedSurahs(state, surahIndex, justCompletedPageNum).then(function (newlyDone) {
+      if (!newlyDone.length) return;
+      renderCertList();
+      var surah = newlyDone[0];
+      el.surahCelebrate.style.display = 'block';
+      el.viewCertBtn.onclick = function () {
+        el.surahCelebrate.style.display = 'none';
+        openCertificateFor(surah);
+      };
+    });
   }
   el.surahCelebrateClose.onclick = function () { el.surahCelebrate.style.display = 'none'; };
 
@@ -863,14 +962,22 @@
       b.classList.toggle('active', b.dataset.tab === tab);
     });
     el.drawerJump.hidden = tab !== 'page';
-    if (tab === 'surah') renderDrawerList(surahIndex ? surahIndex.surahs : [], 'name', 'number');
-    else if (tab === 'juz') renderDrawerList(surahIndex ? surahIndex.juz : [], null, 'number');
+    if (tab === 'surah') renderDrawerList(surahIndex ? surahIndex.surahs : [], 'name', 'number', true);
+    else if (tab === 'juz') renderDrawerList(surahIndex ? surahIndex.juz : [], null, 'number', false);
     else el.drawerList.innerHTML = '';
   }
   document.querySelectorAll('.drawer-tabs button').forEach(function (b) {
     b.addEventListener('click', function () { setDrawerTab(b.dataset.tab); });
   });
-  function renderDrawerList(items, nameKey, numKey) {
+  // isSurahTab: true only for the SURAH list -- a surah selection jumps the
+  // pointer straight to that surah's first word on its page (see loadPage's
+  // opts.surahNumber / applySurahStartJump), showing anything printed
+  // before it on that page as unveiled context. The JUZ list (isSurahTab
+  // false) keeps landing at the top of the page, unchanged (founder spec,
+  // req. 6) -- juz entries share the same `number` field but it means
+  // something else entirely (a juz number, not a surah number), so this
+  // flag is what keeps the two from ever being confused.
+  function renderDrawerList(items, nameKey, numKey, isSurahTab) {
     el.drawerList.innerHTML = '';
     items.forEach(function (it) {
       var row = document.createElement('div');
@@ -881,10 +988,14 @@
       row.onclick = function () {
         // Surah 1 (al-Fatihah) and Juz 1 both start on page 1, which is
         // excluded from the standard flow (founder decision) -- land on the
-        // first navigable page instead and say why.
+        // first navigable page instead and say why. (No surah-start jump
+        // in this case -- the front pages aren't in the standard flow at
+        // all yet, so there's no page data to jump within.)
         if (it.firstPage < NAV_MIN) {
           showToast(t('nav.frontPagesInProgress'));
           loadPage(NAV_MIN);
+        } else if (isSurahTab) {
+          loadPage(it.firstPage, { surahNumber: it.number });
         } else {
           loadPage(it.firstPage);
         }
