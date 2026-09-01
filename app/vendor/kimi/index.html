@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#c9a227">
+  <meta name="description" content="A free charity web app that helps people memorize the Quran by reciting aloud.">
+  <title>مدرب حفظ القرآن</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./style.css">
+  <link rel="manifest" href="./manifest.json">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1 id="app-title" data-i18n="app.title">مدرب حفظ القرآن</h1>
+      <nav>
+        <button data-view="select" class="nav-btn" data-i18n="nav.memorize">الحفظ</button>
+        <button data-view="progress" class="nav-btn" data-i18n="nav.progress">التقدم</button>
+        <button data-view="profile" class="nav-btn" data-i18n="nav.profile">الملف الشخصي</button>
+      </nav>
+      <select id="lang-switcher" aria-label="Language">
+        <option value="ar">العربية</option>
+        <option value="en">English</option>
+        <option value="ur">اردو</option>
+        <option value="id">Bahasa Indonesia</option>
+        <option value="tr">Türkçe</option>
+        <option value="fr">Français</option>
+      </select>
+    </header>
+
+    <main>
+      <!-- Loading View -->
+      <section id="view-loading" class="view active">
+        <div class="loading-box">
+          <div class="spinner"></div>
+          <p data-i18n="msg.modelLoading">جاري تحميل نموذج التعرف على الكلام...</p>
+          <div class="progress-bar"><div class="progress-fill" id="model-progress"></div></div>
+          <p id="model-status"></p>
+          <button id="retry-model-btn" class="hidden" data-i18n="button.retry">إعادة المحاولة</button>
+        </div>
+      </section>
+
+      <!-- Select View -->
+      <section id="view-select" class="view">
+        <h2 data-i18n="msg.selectSurah">اختر سورة للبدء</h2>
+        <div id="surah-grid" class="surah-grid"></div>
+      </section>
+
+      <!-- Review View -->
+      <section id="view-review" class="view">
+        <h2 data-i18n="msg.reviewNeeded">لديك مراجعة من يوم أمس</h2>
+        <p data-i18n="msg.reviewPrompt">راجع الآيات أدناه قبل البدء في حفظ جديد</p>
+        <div id="review-content"></div>
+        <button id="skip-review-btn" class="secondary-btn" data-i18n="button.skipReview">تخطي المراجعة</button>
+      </section>
+
+      <!-- Memorize View -->
+      <section id="view-memorize" class="view">
+        <div class="memorize-header">
+          <h2 id="surah-name"></h2>
+          <div class="ayah-nav">
+            <button id="prev-ayah" class="icon-btn" aria-label="Previous Ayah">◀</button>
+            <span id="ayah-number"></span>
+            <button id="next-ayah" class="icon-btn" aria-label="Next Ayah">▶</button>
+          </div>
+          <select id="level-selector" aria-label="Difficulty Level">
+            <option value="1" data-i18n="level.beginner">مبتدئ</option>
+            <option value="2" data-i18n="level.intermediate">متوسط</option>
+            <option value="3" data-i18n="level.precise">متقن</option>
+          </select>
+        </div>
+        <div id="mushaf-page" class="mushaf-page">
+          <div id="ayah-text" class="ayah-text" aria-live="polite" aria-atomic="false"></div>
+        </div>
+        <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+        <div class="controls">
+          <button id="recite-btn" class="recite-btn" aria-label="Start Recitation">
+            <span class="mic-icon">🎙</span>
+            <span class="recite-label" data-i18n="button.start">ابدأ</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- Profile View -->
+      <section id="view-profile" class="view">
+        <h2 data-i18n="nav.profile">الملف الشخصي</h2>
+        <form id="profile-form">
+          <label>
+            <span data-i18n="label.nickname">الاسم المستعار</span>
+            <input type="text" id="nickname" name="nickname" maxlength="30">
+          </label>
+          <label>
+            <span data-i18n="label.dailyTarget">الهدف اليومي (آيات)</span>
+            <input type="number" id="daily-target" name="dailyTarget" min="1" max="50" value="5">
+          </label>
+          <label>
+            <span data-i18n="label.difficulty">مستوى الصعوبة الافتراضي</span>
+            <select id="default-level">
+              <option value="1" data-i18n="level.beginner">مبتدئ</option>
+              <option value="2" data-i18n="level.intermediate">متوسط</option>
+              <option value="3" data-i18n="level.precise">متقن</option>
+            </select>
+          </label>
+          <button type="submit" data-i18n="button.save">حفظ</button>
+        </form>
+      </section>
+
+      <!-- Progress View -->
+      <section id="view-progress" class="view">
+        <h2 data-i18n="nav.progress">التقدم</h2>
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-value" id="streak-value">0</div>
+            <div class="stat-label" data-i18n="msg.streak">السلسلة اليومية</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="total-ayat-value">0</div>
+            <div class="stat-label" data-i18n="msg.totalAyat">إجمالي الآيات المحفوظة</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="today-progress-value">0</div>
+            <div class="stat-label" data-i18n="msg.todayProgress">آيات اليوم</div>
+          </div>
+        </div>
+        <div id="surah-progress-list"></div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

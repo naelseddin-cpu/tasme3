@@ -1,0 +1,61 @@
+{
+  "app": {
+    "title": "Kur'an Ezber Eğitmeni",
+    "tagline": "Sesli tilavetle Kur'an ezberleyin"
+  },
+  "nav": {
+    "memorize": "Ezber",
+    "profile": "Profil",
+    "progress": "İlerleme",
+    "review": "Tekrar"
+  },
+  "level": {
+    "beginner": "Başlangıç",
+    "intermediate": "Orta",
+    "precise": "İleri",
+    "label": "Zorluk Seviyesi"
+  },
+  "button": {
+    "start": "Tilavete Başla",
+    "stop": "Durdur",
+    "next": "Sonraki",
+    "prev": "Önceki",
+    "retry": "Tekrar Dene",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "continue": "Devam Et",
+    "review": "Tekrar Et",
+    "skipReview": "Tekrarı Atla"
+  },
+  "label": {
+    "nickname": "Takma Ad",
+    "dailyTarget": "Günlük Hedef (ayet)",
+    "difficulty": "Zorluk",
+    "language": "Dil",
+    "surah": "Sure",
+    "ayah": "Ayet"
+  },
+  "msg": {
+    "welcome": "Kur'an Ezber Eğitmeni'ne hoş geldiniz",
+    "selectSurah": "Başlamak için bir sure seçin",
+    "pressToRecite": "Mikrofon düğmesine basın ve tilavete başlayın",
+    "listening": "Dinleniyor...",
+    "processing": "Ses işleniyor...",
+    "ayahComplete": "Harika! Ayeti tamamladınız",
+    "surahComplete": "Tebrikler! Sureyi tamamladınız",
+    "reviewNeeded": "Dünden kalan tekrarınız var",
+    "reviewPrompt": "Yeni ezberlemeye başlamadan önce aşağıdaki ayetleri tekrar edin",
+    "reviewComplete": "Harika! Tekrar tamamlandı",
+    "micDenied": "Mikrofon izni reddedildi. Lütfen tarayıcı ayarlarından izin verin.",
+    "modelLoading": "Konuşma tanıma modeli yükleniyor...",
+    "modelLoadError": "Model yüklenemedi. Tekrar denemek için tıklayın.",
+    "emptyTranscript": "Konuşma algılanmadı. Lütfen tekrar deneyin.",
+    "tryAgain": "Tekrar dene",
+    "excellent": "Aferin!",
+    "keepGoing": "Devam et...",
+    "streak": "Günlük Seri",
+    "totalAyat": "Toplam Ezberlenen Ayet",
+    "todayProgress": "Bugünkü Ayetler",
+    "completion": "tamamlandı"
+  }
+}

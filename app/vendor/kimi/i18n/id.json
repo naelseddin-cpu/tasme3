@@ -1,0 +1,61 @@
+{
+  "app": {
+    "title": "Pelatih Hafalan Al-Qur'an",
+    "tagline": "Hafalkan Al-Qur'an melalui tilawah suara"
+  },
+  "nav": {
+    "memorize": "Hafal",
+    "profile": "Profil",
+    "progress": "Kemajuan",
+    "review": "Ulang"
+  },
+  "level": {
+    "beginner": "Pemula",
+    "intermediate": "Menengah",
+    "precise": "Mahir",
+    "label": "Tingkat Kesulitan"
+  },
+  "button": {
+    "start": "Mulai Tilawah",
+    "stop": "Berhenti",
+    "next": "Selanjutnya",
+    "prev": "Sebelumnya",
+    "retry": "Coba Lagi",
+    "save": "Simpan",
+    "cancel": "Batal",
+    "continue": "Lanjutkan",
+    "review": "Ulangi",
+    "skipReview": "Lewati Ulangan"
+  },
+  "label": {
+    "nickname": "Nama Panggilan",
+    "dailyTarget": "Target Harian (ayat)",
+    "difficulty": "Kesulitan",
+    "language": "Bahasa",
+    "surah": "Surah",
+    "ayah": "Ayat"
+  },
+  "msg": {
+    "welcome": "Selamat datang di Pelatih Hafalan Al-Qur'an",
+    "selectSurah": "Pilih surah untuk memulai",
+    "pressToRecite": "Tekan tombol mikrofon dan mulai tilawah",
+    "listening": "Mendengarkan...",
+    "processing": "Memproses audio...",
+    "ayahComplete": "Bagus! Anda menyelesaikan ayat",
+    "surahComplete": "Selamat! Anda menyelesaikan surah",
+    "reviewNeeded": "Anda memiliki ulangan dari kemarin",
+    "reviewPrompt": "Ulangi ayat-ayat di bawah ini sebelum memulai hafalan baru",
+    "reviewComplete": "Bagus! Ulangan selesai",
+    "micDenied": "Izin mikrofon ditolak. Mohon izinkan akses dari pengaturan browser.",
+    "modelLoading": "Memuat model pengenalan suara...",
+    "modelLoadError": "Gagal memuat model. Klik untuk mencoba lagi.",
+    "emptyTranscript": "Tidak ada suara yang terdeteksi. Silakan coba lagi.",
+    "tryAgain": "Coba lagi",
+    "excellent": "Bagus sekali!",
+    "keepGoing": "Teruskan...",
+    "streak": "Streak Harian",
+    "totalAyat": "Total Ayat Dihafal",
+    "todayProgress": "Ayat Hari Ini",
+    "completion": "selesai"
+  }
+}

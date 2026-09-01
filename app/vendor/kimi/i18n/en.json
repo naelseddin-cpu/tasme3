@@ -1,0 +1,61 @@
+{
+  "app": {
+    "title": "Quran Memorization Trainer",
+    "tagline": "Memorize the Quran through voice recitation"
+  },
+  "nav": {
+    "memorize": "Memorize",
+    "profile": "Profile",
+    "progress": "Progress",
+    "review": "Review"
+  },
+  "level": {
+    "beginner": "Beginner",
+    "intermediate": "Intermediate",
+    "precise": "Precise",
+    "label": "Difficulty Level"
+  },
+  "button": {
+    "start": "Start Recitation",
+    "stop": "Stop",
+    "next": "Next",
+    "prev": "Previous",
+    "retry": "Retry",
+    "save": "Save",
+    "cancel": "Cancel",
+    "continue": "Continue",
+    "review": "Review",
+    "skipReview": "Skip Review"
+  },
+  "label": {
+    "nickname": "Nickname",
+    "dailyTarget": "Daily Target (verses)",
+    "difficulty": "Difficulty",
+    "language": "Language",
+    "surah": "Surah",
+    "ayah": "Ayah"
+  },
+  "msg": {
+    "welcome": "Welcome to Quran Memorization Trainer",
+    "selectSurah": "Select a surah to begin",
+    "pressToRecite": "Press the microphone button and start reciting",
+    "listening": "Listening...",
+    "processing": "Processing audio...",
+    "ayahComplete": "Excellent! You completed the verse",
+    "surahComplete": "Congratulations! You completed the surah",
+    "reviewNeeded": "You have a review from yesterday",
+    "reviewPrompt": "Review the verses below before starting new memorization",
+    "reviewComplete": "Excellent! Review completed",
+    "micDenied": "Microphone permission denied. Please allow access from browser settings.",
+    "modelLoading": "Loading speech recognition model...",
+    "modelLoadError": "Failed to load model. Click to retry.",
+    "emptyTranscript": "No speech recognized. Please try again.",
+    "tryAgain": "Try again",
+    "excellent": "Excellent!",
+    "keepGoing": "Keep going...",
+    "streak": "Daily Streak",
+    "totalAyat": "Total Verses Memorized",
+    "todayProgress": "Today's Verses",
+    "completion": "completed"
+  }
+}

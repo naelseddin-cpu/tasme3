@@ -1,0 +1,61 @@
+{
+  "app": {
+    "title": "Entraîneur de Mémorisation du Coran",
+    "tagline": "Mémorisez le Coran par récitation vocale"
+  },
+  "nav": {
+    "memorize": "Mémoriser",
+    "profile": "Profil",
+    "progress": "Progrès",
+    "review": "Révision"
+  },
+  "level": {
+    "beginner": "Débutant",
+    "intermediate": "Intermédiaire",
+    "precise": "Précis",
+    "label": "Niveau de Difficulté"
+  },
+  "button": {
+    "start": "Commencer la Récitation",
+    "stop": "Arrêter",
+    "next": "Suivant",
+    "prev": "Précédent",
+    "retry": "Réessayer",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "continue": "Continuer",
+    "review": "Réviser",
+    "skipReview": "Passer la Révision"
+  },
+  "label": {
+    "nickname": "Pseudo",
+    "dailyTarget": "Objectif Quotidien (versets)",
+    "difficulty": "Difficulté",
+    "language": "Langue",
+    "surah": "Sourate",
+    "ayah": "Verset"
+  },
+  "msg": {
+    "welcome": "Bienvenue dans l'Entraîneur de Mémorisation du Coran",
+    "selectSurah": "Sélectionnez une sourate pour commencer",
+    "pressToRecite": "Appuyez sur le bouton du micro et commencez la récitation",
+    "listening": "Écoute en cours...",
+    "processing": "Traitement audio...",
+    "ayahComplete": "Excellent! Vous avez terminé le verset",
+    "surahComplete": "Félicitations! Vous avez terminé la sourate",
+    "reviewNeeded": "Vous avez une révision d'hier",
+    "reviewPrompt": "Révisez les versets ci-dessous avant de commencer une nouvelle mémorisation",
+    "reviewComplete": "Excellent! Révision terminée",
+    "micDenied": "Permission du micro refusée. Veuillez autoriser l'accès dans les paramètres du navigateur.",
+    "modelLoading": "Chargement du modèle de reconnaissance vocale...",
+    "modelLoadError": "Échec du chargement du modèle. Cliquez pour réessayer.",
+    "emptyTranscript": "Aucune parole reconnue. Veuillez réessayer.",
+    "tryAgain": "Réessayer",
+    "excellent": "Excellent!",
+    "keepGoing": "Continuez...",
+    "streak": "Série Quotidienne",
+    "totalAyat": "Total de Versets Mémorisés",
+    "todayProgress": "Versets d'Aujourd'hui",
+    "completion": "terminé"
+  }
+}

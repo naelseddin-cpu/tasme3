@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدرب حفظ القرآن الكريم</title>
+<style>
+  @font-face {
+    font-family: 'UthmanicHafs';
+    src: url('mushaf/fonts/UthmanicHafs.woff2') format('woff2');
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --bg: #f5f1e6; --sheet: #fffdf5; --gold: #b8a24a;
+    --green: #1a5c38; --ink: #2a2a20; --veil: #eee8d5;
+  }
+  body {
+    font-family: system-ui, sans-serif;
+    background: var(--bg); color: var(--ink);
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 10px;
+  }
+  header { text-align: center; margin-bottom: 8px; }
+  header h1 { font-size: 1.25rem; color: var(--green); font-family: 'UthmanicHafs', serif; }
+  header p { font-size: .8rem; color: #777; }
+  .controls { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 10px; }
+  select, button {
+    font-size: .95rem; padding: 7px 14px; border-radius: 8px;
+    border: 1px solid #c9c2ac; background: #fff; cursor: pointer;
+  }
+  button:disabled { opacity: .45; cursor: not-allowed; }
+  #recordBtn.recording { background: #c0392b; color: #fff; border-color: #c0392b; }
+  #loadBtn { background: var(--green); color: #fff; border-color: var(--green); }
+
+  /* ——— The mushaf page: exact print layout ——— */
+  .mushaf-sheet {
+    background: var(--sheet);
+    border: 1px solid var(--gold);
+    outline: 3px double var(--gold);
+    outline-offset: -7px;
+    border-radius: 6px;
+    box-shadow: 0 2px 14px rgba(0,0,0,.10);
+    width: min(94vw, 470px);
+    padding: 22px 18px;
+    direction: rtl;
+  }
+  .mline {
+    display: flex; justify-content: space-between; align-items: baseline;
+    direction: rtl; white-space: nowrap;
+    font-size: clamp(17px, 5.1vw, 25.5px);
+    line-height: 1.95;
+  }
+  .mline.center { justify-content: center; gap: .35em; }
+  .mword, .mmark { display: inline-block; border-radius: 5px; transition: color .35s, background .35s; }
+  .mword.veiled { color: transparent; background: var(--veil); user-select: none; }
+  .mword.revealed { color: var(--ink); background: transparent; animation: pop .3s ease; }
+  .mword.next { box-shadow: 0 0 0 2px var(--gold) inset; }
+  .mmark { color: var(--ink); }
+  @keyframes pop { from { transform: scale(1.18); } to { transform: scale(1); } }
+  .sura-band {
+    border: 1.5px solid var(--gold); border-radius: 8px;
+    text-align: center; font-family: 'UthmanicHafs', serif;
+    color: var(--green); background: rgba(184,162,74,.08);
+    margin: 3px 0; padding: 1px 0;
+    font-size: clamp(15px, 4.4vw, 22px);
+  }
+  .basmala-line {
+    text-align: center; font-family: 'UthmanicHafs', serif;
+    font-size: clamp(15px, 4.6vw, 23px); color: var(--ink);
+  }
+  .page-chip {
+    margin: 8px auto 0; width: fit-content; background: #fff;
+    border: 1px solid #c9c2ac; border-radius: 999px; padding: 2px 14px; font-size: .85rem;
+  }
+  .status { font-size: .85rem; color: #555; margin-top: 10px; text-align: center; min-height: 1.3em; }
+  .heard { color: #999; font-size: .8rem; margin-top: 3px; direction: rtl; }
+  progress { width: 200px; }
+  .done-msg { color: var(--green); font-weight: bold; margin-top: 8px; }
+  footer { margin-top: auto; padding-top: 14px; font-size: .7rem; color: #aaa; text-align: center; }
+</style>
+</head>
+<body>
+<header>
+  <h1>مدرب حفظ القرآن الكريم</h1>
+  <p>الصفحات كما في المصحف الشريف تمامًا — صوتك لا يغادر جهازك أبدًا</p>
+</header>
+
+<div class="controls">
+  <select id="pageSelect"></select>
+  <button id="loadBtn">تحميل محرك التعرّف</button>
+  <button id="recordBtn" disabled>🎙️ ابدأ التلاوة</button>
+  <button id="resetBtn">إعادة</button>
+</div>
+
+<div class="mushaf-sheet" id="sheet"></div>
+<div class="page-chip" id="pageChip"></div>
+<div class="status" id="status">اختر الصفحة ثم حمّل محرك التعرّف (مرة واحدة، يُحفظ في المتصفح)</div>
+<div class="status heard" id="heard"></div>
+<div class="done-msg" id="doneMsg" hidden>ما شاء الله! أتممت الصفحة ✓</div>
+
+<footer>نموذج تجريبي — صدقة جارية، مجاني للجميع</footer>
+
+<script src="matcher.js"></script>
+<script type="module">
+const PAGES = [1, 2, 596, 597, 598, 599, 600, 601, 602, 603, 604];
+const AR_NUMS = '٠١٢٣٤٥٦٧٨٩';
+const arNum = n => String(n).split('').map(d => AR_NUMS[+d]).join('');
+const BASMALA = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
+
+const sheet = document.getElementById('sheet');
+const statusEl = document.getElementById('status');
+const heardEl = document.getElementById('heard');
+const doneEl = document.getElementById('doneMsg');
+const pageChip = document.getElementById('pageChip');
+const pageSelect = document.getElementById('pageSelect');
+const loadBtn = document.getElementById('loadBtn');
+const recordBtn = document.getElementById('recordBtn');
+const resetBtn = document.getElementById('resetBtn');
+
+let wordEls = [], expectedNorm = [], markersByWord = {}, pointer = 0;
+let transcriber = null, mediaRecorder = null, chunks = [], recording = false;
+const loadedFonts = new Set();
+
+PAGES.forEach(p => {
+  const o = document.createElement('option');
+  o.value = p; o.textContent = 'صفحة ' + arNum(p);
+  pageSelect.appendChild(o);
+});
+
+function ensurePageFont(p) {
+  if (loadedFonts.has(p)) return;
+  const nnn = String(p).padStart(3, '0');
+  const st = document.createElement('style');
+  st.textContent = `@font-face { font-family:'QCF_P${nnn}'; src:url('mushaf/fonts/QCF_P${nnn}.woff2') format('woff2'); }`;
+  document.head.appendChild(st);
+  loadedFonts.add(p);
+}
+
+async function loadPage(p) {
+  ensurePageFont(p);
+  const nnn = String(p).padStart(3, '0');
+  const data = await (await fetch(`mushaf/pages/page-${nnn}.json`)).json();
+  sheet.innerHTML = '';
+  wordEls = []; expectedNorm = []; markersByWord = {}; pointer = 0;
+  doneEl.hidden = true;
+  for (const line of data.lines) {
+    if (line.t === 's') {
+      const div = document.createElement('div');
+      div.className = 'sura-band';
+      div.textContent = 'سُورَةُ ' + line.name;
+      sheet.appendChild(div);
+    } else if (line.t === 'b') {
+      const div = document.createElement('div');
+      div.className = 'basmala-line';
+      div.textContent = BASMALA;
+      sheet.appendChild(div);
+    } else {
+      const div = document.createElement('div');
+      div.className = 'mline' + (line.tk.length <= 2 ? ' center' : '');
+      div.style.fontFamily = `'QCF_P${nnn}'`;
+      for (const tk of line.tk) {
+        const span = document.createElement('span');
+        span.textContent = tk.g;
+        if (tk.e) {
+          span.className = 'mmark';
+          const wi = wordEls.length - 1;
+          (markersByWord[wi] = markersByWord[wi] || []).push(span);
+          span.style.visibility = wi >= 0 ? 'hidden' : 'visible';
+        } else {
+          span.className = 'mword veiled';
+          span.title = '';
+          wordEls.push(span);
+          expectedNorm.push(tk.n);
+        }
+        div.appendChild(span);
+      }
+      sheet.appendChild(div);
+    }
+  }
+  pageChip.textContent = arNum(p);
+  highlightNext();
+  statusEl.textContent = 'اقرأ الصفحة غيبًا وستظهر الكلمات الصحيحة';
+}
+
+function highlightNext() {
+  wordEls.forEach(el => el.classList.remove('next'));
+  if (pointer < wordEls.length) wordEls[pointer].classList.add('next');
+}
+
+function applyMatches(result) {
+  for (const i of result.matched) {
+    wordEls[i].classList.remove('veiled');
+    wordEls[i].classList.add('revealed');
+    if (markersByWord[i]) markersByWord[i].forEach(m => m.style.visibility = 'visible');
+  }
+  pointer = result.pointer;
+  highlightNext();
+  if (pointer >= wordEls.length) {
+    doneEl.hidden = false; statusEl.textContent = '';
+  } else if (result.matched.length === 0) {
+    statusEl.textContent = 'لم أتعرف على الكلمة التالية — حاول مرة أخرى';
+  } else {
+    statusEl.textContent = 'أحسنت، أكمل…';
+  }
+}
+
+loadBtn.addEventListener('click', async () => {
+  loadBtn.disabled = true;
+  statusEl.innerHTML = 'جاري تحميل المحرك… <progress id="prog" max="100" value="0"></progress>';
+  try {
+    const { pipeline } = await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.3.1');
+    transcriber = await pipeline('automatic-speech-recognition', 'onnx-community/whisper-base', {
+      progress_callback: p => { const el = document.getElementById('prog'); if (el && p.progress) el.value = p.progress; }
+    });
+    statusEl.textContent = 'المحرك جاهز ✓ — اضغط "ابدأ التلاوة" واقرأ ثم اضغط "تحقق"';
+    recordBtn.disabled = false; loadBtn.hidden = true;
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = 'تعذر تحميل المحرك — تحقق من الاتصال وحاول مجددًا';
+    loadBtn.disabled = false;
+  }
+});
+
+recordBtn.addEventListener('click', async () => {
+  if (!recording) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      chunks = [];
+      mediaRecorder = new MediaRecorder(stream);
+      mediaRecorder.ondataavailable = e => chunks.push(e.data);
+      mediaRecorder.onstop = onStopped;
+      mediaRecorder.start();
+      recording = true;
+      recordBtn.textContent = '⏹️ تحقق';
+      recordBtn.classList.add('recording');
+      statusEl.textContent = 'أستمع إليك… اقرأ ثم اضغط "تحقق"';
+    } catch { statusEl.textContent = 'يجب السماح باستخدام الميكروفون'; }
+  } else {
+    mediaRecorder.stop();
+    mediaRecorder.stream.getTracks().forEach(t => t.stop());
+    recording = false;
+    recordBtn.textContent = '🎙️ ابدأ التلاوة';
+    recordBtn.classList.remove('recording');
+    recordBtn.disabled = true;
+    statusEl.textContent = 'جاري التحليل…';
+  }
+});
+
+async function onStopped() {
+  try {
+    const audio = await blobToMono16k(new Blob(chunks));
+    const out = await transcriber(audio, { language: 'arabic', task: 'transcribe', chunk_length_s: 30 });
+    const text = (out.text || '').trim();
+    heardEl.textContent = text ? 'سمعت: ' + text : '';
+    if (!text) statusEl.textContent = 'لم أسمع شيئًا — حاول بصوت أوضح';
+    else applyMatches(QuranMatcher.matchTranscript(expectedNorm, pointer, text));
+  } catch (e) {
+    console.error(e);
+    statusEl.textContent = 'حدث خطأ أثناء التحليل — حاول مجددًا';
+  }
+  recordBtn.disabled = false;
+}
+
+async function blobToMono16k(blob) {
+  const buf = await blob.arrayBuffer();
+  const ctx = new AudioContext();
+  const decoded = await ctx.decodeAudioData(buf);
+  ctx.close();
+  const off = new OfflineAudioContext(1, Math.ceil(decoded.duration * 16000), 16000);
+  const src = off.createBufferSource();
+  src.buffer = decoded; src.connect(off.destination); src.start();
+  return (await off.startRendering()).getChannelData(0);
+}
+
+resetBtn.addEventListener('click', () => loadPage(+pageSelect.value));
+pageSelect.addEventListener('change', () => loadPage(+pageSelect.value));
+loadPage(PAGES[0]);
+</script>
+</body>
+</html>
