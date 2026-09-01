@@ -177,13 +177,19 @@ check('merged n-only combo is not an exact match (sanity)', M.levenshtein('مل�
 // still reveals all three, because every part is an exact split.
 r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0, 'انالذينكفروا', 4);
 check('triple-glued exact-concatenation token reveals all three at L4', r.pointer === 3 && r.matched.length === 3);
-// A triple-glued token that is only APPROXIMATELY the concatenation (one
-// part off by one vowel edit) is rejected at L4 (exact-only) but still
-// accepted at L1-L3 (which tolerate a single vowel edit at this length).
-r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0, 'انالذينكفروه', 4);
-check('near-miss triple-glued token rejected at L4', r.pointer === 0 && r.matched.length === 0);
-r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0, 'انالذينكفروه', 3);
-check('near-miss triple-glued token still accepted at L3 (1 vowel edit within tolerance)', r.pointer === 3 && r.matched.length === 3);
+// A triple-glued token that is only APPROXIMATELY the concatenation (last
+// part's LAST letter swapped: كفروا -> كفروه) is rejected at every level,
+// including L1-L3. Before the boundary-affix fix (2026-09-01, master audit)
+// this was accepted at L1-L3 as a "1 vowel edit within tolerance" -- but
+// the edit sits on the FINAL letter of the word, exactly the affix-bearing
+// edge position that must never be cheap (ا/ه word-final confusion is
+// plausible ASR noise, but so is a genuinely different word ending; the
+// Iron Rule requires treating it as a reject). See app/matcher.js's
+// isEdgePos doc comment for the full rationale and the accepted trade-off.
+[1, 2, 3, 4].forEach(function (level) {
+  r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0, 'انالذينكفروه', level);
+  check('near-miss triple-glued token (final-letter edit) rejected at level ' + level, r.pointer === 0 && r.matched.length === 0);
+});
 
 // The old merge loophole itself, reproduced directly: expected [ان, الذين],
 // spoken ONLY 'الذين' at pointer 0 must not advance the pointer or reveal
@@ -307,6 +313,49 @@ check('toleranceFor(1,9) === toleranceFor(2,9) (L1/L2 coincide at len 6+)', M.to
   r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0,
     'براءه من واعلموا مخزي الناس قال معي بعدها عذرا استطعما هل لن كي', level);
   check('wrong-word storm at short-word pointer reveals nothing at level ' + level, r.matched.length === 0 && r.pointer === 0);
+});
+
+// ===================== Boundary-affix fix (master audit 2026-09-01) =====================
+// A false-reveal missed by the 7391880 fix above: edge letters (first/last
+// position of a word) are meaning-bearing affixes in Arabic, so an edit
+// there must never be cheap even when the letter is vowel-class. See
+// site/tests/test-boundary-affix.js for the full scan; these are the unit-
+// level acceptance criteria the DP change must satisfy directly.
+
+// Unit-level DP check: edge insertion now costs CONSONANT_EDIT_COST even
+// though the inserted letter (ي) is vowel-class.
+check('weightedEditDistance(يالرحمن, الرحمن) is 3 (leading-letter insertion, edge)',
+  M.weightedEditDistance('يالرحمن', 'الرحمن') === 3);
+// Contrast: the same vowel-class letter inserted INTERIOR still costs 1.
+check('weightedEditDistance(السموات, السماوات) is 1 (interior insertion)',
+  M.weightedEditDistance('السموات', 'السماوات') === 1);
+
+// The exact repro: {n:عبد,a:عباد} + {n:الرحمن,a:الرحمان}, spoken عبادي
+// (a different, unspoken word) glued to الرحمن -- must reveal NOTHING at
+// any level (before this fix: {pointer:2, matched:[0,1]}, falsely
+// revealing both).
+[1, 2, 3, 4, undefined].forEach(function (level) {
+  var expBoundary = [{ n: 'عبد', a: 'عباد' }, { n: 'الرحمن', a: 'الرحمان' }];
+  r = M.matchTranscript(expBoundary, 0, 'عبادي' + 'الرحمن', level);
+  check('glued عباديالرحمن reveals nothing at level ' + level, r.pointer === 0 && r.matched.length === 0, r);
+  r = M.matchTranscript([expBoundary[0]], 0, 'عبادي', level);
+  check('single عبادي does not reveal {n:عبد,a:عباد} at level ' + level, r.matched.length === 0);
+  r = M.matchTranscript(expBoundary, 0, 'عبادي الرحمن', level);
+  check('spaced عبادي الرحمن reveals nothing at level ' + level, r.pointer === 0 && r.matched.length === 0, r);
+  // Genuine عباد الرحمن (both words truly present) must still reveal both.
+  r = M.matchTranscript(expBoundary, 0, 'عباد' + 'الرحمن', level);
+  check('genuine glued عبادالرحمن reveals both at level ' + level,
+    r.pointer === 2 && r.matched.indexOf(0) !== -1 && r.matched.indexOf(1) !== -1, r);
+});
+
+// Other edge-rejection cases named in the audit.
+[1, 2, 3, 4, undefined].forEach(function (level) {
+  check('وقل rejected for قل at level ' + level, !M.fuzzyEqual('وقل', 'قل', level));
+  check('يالرحمن rejected for الرحمن at level ' + level, !M.fuzzyEqual('يالرحمن', 'الرحمن', level));
+  // Documented Iron-Rule trade-off: dropped final alif (edge deletion) is
+  // now rejected at every level, even though it is a plausible ASR/tanween
+  // variance. See site/tests/test-boundary-affix.js for the full rationale.
+  check('كفو rejected for expected كفوا at level ' + level, !M.fuzzyEqual('كفو', 'كفوا', level));
 });
 
 console.log(`\n${pass} passed, ${fail} failed`);

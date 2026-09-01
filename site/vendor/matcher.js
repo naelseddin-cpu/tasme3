@@ -92,30 +92,105 @@
   var CONSONANT_EDIT_COST = 3;
   var VOWEL_EDIT_COST = 1;
 
+  // Boundary-affix fix (master audit 2026-09-01, false-reveal missed by
+  // 7391880): a word's FIRST and LAST letter positions are where Arabic
+  // affixes attach -- و "and", ي "my"/1st-person, ا case/dual endings, and
+  // the ب/ل/ف/ك prefix letters -- so an edit there changes the word's
+  // *meaning* (a different word or a different grammatical person/case),
+  // never merely its *accent*, even when the letter itself is vowel-class.
+  // 'عباد' + trailing ي ("my servants" -> "عبادي", a different, unspoken
+  // word) used to cost only VOWEL_EDIT_COST (ي is vowel-class) and so slid
+  // under every level's tolerance.
+  //
+  // edgeRun() computes, for a given string (compared against the OTHER
+  // string's length), the set of indices that count as "the boundary" --
+  // NOT just {0, length-1}. A plain single-index check is exploitable two
+  // different ways, both found live via the affix-variant corpus scan (see
+  // site/tests/test-boundary-affix.js):
+  //
+  // 1. Identical-letter ties. If the affix letter being prepended/appended
+  //    happens to equal the word's own boundary letter (e.g. prefixing 'ا'
+  //    onto 'الذين', which already starts with 'ا', giving 'االذين'), the
+  //    two adjacent identical letters make deleting EITHER of them produce
+  //    the same result string -- so the DP is free to attribute the edit to
+  //    the second 'ا' (index 1, "interior" under a naive check) instead of
+  //    the first (index 0, "edge"), and pays only VOWEL_EDIT_COST (429
+  //    leaks/level with only a single-index check). Fix: the boundary is
+  //    the entire leading run of characters equal to the first letter, and
+  //    the entire trailing run of characters equal to the last letter --
+  //    any index inside either run is edge, since an edit anywhere in it is
+  //    indistinguishable in effect from editing the true boundary letter.
+  //
+  // 2. Multi-letter length differences. Appending a whole extra affix onto
+  //    an already-longer alternate form (e.g. 'وعليا' (the 'a' form) + 'ي'
+  //    = 'وعلياي', compared against the shorter 'n' form 'وعلي') needs 2
+  //    trailing edits, not 1. Only the true last character (index
+  //    len-1) is caught by rule 1 above; the second-to-last character
+  //    ('ا', not equal to the final 'ي', so no identical run) still reads
+  //    as "interior" even though it only exists because of the length
+  //    mismatch -- both edits together constitute the affix change and
+  //    both must be edge (still 6 leaks/level after rule 1 alone). Fix: the
+  //    boundary additionally always includes the leading and trailing
+  //    window of size `excess` = max(0, thisLen - otherLen) -- the minimum
+  //    number of characters that MUST be inserted/deleted at start or end
+  //    for the lengths to reconcile, regardless of which specific
+  //    characters an optimal alignment happens to pick.
+  //
+  // Both rules only WIDEN the boundary beyond {0, length-1}; interior edits
+  // for same-length or off-by-one words (all of the "must stay forgiving"
+  // cases -- السموات/السماوات, الصلوه/الصلاه, ابرهيم/ابراهيم, ملك/مالك --
+  // have length difference <=1 and no boundary-adjacent identical-letter
+  // run there) are completely unaffected; confirmed via the corpus scan
+  // reaching 0 leaks at every level with both rules combined.
+  function edgeRun(s, otherLen) {
+    var len = s.length;
+    var leadEnd = 0;
+    while (leadEnd + 1 < len && s.charAt(leadEnd + 1) === s.charAt(0)) leadEnd++;
+    var trailStart = len - 1;
+    while (trailStart - 1 >= 0 && s.charAt(trailStart - 1) === s.charAt(len - 1)) trailStart--;
+    var excess = Math.max(0, len - otherLen);
+    if (excess - 1 > leadEnd) leadEnd = excess - 1;
+    var trailBound = len - excess;
+    if (trailBound < trailStart) trailStart = trailBound;
+    return { leadEnd: leadEnd, trailStart: trailStart };
+  }
+  function isEdgePos(idx, run) { return idx <= run.leadEnd || idx >= run.trailStart; }
+
   // Weighted edit distance: like Levenshtein, but each insertion/deletion of
   // a single character costs 1 if that character is vowel-class else
   // CONSONANT_EDIT_COST; each substitution costs 1 only if BOTH characters
-  // are vowel-class, else CONSONANT_EDIT_COST. Used everywhere fuzzy word
-  // matching happens instead of plain levenshtein() (kept above, unweighted,
-  // for anyone who needs raw edit distance).
+  // are vowel-class, else CONSONANT_EDIT_COST -- UNLESS the edit touches a
+  // boundary position of `a` or `b` (see edgeRun/isEdgePos above), in which
+  // case it always costs CONSONANT_EDIT_COST regardless of letter class:
+  // edge letters are meaning-bearing affixes, so an edit there must never be
+  // treated as a cheap accent slip. Used everywhere fuzzy word matching
+  // happens instead of plain levenshtein() (kept above, unweighted, for
+  // anyone who needs raw edit distance).
   function weightedEditDistance(a, b) {
     if (a === b) return 0;
     var m = a.length, n = b.length;
-    var i, j, ca, cb, delCost, insCost, subCost;
+    var runA = edgeRun(a, n), runB = edgeRun(b, m);
+    var i, j, ca, cb, delCost, insCost, subCost, edgeA, edgeB;
     var prev = new Array(n + 1), cur = new Array(n + 1);
     prev[0] = 0;
     for (j = 1; j <= n; j++) {
-      prev[j] = prev[j - 1] + (isVowelLetter(b.charAt(j - 1)) ? VOWEL_EDIT_COST : CONSONANT_EDIT_COST);
+      insCost = isEdgePos(j - 1, runB) ? CONSONANT_EDIT_COST
+        : (isVowelLetter(b.charAt(j - 1)) ? VOWEL_EDIT_COST : CONSONANT_EDIT_COST);
+      prev[j] = prev[j - 1] + insCost;
     }
     for (i = 1; i <= m; i++) {
       ca = a.charAt(i - 1);
-      delCost = isVowelLetter(ca) ? VOWEL_EDIT_COST : CONSONANT_EDIT_COST;
+      edgeA = isEdgePos(i - 1, runA);
+      delCost = edgeA ? CONSONANT_EDIT_COST : (isVowelLetter(ca) ? VOWEL_EDIT_COST : CONSONANT_EDIT_COST);
       cur[0] = prev[0] + delCost;
       for (j = 1; j <= n; j++) {
         cb = b.charAt(j - 1);
-        insCost = isVowelLetter(cb) ? VOWEL_EDIT_COST : CONSONANT_EDIT_COST;
+        edgeB = isEdgePos(j - 1, runB);
+        insCost = edgeB ? CONSONANT_EDIT_COST : (isVowelLetter(cb) ? VOWEL_EDIT_COST : CONSONANT_EDIT_COST);
         if (ca === cb) {
           subCost = 0;
+        } else if (edgeA || edgeB) {
+          subCost = CONSONANT_EDIT_COST;
         } else {
           subCost = (isVowelLetter(ca) && isVowelLetter(cb)) ? VOWEL_EDIT_COST : CONSONANT_EDIT_COST;
         }

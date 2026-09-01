@@ -270,20 +270,19 @@ def test_triple_glued_exact_concatenation_reveals_all_three_at_l4():
     assert len(r["matched"]) == 3
 
 
-def test_near_miss_triple_glued_rejected_at_l4():
+@pytest.mark.parametrize("level", [1, 2, 3, 4])
+def test_near_miss_triple_glued_rejected_at_every_level(level):
+    """كفروا -> كفروه: the edit is a substitution on the FINAL letter of the
+    word, the affix-bearing edge position that boundary-affix fix (2026-09-01,
+    master audit) forces to CONSONANT_EDIT_COST regardless of letter class.
+    Before that fix this was accepted at L1-L3 as "1 vowel edit within
+    tolerance" -- now rejected at every level. See matching.py's
+    _is_edge_pos doc comment for the accepted trade-off."""
     r = match_transcript(
-        [{"n": "ان"}, {"n": "الذين"}, {"n": "كفروا"}], 0, "انالذينكفروه", 4
+        [{"n": "ان"}, {"n": "الذين"}, {"n": "كفروا"}], 0, "انالذينكفروه", level
     )
     assert r["pointer"] == 0
     assert r["matched"] == []
-
-
-def test_near_miss_triple_glued_accepted_at_l3():
-    r = match_transcript(
-        [{"n": "ان"}, {"n": "الذين"}, {"n": "كفروا"}], 0, "انالذينكفروه", 3
-    )
-    assert r["pointer"] == 3
-    assert len(r["matched"]) == 3
 
 
 def test_merge_loophole_reproduction_an_stays_veiled():
@@ -451,3 +450,87 @@ def test_wrong_word_storm_at_short_word_pointer_reveals_nothing(level):
     )
     assert r["matched"] == []
     assert r["pointer"] == 0
+
+
+# ===================== Boundary-affix fix (master audit 2026-09-01) =====================
+# A false-reveal missed by the 7391880 fix above: edge letters (first/last
+# position of a word) are meaning-bearing affixes in Arabic, so an edit
+# there must never be cheap even when the letter is vowel-class. Python
+# port of the new cases in app/tests/test-matcher.js and
+# site/tests/test-boundary-affix.js -- keep all three in sync.
+
+BOUNDARY_AFFIX_EXPECTED = [{"n": "عبد", "a": "عباد"}, {"n": "الرحمن", "a": "الرحمان"}]
+
+
+def test_weighted_edit_distance_edge_insertion_is_consonant_cost():
+    # Leading-letter insertion (ي, vowel-class) now costs CONSONANT_EDIT_COST
+    # because it touches the FIRST position -- not VOWEL_EDIT_COST as before.
+    assert weighted_edit_distance("يالرحمن", "الرحمن") == 3
+
+
+def test_weighted_edit_distance_interior_insertion_stays_vowel_cost():
+    # Contrast: the same vowel-class letter inserted INTERIOR still costs 1.
+    assert weighted_edit_distance("السموات", "السماوات") == 1
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_boundary_affix_repro_glued_reveals_nothing(level):
+    # spoken عبادي (a different, unspoken word) glued to الرحمن -- must
+    # reveal NOTHING at any level (before this fix:
+    # {pointer:2, matched:[0,1]}, falsely revealing both).
+    r = match_transcript(BOUNDARY_AFFIX_EXPECTED, 0, "عبادي" + "الرحمن", level)
+    assert r["pointer"] == 0
+    assert r["matched"] == []
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_boundary_affix_repro_single_word_reveals_nothing(level):
+    r = match_transcript([BOUNDARY_AFFIX_EXPECTED[0]], 0, "عبادي", level)
+    assert r["matched"] == []
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_boundary_affix_repro_spaced_reveals_nothing(level):
+    r = match_transcript(BOUNDARY_AFFIX_EXPECTED, 0, "عبادي الرحمن", level)
+    assert r["pointer"] == 0
+    assert r["matched"] == []
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_boundary_affix_genuine_glued_reveals_both(level):
+    r = match_transcript(BOUNDARY_AFFIX_EXPECTED, 0, "عباد" + "الرحمن", level)
+    assert r["pointer"] == 2
+    assert 0 in r["matched"] and 1 in r["matched"]
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_boundary_affix_genuine_spaced_reveals_both(level):
+    r = match_transcript(BOUNDARY_AFFIX_EXPECTED, 0, "عباد الرحمن", level)
+    assert r["pointer"] == 2
+    assert 0 in r["matched"] and 1 in r["matched"]
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_waqul_rejected_for_qul(level):
+    assert not fuzzy_equal("وقل", "قل", level)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_ya_alrahman_rejected_for_alrahman(level):
+    assert not fuzzy_equal("يالرحمن", "الرحمن", level)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_kafu_rejected_for_kafuwan_dropped_final_alif(level):
+    # Documented Iron-Rule trade-off: dropped final alif (edge deletion) is
+    # now rejected at every level, even though it is a plausible ASR/
+    # tanween transcription variance. See site/tests/test-boundary-affix.js
+    # for the full rationale; not weakened to special-case this.
+    assert not fuzzy_equal("كفو", "كفوا", level)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3])
+def test_interior_vowel_edits_still_forgiving(level):
+    assert fuzzy_equal("السموات", "السماوات", level)
+    assert fuzzy_equal("الصلوه", "الصلاه", level)
+    assert fuzzy_equal("ابرهيم", "ابراهيم", level)

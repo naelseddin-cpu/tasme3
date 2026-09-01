@@ -120,29 +120,115 @@ CONSONANT_EDIT_COST = 3
 VOWEL_EDIT_COST = 1
 
 
+# Boundary-affix fix (master audit 2026-09-01, false-reveal missed by JS
+# commit 7391880): a word's FIRST and LAST letter positions are where Arabic
+# affixes attach -- و "and", ي "my"/1st-person, ا case/dual endings, and the
+# ب/ل/ف/ك prefix letters -- so an edit there changes the word's *meaning*
+# (a different word or a different grammatical person/case), never merely
+# its *accent*, even when the letter itself is vowel-class. 'عباد' + trailing
+# ي ("my servants" -> "عبادي", a different, unspoken word) used to cost only
+# VOWEL_EDIT_COST (ي is vowel-class) and so slid under every level's
+# tolerance.
+#
+# _edge_run() computes, for a given string (compared against the OTHER
+# string's length), the set of indices that count as "the boundary" -- NOT
+# just {0, length-1}. A plain single-index check is exploitable two
+# different ways, both found live via the affix-variant corpus scan (see
+# site/tests/test-boundary-affix.js):
+#
+# 1. Identical-letter ties. If the affix letter being prepended/appended
+#    happens to equal the word's own boundary letter (e.g. prefixing 'ا'
+#    onto 'الذين', which already starts with 'ا', giving 'االذين'), the two
+#    adjacent identical letters make deleting EITHER of them produce the
+#    same result string -- so the DP is free to attribute the edit to the
+#    second 'ا' (index 1, "interior" under a naive check) instead of the
+#    first (index 0, "edge"), and pays only VOWEL_EDIT_COST (429
+#    leaks/level with only a single-index check). Fix: the boundary is the
+#    entire leading run of characters equal to the first letter, and the
+#    entire trailing run of characters equal to the last letter -- any
+#    index inside either run is edge, since an edit anywhere in it is
+#    indistinguishable in effect from editing the true boundary letter.
+#
+# 2. Multi-letter length differences. Appending a whole extra affix onto an
+#    already-longer alternate form (e.g. 'وعليا' (the 'a' form) + 'ي' =
+#    'وعلياي', compared against the shorter 'n' form 'وعلي') needs 2
+#    trailing edits, not 1. Only the true last character (index len-1) is
+#    caught by rule 1 above; the second-to-last character ('ا', not equal
+#    to the final 'ي', so no identical run) still reads as "interior" even
+#    though it only exists because of the length mismatch -- both edits
+#    together constitute the affix change and both must be edge (still 6
+#    leaks/level after rule 1 alone). Fix: the boundary additionally always
+#    includes the leading and trailing window of size `excess` = max(0,
+#    this_len - other_len) -- the minimum number of characters that MUST be
+#    inserted/deleted at start or end for the lengths to reconcile,
+#    regardless of which specific characters an optimal alignment happens
+#    to pick.
+#
+# Both rules only WIDEN the boundary beyond {0, length-1}; interior edits
+# for same-length or off-by-one words (all of the "must stay forgiving"
+# cases -- السموات/السماوات, الصلوه/الصلاه, ابرهيم/ابراهيم, ملك/مالك -- have
+# length difference <=1 and no boundary-adjacent identical-letter run
+# there) are completely unaffected; confirmed via the corpus scan reaching
+# 0 leaks at every level with both rules combined. Mirrors app/matcher.js's
+# edgeRun()/isEdgePos() exactly.
+def _edge_run(s: str, other_len: int) -> tuple:
+    length = len(s)
+    lead_end = 0
+    while lead_end + 1 < length and s[lead_end + 1] == s[0]:
+        lead_end += 1
+    trail_start = length - 1
+    while trail_start - 1 >= 0 and s[trail_start - 1] == s[length - 1]:
+        trail_start -= 1
+    excess = max(0, length - other_len)
+    if excess - 1 > lead_end:
+        lead_end = excess - 1
+    trail_bound = length - excess
+    if trail_bound < trail_start:
+        trail_start = trail_bound
+    return (lead_end, trail_start)
+
+
+def _is_edge_pos(idx: int, run: tuple) -> bool:
+    return idx <= run[0] or idx >= run[1]
+
+
 def weighted_edit_distance(a: str, b: str) -> int:
     """Like levenshtein(), but each insertion/deletion of a single character
     costs VOWEL_EDIT_COST if that character is vowel-class else
     CONSONANT_EDIT_COST; each substitution costs VOWEL_EDIT_COST only if BOTH
-    characters are vowel-class, else CONSONANT_EDIT_COST. Mirrors
-    app/matcher.js's weightedEditDistance() exactly. Used everywhere fuzzy
-    word matching happens instead of plain levenshtein()."""
+    characters are vowel-class, else CONSONANT_EDIT_COST -- UNLESS the edit
+    touches a boundary position of `a` or `b` (see _edge_run/_is_edge_pos
+    above), in which case it always costs CONSONANT_EDIT_COST regardless of
+    letter class: edge letters are meaning-bearing affixes, so an edit there
+    must never be treated as a cheap accent slip. Mirrors app/matcher.js's
+    weightedEditDistance() exactly. Used everywhere fuzzy word matching
+    happens instead of plain levenshtein()."""
     if a == b:
         return 0
     m, n = len(a), len(b)
+    run_a, run_b = _edge_run(a, n), _edge_run(b, m)
     prev = [0] * (n + 1)
     for j in range(1, n + 1):
-        prev[j] = prev[j - 1] + (VOWEL_EDIT_COST if _is_vowel_letter(b[j - 1]) else CONSONANT_EDIT_COST)
+        ins_cost = (
+            CONSONANT_EDIT_COST
+            if _is_edge_pos(j - 1, run_b)
+            else (VOWEL_EDIT_COST if _is_vowel_letter(b[j - 1]) else CONSONANT_EDIT_COST)
+        )
+        prev[j] = prev[j - 1] + ins_cost
     cur = [0] * (n + 1)
     for i in range(1, m + 1):
         ca = a[i - 1]
-        del_cost = VOWEL_EDIT_COST if _is_vowel_letter(ca) else CONSONANT_EDIT_COST
+        edge_a = _is_edge_pos(i - 1, run_a)
+        del_cost = CONSONANT_EDIT_COST if edge_a else (VOWEL_EDIT_COST if _is_vowel_letter(ca) else CONSONANT_EDIT_COST)
         cur[0] = prev[0] + del_cost
         for j in range(1, n + 1):
             cb = b[j - 1]
-            ins_cost = VOWEL_EDIT_COST if _is_vowel_letter(cb) else CONSONANT_EDIT_COST
+            edge_b = _is_edge_pos(j - 1, run_b)
+            ins_cost = CONSONANT_EDIT_COST if edge_b else (VOWEL_EDIT_COST if _is_vowel_letter(cb) else CONSONANT_EDIT_COST)
             if ca == cb:
                 sub_cost = 0
+            elif edge_a or edge_b:
+                sub_cost = CONSONANT_EDIT_COST
             elif _is_vowel_letter(ca) and _is_vowel_letter(cb):
                 sub_cost = VOWEL_EDIT_COST
             else:
