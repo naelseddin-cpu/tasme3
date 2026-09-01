@@ -73,3 +73,12 @@ occurrences across those 11 pages).
 - Word-alignment check (b): 6236/6236 aligned, 0 exceptions.
 - Page-JSON structural validation: 604/604 OK.
 - 2 generator bugs found and fixed (36:22 special-case rule; trailing sura-header line drop, 21 pages).
+
+## Post-WP-D audit fix (2026-09-01)
+
+- **page-187 surah header corrected at source.** The upstream word-by-word
+  package's `metaData` for Surah 9 (At-Tawbah — the one surah with no basmala,
+  hence the special-cased metadata) carried `sura:0` and a Turkish name
+  "Et-Tevbe". Full-604 scan confirmed it was the ONLY such case. Fixed in
+  app/mushaf/pages/page-187.json (sura 9, التوبة), page 187 image re-rendered
+  and re-validated, surah index rebuilt (surah 9 → page 187 verified in UI).
