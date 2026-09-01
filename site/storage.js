@@ -16,7 +16,12 @@
   // purely additive: a v1 blob (or any entry missing the field) repairs to
   // contextRevealed: [] below, so no migration branch is needed beyond the
   // repair defaulting -- old data loads and works exactly as it did.
-  var SCHEMA_VERSION = 2;
+  // v3 adds the top-level `installPromo` counter (founder idea #2: the PWA
+  // install card fires from the user's SECOND session onward, never the
+  // first) and settings.focusLineMode (founder idea #3's auto/on/off
+  // landscape toggle) -- both purely additive, same repair-defaulting
+  // pattern, no migration branch needed.
+  var SCHEMA_VERSION = 3;
 
   // Kept in sync with site/listen.js's CHAINS keys (not read from there
   // directly — this file loads before listen.js and must validate/repair
@@ -42,6 +47,11 @@
   }
 
   function defaultProfile() { return { nickname: null, code: null }; }
+  // sessionCount: incremented once per fresh page load (see app.js init) --
+  // the install-promo card is eligible only once this reaches 2 (the user's
+  // SECOND session), never on their first visit. dismissed: forever, once
+  // the user closes the card or installs the app.
+  function defaultInstallPromo() { return { sessionCount: 0, dismissed: false }; }
   function defaultStreak() { return { count: 0, lastActiveDate: null }; }
   function defaultToday() { return { date: todayKey(), wordsRevealed: 0, pagesCompleted: 0 }; }
   function defaultSettings() {
@@ -55,8 +65,10 @@
       lastPage: null, // raw 1..604 page number; app.js clamps to the navigable
                        // range [3,604] on restore -- pages 1-2 are ornamental
                        // and excluded from the standard flow (founder decision)
-      listenPanelOpen: false // remembers whether the compact bottom bar's
+      listenPanelOpen: false, // remembers whether the compact bottom bar's
                               // listen/reciter slide-up panel was left open
+      focusLineMode: 'auto' // founder idea #3: 'auto' (the landscape+short-
+                             // height heuristic) | 'on' (always) | 'off' (never)
     };
   }
   function defaultState() {
@@ -66,7 +78,8 @@
       progressByPage: {},
       streak: defaultStreak(),
       today: defaultToday(),
-      settings: defaultSettings()
+      settings: defaultSettings(),
+      installPromo: defaultInstallPromo()
     };
   }
 
@@ -111,6 +124,13 @@
     }
     return out;
   }
+  function repairInstallPromo(v) {
+    if (!isPlainObject(v)) return defaultInstallPromo();
+    return {
+      sessionCount: Number.isFinite(v.sessionCount) && v.sessionCount >= 0 ? v.sessionCount : 0,
+      dismissed: typeof v.dismissed === 'boolean' ? v.dismissed : false
+    };
+  }
   function repairStreak(v) {
     if (!isPlainObject(v)) return defaultStreak();
     return {
@@ -138,7 +158,8 @@
       lastSyncedAt: typeof v.lastSyncedAt === 'string' ? v.lastSyncedAt : null,
       name: (typeof v.name === 'string' && v.name.trim()) ? v.name.trim().slice(0, 40) : null,
       lastPage: (Number.isFinite(v.lastPage) && v.lastPage >= 1 && v.lastPage <= 604) ? v.lastPage : null,
-      listenPanelOpen: typeof v.listenPanelOpen === 'boolean' ? v.listenPanelOpen : false
+      listenPanelOpen: typeof v.listenPanelOpen === 'boolean' ? v.listenPanelOpen : false,
+      focusLineMode: ['auto', 'on', 'off'].indexOf(v.focusLineMode) !== -1 ? v.focusLineMode : d.focusLineMode
     };
   }
 
@@ -156,7 +177,8 @@
       progressByPage: repairProgressByPage(parsed.progressByPage),
       streak: repairStreak(parsed.streak),
       today: repairToday(parsed.today),
-      settings: repairSettings(parsed.settings)
+      settings: repairSettings(parsed.settings),
+      installPromo: repairInstallPromo(parsed.installPromo)
     };
   }
 
