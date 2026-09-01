@@ -134,5 +134,17 @@
   "listen.attribution": "Recitación: Jeque Mahmoud Khalil al-Husary — audio cortesía de everyayah.com",
   "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
   "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
-  "listen.reciterAlafasy": "Mishary Alafasy"
+  "listen.reciterAlafasy": "Mishary Alafasy",
+  "greeting.hello": "Bienvenido, {name} 🌙",
+  "account.namePrompt": "¿Cómo te llamas? (opcional)",
+  "account.namePlaceholder": "Tu nombre",
+  "account.nameSkip": "Ahora no",
+  "cert.title": "Certificado de Finalización",
+  "cert.congrats": "Alabado sea Al-lah, por cuya gracia se perfeccionan las buenas obras — te felicitamos por este bendito logro.",
+  "cert.completedSurah": "Ha completado la memorización de la sura {surah}",
+  "cert.panelTitle": "Mis certificados",
+  "cert.empty": "Aún no hay certificados — completa una sura para conseguir uno",
+  "cert.viewButton": "Ver certificado",
+  "cert.share": "Compartir",
+  "cert.download": "Descargar"
 }

@@ -134,5 +134,17 @@
   "listen.attribution": "Чтение: шейх Махмуд Халиль аль-Хусари — аудио предоставлено everyayah.com",
   "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
   "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
-  "listen.reciterAlafasy": "Mishary Alafasy"
+  "listen.reciterAlafasy": "Mishary Alafasy",
+  "greeting.hello": "Добро пожаловать, {name} 🌙",
+  "account.namePrompt": "Как вас зовут? (необязательно)",
+  "account.namePlaceholder": "Ваше имя",
+  "account.nameSkip": "Не сейчас",
+  "cert.title": "Сертификат о завершении",
+  "cert.congrats": "Хвала Аллаху, по милости Которого совершаются добрые дела — поздравляем тебя с этим благословенным достижением.",
+  "cert.completedSurah": "Завершил(а) заучивание суры {surah}",
+  "cert.panelTitle": "Мои сертификаты",
+  "cert.empty": "Пока нет сертификатов — заверши суру, чтобы получить один",
+  "cert.viewButton": "Посмотреть сертификат",
+  "cert.share": "Поделиться",
+  "cert.download": "Скачать"
 }

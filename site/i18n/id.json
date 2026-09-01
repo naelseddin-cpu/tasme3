@@ -134,5 +134,17 @@
   "listen.attribution": "Bacaan: Syekh Mahmoud Khalil al-Husary — audio dari everyayah.com",
   "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
   "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
-  "listen.reciterAlafasy": "Mishary Alafasy"
+  "listen.reciterAlafasy": "Mishary Alafasy",
+  "greeting.hello": "Selamat datang, {name} 🌙",
+  "account.namePrompt": "Siapa namamu? (opsional)",
+  "account.namePlaceholder": "Namamu",
+  "account.nameSkip": "Nanti saja",
+  "cert.title": "Sertifikat Penyelesaian",
+  "cert.congrats": "Segala puji bagi Allah, yang dengan nikmat-Nya amal saleh disempurnakan — selamat atas pencapaian yang penuh berkah ini.",
+  "cert.completedSurah": "Telah menyelesaikan hafalan Surah {surah}",
+  "cert.panelTitle": "Sertifikat Saya",
+  "cert.empty": "Belum ada sertifikat — selesaikan satu surat untuk mendapatkannya",
+  "cert.viewButton": "Lihat sertifikat",
+  "cert.share": "Bagikan",
+  "cert.download": "Unduh"
 }

@@ -134,5 +134,17 @@
   "listen.attribution": "Usomaji: Sheikh Mahmoud Khalil al-Husary — sauti kutoka everyayah.com",
   "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
   "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
-  "listen.reciterAlafasy": "Mishary Alafasy"
+  "listen.reciterAlafasy": "Mishary Alafasy",
+  "greeting.hello": "Karibu, {name} 🌙",
+  "account.namePrompt": "Jina lako nani? (hiari)",
+  "account.namePlaceholder": "Jina lako",
+  "account.nameSkip": "Sivyo sasa",
+  "cert.title": "Cheti cha Kukamilisha",
+  "cert.congrats": "Sifa zote ni za Mwenyezi Mungu, ambaye kwa neema yake matendo mema hukamilika — hongera kwa mafanikio haya yenye baraka.",
+  "cert.completedSurah": "Amekamilisha kuhifadhi Sura ya {surah}",
+  "cert.panelTitle": "Vyeti Vyangu",
+  "cert.empty": "Bado hakuna vyeti — maliza sura moja upate kimoja",
+  "cert.viewButton": "Ona cheti",
+  "cert.share": "Shiriki",
+  "cert.download": "Pakua"
 }

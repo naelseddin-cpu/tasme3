@@ -3,7 +3,7 @@
 // must be purged, not accumulate forever).
 //
 // Bump CACHE_VERSION on every deploy that changes any precached file.
-var CACHE_VERSION = 'tasme3-v4';
+var CACHE_VERSION = 'tasme3-v5';
 var SHELL_CACHE = CACHE_VERSION + '-shell';
 var RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 var RUNTIME_CAP = 50; // ~50-entry LRU-ish cap on runtime-cached page images/i18n/fonts
@@ -19,11 +19,13 @@ var SHELL_URLS = [
   'i18n.js',
   'account.js',
   'share.js',
+  'certificate.js',
   'listen.js',
   'recorder.js',
   'app.js',
   'manifest.webmanifest',
   'surah-index.json',
+  'basmala.json',
   'vendor/matcher.js',
   'i18n/ar.json', 'i18n/en.json', 'i18n/ur.json', 'i18n/fa.json',
   'i18n/tr.json', 'i18n/fr.json', 'i18n/es.json', 'i18n/id.json',

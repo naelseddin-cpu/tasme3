@@ -129,17 +129,24 @@
 
   // Merge server progress into local state: server wins per top-level key
   // (progressByPage / streak / today / profile) when that key was returned,
-  // per the sync spec in docs/BUILD-PLAN.md.
+  // per the sync spec in docs/BUILD-PLAN.md. `name` is the one exception
+  // baked into `settings` (otherwise entirely local-only): if the server
+  // has a name from another device, adopt it; never erase a locally-set
+  // name just because an older/other device's payload omitted it.
   function mergeServerIntoLocal(state, serverData) {
     if (!serverData || typeof serverData !== 'object') return state;
     var validate = global.Tasme3Storage.validate;
+    var mergedSettings = state.settings;
+    if (Object.prototype.hasOwnProperty.call(serverData, 'name') && serverData.name) {
+      mergedSettings = Object.assign({}, state.settings, { name: serverData.name });
+    }
     var merged = {
       v: 1,
       profile: Object.prototype.hasOwnProperty.call(serverData, 'profile') ? serverData.profile : state.profile,
       progressByPage: Object.prototype.hasOwnProperty.call(serverData, 'progressByPage') ? serverData.progressByPage : state.progressByPage,
       streak: Object.prototype.hasOwnProperty.call(serverData, 'streak') ? serverData.streak : state.streak,
       today: Object.prototype.hasOwnProperty.call(serverData, 'today') ? serverData.today : state.today,
-      settings: state.settings
+      settings: mergedSettings
     };
     // Re-validate after merge (a malformed server payload must not corrupt
     // local storage either — same C5a discipline applies to remote data).
@@ -149,8 +156,10 @@
   var syncTimer = null;
   var SYNC_DEBOUNCE_MS = 1500;
 
-  // Debounced PUT of the four syncable top-level keys. Call after each
-  // completed page. No-ops when logged out or server disabled.
+  // Debounced PUT of the syncable top-level keys. Call after each completed
+  // page (and after the name is set/changed). No-ops when logged out or
+  // server disabled. `name` rides along as its own top-level progress key
+  // (not nested in `profile`) per the founder's name/greeting feature spec.
   function scheduleSync(getState) {
     if (!isEnabled()) return;
     var state = getState();
@@ -164,7 +173,8 @@
         progressByPage: s.progressByPage,
         streak: s.streak,
         today: s.today,
-        profile: { nickname: s.profile.nickname }
+        profile: { nickname: s.profile.nickname },
+        name: s.settings.name
       }).then(function () {
         s.settings.lastSyncedAt = new Date().toISOString();
         global.Tasme3Storage.save(s);

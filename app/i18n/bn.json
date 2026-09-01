@@ -6,6 +6,7 @@
   "nav.groups": "গ্রুপ",
   "nav.settings": "সেটিংস",
   "home.salam": "আসসালামু আলাইকুম",
+  "greeting.hello": "স্বাগতম, {name} 🌙",
   "home.todayPlan": "আজকের পরিকল্পনা",
   "home.review": "পুনর্ব্যক্তি",
   "home.newMemorization": "নতুন হিফজ",
@@ -115,6 +116,9 @@
   "account.whatsappMessage": "এটি তাসমি' অ্যাপের জন্য আমার সংরক্ষণ কোড: {code}\nযেকোনো ডিভাইস থেকে লগ ইন করতে এটি রাখুন।",
   "account.syncing": "সিঙ্ক হচ্ছে…",
   "account.synced": "সিঙ্ক হয়েছে ✓",
+  "account.namePrompt": "আপনার নাম কী? (ঐচ্ছিক)",
+  "account.namePlaceholder": "আপনার নাম",
+  "account.nameSkip": "এখন নয়",
   "share.button": "আপনার অর্জন শেয়ার করুন",
   "share.pageDone": "আলহামদুলিল্লাহ — আজ আমি পবিত্র কুরআন মুখস্থ করার {page} নম্বর পৃষ্ঠা সম্পন্ন করেছি 📖✨\nবিনামূল্যে তাসমি' অ্যাপ: {link}",
   "share.streakMilestone": "আলহামদুলিল্লাহ — পবিত্র কুরআন মুখস্থ করে টানা {days} দিন 🔥📖\nবিনামূল্যে তাসমি' অ্যাপ: {link}",
@@ -134,5 +138,13 @@
   "progress.totalWords": "মোট {count} শব্দ",
   "error.pageLoad": "পৃষ্ঠা লোড করা যায়নি",
   "mic.helpLink": "🎤 মাইক্রোফোন কাজ করছে না?",
-  "listen.attribution": "তিলাওয়াত: শায়খ মাহমুদ খলিল আল-হুসারি — অডিও everyayah.com থেকে"
+  "listen.attribution": "তিলাওয়াত: শায়খ মাহমুদ খলিল আল-হুসারি — অডিও everyayah.com থেকে",
+  "cert.title": "সমাপনী সনদ",
+  "cert.congrats": "সমস্ত প্রশংসা আল্লাহর, যাঁর অনুগ্রহে সৎকর্ম সম্পন্ন হয় — আপনার এই বরকতময় অর্জনের জন্য অভিনন্দন।",
+  "cert.completedSurah": "সূরা {surah} মুখস্থ সম্পন্ন করেছে",
+  "cert.panelTitle": "আমার সার্টিফিকেট",
+  "cert.empty": "এখনও কোনো সার্টিফিকেট নেই — একটি পেতে একটি সূরা সম্পন্ন করুন",
+  "cert.viewButton": "সার্টিফিকেট দেখুন",
+  "cert.share": "শেয়ার করুন",
+  "cert.download": "ডাউনলোড"
 }

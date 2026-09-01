@@ -49,7 +49,11 @@
     'saveProgressBtn', 'showLoginBtn', 'loginRow', 'loginInput', 'loginBtn', 'acctMsg',
     'codeBig', 'sendWaBtn', 'copyCodeBtn', 'acctSyncState', 'logoutBtn', 'privacyLine',
     'drawerBackdrop', 'drawer', 'drawerClose', 'drawerJump', 'drawerPageInput',
-    'drawerGoBtn', 'drawerList', 'toast'
+    'drawerGoBtn', 'drawerList', 'toast',
+    'greetingLine', 'namePromptRow', 'nameInput', 'nameSaveBtn', 'nameSkipBtn',
+    'surahCelebrate', 'surahCelebrateText', 'viewCertBtn', 'surahCelebrateClose',
+    'certModal', 'certCanvas', 'certCloseBtn', 'certShareBtn', 'certDownloadBtn',
+    'certListPanel', 'certList', 'certListEmpty'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
   window.Tasme3Account.attachGroupedInput(el.loginInput);
   var ctx = el.pagecanvas.getContext('2d');
@@ -230,6 +234,7 @@
       recorder.abort();
       showShareBar(streakBefore);
       window.Tasme3Account.scheduleSync(function () { return state; });
+      celebrateNewlyCompletedSurahs(pageNum);
     } else if ((r.matched || []).length) {
       el.status.textContent = t('recite.wellDone');
       el.status.className = 'status good';
@@ -472,6 +477,7 @@
         });
       };
       window.Tasme3Account.scheduleSync(function () { return state; });
+      maybePromptForName();
     }).catch(function () {
       el.acctMsg.className = 'msg err';
       el.acctMsg.textContent = t('account.error.network');
@@ -489,7 +495,9 @@
       Storage.save(state);
       renderAccountPanel();
       renderProgressPanel();
+      renderGreeting();
       el.acctMsg.className = 'msg ok'; el.acctMsg.textContent = t('account.synced');
+      maybePromptForName();
     }).catch(function (err) {
       el.acctMsg.className = 'msg err';
       el.acctMsg.textContent = (err && err.status === 401) ? t('account.error.invalidCode') : t('account.error.network');
@@ -500,6 +508,133 @@
     Storage.save(state);
     renderAccountPanel();
   };
+
+  // --------------------------------------------------- name & greeting
+  // Optional, never required (founder feature): after creating a save code
+  // or logging in with one, gently offer a one-tap-skippable name field.
+  // Not re-shown on every panel re-render -- only right after those two
+  // events, and only when no name is stored yet -- and this in-session
+  // `nameDismissed` flag (not persisted) keeps it from popping again for
+  // the rest of the visit once the user has skipped it once.
+  var nameDismissed = false;
+  function maybePromptForName() {
+    if (state.settings.name || nameDismissed) { el.namePromptRow.hidden = true; return; }
+    el.namePromptRow.hidden = false;
+    el.nameInput.value = '';
+    el.nameInput.focus();
+  }
+  el.nameSaveBtn.onclick = function () {
+    var v = (el.nameInput.value || '').trim().slice(0, 40);
+    if (!v) { el.nameSkipBtn.click(); return; }
+    state.settings.name = v;
+    Storage.save(state);
+    el.namePromptRow.hidden = true;
+    renderGreeting();
+    window.Tasme3Account.scheduleSync(function () { return state; });
+  };
+  el.nameSkipBtn.onclick = function () {
+    nameDismissed = true;
+    el.namePromptRow.hidden = true;
+  };
+
+  // One subtle line, not a popup -- shown only when a name is on file.
+  function renderGreeting() {
+    if (state.settings.name) {
+      el.greetingLine.textContent = t('greeting.hello', { name: state.settings.name });
+      el.greetingLine.hidden = false;
+    } else {
+      el.greetingLine.hidden = true;
+    }
+  }
+
+  // ----------------------------------------------------- certificates
+  var certTemplatesPromise = window.Tasme3Certificate.loadTemplates();
+  var currentCertCanvas = null;
+  var currentCertFilename = 'certificate.png';
+
+  function certAppLink() { return window.Tasme3Share.APP_LINK; }
+
+  function openCertificateFor(surah) {
+    var lang = window.Tasme3I18n.currentLang();
+    var dir = (window.Tasme3I18n.LANGS[lang] || {}).dir || 'rtl';
+    certTemplatesPromise.then(function (templates) {
+      var template = window.Tasme3Certificate.templateForSurah(surah.number, templates);
+      return window.Tasme3Certificate.renderCertificate({
+        name: state.settings.name || null,
+        surahName: surah.name,
+        titleText: t('cert.title'),
+        congratsText: t('cert.congrats'),
+        completedSurahText: t('cert.completedSurah', { surah: surah.name }),
+        dateStr: window.Tasme3Certificate.certificateDate(lang),
+        dir: dir,
+        template: template,
+        appLink: certAppLink()
+      });
+    }).then(function (canvas) {
+      currentCertCanvas = canvas;
+      currentCertFilename = 'tasmee-certificate-surah-' + surah.number + '.png';
+      var ctx2d = el.certCanvas.getContext('2d');
+      el.certCanvas.width = canvas.width;
+      el.certCanvas.height = canvas.height;
+      ctx2d.drawImage(canvas, 0, 0);
+      el.certModal.hidden = false;
+      el.certModal.style.display = 'flex';
+    }).catch(function () { showToast(t('error.generic')); });
+  }
+
+  el.certCloseBtn.onclick = function () { el.certModal.hidden = true; el.certModal.style.display = 'none'; };
+  el.certModal.addEventListener('click', function (e) {
+    if (e.target === el.certModal) { el.certModal.hidden = true; el.certModal.style.display = 'none'; }
+  });
+  el.certShareBtn.onclick = function () {
+    if (!currentCertCanvas) return;
+    window.Tasme3Certificate.shareCertificate(currentCertCanvas, t('share.button'), currentCertFilename);
+  };
+  el.certDownloadBtn.onclick = function () {
+    if (!currentCertCanvas) return;
+    window.Tasme3Certificate.downloadCanvas(currentCertCanvas, currentCertFilename);
+  };
+
+  function renderCertList() {
+    if (!surahIndex || !surahIndex.surahs || !surahIndex.surahs.length) return;
+    var list = window.Tasme3Certificate.completedSurahList(state, surahIndex);
+    el.certList.innerHTML = '';
+    el.certListEmpty.hidden = !!list.length;
+    list.forEach(function (item) {
+      var row = document.createElement('button');
+      row.type = 'button';
+      row.className = 'cert-item';
+      var nameSpan = document.createElement('span');
+      nameSpan.className = 'cert-name';
+      nameSpan.textContent = item.name;
+      var dateSpan = document.createElement('span');
+      dateSpan.className = 'cert-date';
+      dateSpan.textContent = item.completedAt || '';
+      row.appendChild(nameSpan);
+      row.appendChild(dateSpan);
+      row.onclick = function () { openCertificateFor({ number: item.number, name: item.name }); };
+      el.certList.appendChild(row);
+    });
+  }
+
+  // Called right after a page is marked complete (see applyMatches) -- finds
+  // any surah whose full page range just became complete and offers to
+  // celebrate + view the certificate. Transient in-session banner, not a
+  // blocking modal; the certificate itself is always re-derivable later
+  // from the "شهاداتي" list, so missing this banner costs nothing.
+  function celebrateNewlyCompletedSurahs(justCompletedPageNum) {
+    if (!surahIndex || !surahIndex.surahs || !surahIndex.surahs.length) return;
+    var newlyDone = window.Tasme3Certificate.newlyCompletedSurahs(state, surahIndex, justCompletedPageNum);
+    if (!newlyDone.length) return;
+    renderCertList();
+    var surah = newlyDone[0];
+    el.surahCelebrate.style.display = 'block';
+    el.viewCertBtn.onclick = function () {
+      el.surahCelebrate.style.display = 'none';
+      openCertificateFor(surah);
+    };
+  }
+  el.surahCelebrateClose.onclick = function () { el.surahCelebrate.style.display = 'none'; };
 
   // --------------------------------------------------------------- drawer
   function pad3n(n) { return pad3(n); }
@@ -548,6 +683,7 @@
   fetch('surah-index.json').then(function (r) { return r.json(); }).then(function (data) {
     surahIndex = data;
     if (el.drawer.classList.contains('open')) setDrawerTab(document.querySelector('.drawer-tabs button.active').dataset.tab);
+    renderCertList();
   }).catch(function () { surahIndex = { surahs: [], juz: [] }; });
 
   // --------------------------------------------------------------- header
@@ -586,6 +722,7 @@
     el.pageChip.textContent = pageLabel(pageNum);
     renderStatusIdle();
     renderProgressPanel();
+    renderGreeting();
     el.privacyLine.setAttribute('data-i18n', SERVER_MODE ? 'server.privacyServer' : 'server.privacyInterim');
     window.Tasme3I18n.applyTranslations(document);
     if (surahIndex) {
@@ -604,6 +741,8 @@
     syncReciterDefault();
     renderAccountPanel();
     renderProgressPanel();
+    renderGreeting();
+    renderCertList();
 
     var params = new URLSearchParams(location.search);
     var qp = parseInt(params.get('page'), 10);

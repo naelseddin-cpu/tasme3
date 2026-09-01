@@ -6,6 +6,7 @@
   "nav.groups": "Vikundi",
   "nav.settings": "Mipangilio",
   "home.salam": "Assalamu alaikum",
+  "greeting.hello": "Karibu, {name} 🌙",
   "home.todayPlan": "Mpango wa leo",
   "home.review": "Kurudia",
   "home.newMemorization": "Kuhifadhi kipya",
@@ -115,6 +116,9 @@
   "account.whatsappMessage": "Huu ni msimbo wangu wa kuhifadhi kwa programu ya Tasmee': {code}\nUhifadhi ili kuingia kutoka kifaa chochote.",
   "account.syncing": "Inasawazisha…",
   "account.synced": "Imesawazishwa ✓",
+  "account.namePrompt": "Jina lako nani? (hiari)",
+  "account.namePlaceholder": "Jina lako",
+  "account.nameSkip": "Sivyo sasa",
   "share.button": "Shiriki mafanikio yako",
   "share.pageDone": "Alhamdulillahi — leo nimekamilisha ukurasa {page} wa kuhifadhi Qur'ani Tukufu 📖✨\nProgramu ya bure ya Tasmee': {link}",
   "share.streakMilestone": "Alhamdulillahi — siku {days} mfululizo za kuhifadhi Qur'ani Tukufu 🔥📖\nProgramu ya bure ya Tasmee': {link}",
@@ -134,5 +138,13 @@
   "progress.totalWords": "Jumla ya maneno {count}",
   "error.pageLoad": "Imeshindwa kupakia ukurasa",
   "mic.helpLink": "🎤 Kipaza sauti hakifanyi kazi?",
-  "listen.attribution": "Usomaji: Sheikh Mahmoud Khalil al-Husary — sauti kutoka everyayah.com"
+  "listen.attribution": "Usomaji: Sheikh Mahmoud Khalil al-Husary — sauti kutoka everyayah.com",
+  "cert.title": "Cheti cha Kukamilisha",
+  "cert.congrats": "Sifa zote ni za Mwenyezi Mungu, ambaye kwa neema yake matendo mema hukamilika — hongera kwa mafanikio haya yenye baraka.",
+  "cert.completedSurah": "Amekamilisha kuhifadhi Sura ya {surah}",
+  "cert.panelTitle": "Vyeti Vyangu",
+  "cert.empty": "Bado hakuna vyeti — maliza sura moja upate kimoja",
+  "cert.viewButton": "Ona cheti",
+  "cert.share": "Shiriki",
+  "cert.download": "Pakua"
 }

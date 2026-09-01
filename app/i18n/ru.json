@@ -6,6 +6,7 @@
   "nav.groups": "Группы",
   "nav.settings": "Настройки",
   "home.salam": "Ассаляму алейкум",
+  "greeting.hello": "Добро пожаловать, {name} 🌙",
   "home.todayPlan": "План на сегодня",
   "home.review": "Повторение",
   "home.newMemorization": "Новое заучивание",
@@ -115,6 +116,9 @@
   "account.whatsappMessage": "Это мой код сохранения для приложения Tasmee': {code}\nСохраните его, чтобы входить с любого устройства.",
   "account.syncing": "Синхронизация…",
   "account.synced": "Синхронизировано ✓",
+  "account.namePrompt": "Как вас зовут? (необязательно)",
+  "account.namePlaceholder": "Ваше имя",
+  "account.nameSkip": "Не сейчас",
   "share.button": "Поделиться достижением",
   "share.pageDone": "Альхамдулиллях — сегодня я завершил(а) страницу {page} заучивания Священного Корана 📖✨\nБесплатное приложение Tasmee': {link}",
   "share.streakMilestone": "Альхамдулиллях — {days} дней подряд заучивания Священного Корана 🔥📖\nБесплатное приложение Tasmee': {link}",
@@ -134,5 +138,13 @@
   "progress.totalWords": "Всего {count} слов",
   "error.pageLoad": "Не удалось загрузить страницу",
   "mic.helpLink": "🎤 Микрофон не работает?",
-  "listen.attribution": "Чтение: шейх Махмуд Халиль аль-Хусари — аудио предоставлено everyayah.com"
+  "listen.attribution": "Чтение: шейх Махмуд Халиль аль-Хусари — аудио предоставлено everyayah.com",
+  "cert.title": "Сертификат о завершении",
+  "cert.congrats": "Хвала Аллаху, по милости Которого совершаются добрые дела — поздравляем тебя с этим благословенным достижением.",
+  "cert.completedSurah": "Завершил(а) заучивание суры {surah}",
+  "cert.panelTitle": "Мои сертификаты",
+  "cert.empty": "Пока нет сертификатов — заверши суру, чтобы получить один",
+  "cert.viewButton": "Посмотреть сертификат",
+  "cert.share": "Поделиться",
+  "cert.download": "Скачать"
 }

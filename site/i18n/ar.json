@@ -134,5 +134,17 @@
   "listen.attribution": "التلاوة: الشيخ محمود خليل الحصري — الصوت من everyayah.com",
   "listen.reciterMinshawi": "المنشاوي — مرتل",
   "listen.reciterAbdulBasit": "عبد الباسط عبد الصمد — مرتل",
-  "listen.reciterAlafasy": "مشاري العفاسي"
+  "listen.reciterAlafasy": "مشاري العفاسي",
+  "greeting.hello": "أهلًا وسهلًا يا {name} 🌙",
+  "account.namePrompt": "ما اسمك؟ (اختياري)",
+  "account.namePlaceholder": "اسمك",
+  "account.nameSkip": "لاحقًا",
+  "cert.title": "شهادة إتمام",
+  "cert.congrats": "الحمد لله الذي بنعمته تتم الصالحات، نبارك لكم هذا الإنجاز المبارك",
+  "cert.completedSurah": "أتمّ حفظ سورة {surah}",
+  "cert.panelTitle": "شهاداتي",
+  "cert.empty": "لا توجد شهادات بعد — أكمل حفظ سورة لتحصل على واحدة",
+  "cert.viewButton": "عرض الشهادة",
+  "cert.share": "مشاركة",
+  "cert.download": "تحميل"
 }

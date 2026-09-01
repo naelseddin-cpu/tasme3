@@ -6,6 +6,7 @@
   "nav.groups": "گروه‌ها",
   "nav.settings": "تنظیمات",
   "home.salam": "السلام علیکم",
+  "greeting.hello": "خوش آمدی، {name} 🌙",
   "home.todayPlan": "برنامه امروز",
   "home.review": "مرور",
   "home.newMemorization": "حفظ جدید",
@@ -115,6 +116,9 @@
   "account.whatsappMessage": "این کد ذخیره من در برنامه تسمیع است: {code}\nآن را برای ورود از هر دستگاهی نگه دارید.",
   "account.syncing": "در حال همگام‌سازی…",
   "account.synced": "همگام‌سازی شد ✓",
+  "account.namePrompt": "اسم شما چیست؟ (اختیاری)",
+  "account.namePlaceholder": "نام شما",
+  "account.nameSkip": "الان نه",
   "share.button": "دستاورد خود را به اشتراک بگذارید",
   "share.pageDone": "الحمدلله — امروز صفحه {page} از حفظ قرآن کریم را تکمیل کردم 📖✨\nبرنامه رایگان تسمیع: {link}",
   "share.streakMilestone": "الحمدلله — {days} روز متوالی در حفظ قرآن کریم 🔥📖\nبرنامه رایگان تسمیع: {link}",
@@ -134,5 +138,13 @@
   "progress.totalWords": "در مجموع {count} کلمه",
   "error.pageLoad": "بارگذاری صفحه ممکن نشد",
   "mic.helpLink": "🎤 میکروفون کار نمی‌کند؟",
-  "listen.attribution": "تلاوت: شیخ محمود خلیل حصری — صدا از everyayah.com"
+  "listen.attribution": "تلاوت: شیخ محمود خلیل حصری — صدا از everyayah.com",
+  "cert.title": "گواهی اتمام",
+  "cert.congrats": "الحمد لله که به نعمت او کارهای نیک به کمال می‌رسد؛ این دستاورد پربرکت را به شما تبریک می‌گوییم.",
+  "cert.completedSurah": "حفظ سوره {surah} را به پایان رساند",
+  "cert.panelTitle": "گواهی‌های من",
+  "cert.empty": "هنوز گواهی‌ای نیست — یک سوره را کامل کن تا یکی بگیری",
+  "cert.viewButton": "مشاهده گواهی",
+  "cert.share": "اشتراک‌گذاری",
+  "cert.download": "دانلود"
 }

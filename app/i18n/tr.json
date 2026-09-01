@@ -6,6 +6,7 @@
   "nav.groups": "Gruplar",
   "nav.settings": "Ayarlar",
   "home.salam": "Esselamu Aleykum",
+  "greeting.hello": "Hoş geldin, {name} 🌙",
   "home.todayPlan": "Bugünün planı",
   "home.review": "Tekrar",
   "home.newMemorization": "Yeni ezber",
@@ -115,6 +116,9 @@
   "account.whatsappMessage": "Bu, Tasmee' uygulaması için kayıt kodum: {code}\nHerhangi bir cihazdan giriş yapmak için saklayın.",
   "account.syncing": "Senkronize ediliyor…",
   "account.synced": "Senkronize edildi ✓",
+  "account.namePrompt": "Adın ne? (isteğe bağlı)",
+  "account.namePlaceholder": "Adın",
+  "account.nameSkip": "Şimdi değil",
   "share.button": "Başarınızı paylaşın",
   "share.pageDone": "Elhamdülillah — bugün Kur'an-ı Kerim'i ezberlemede {page}. sayfayı tamamladım 📖✨\nÜcretsiz Tasmee' uygulaması: {link}",
   "share.streakMilestone": "Elhamdülillah — Kur'an-ı Kerim'i ezberlemede {days} gündür kesintisiz 🔥📖\nÜcretsiz Tasmee' uygulaması: {link}",
@@ -134,5 +138,13 @@
   "progress.totalWords": "Toplam {count} kelime",
   "error.pageLoad": "Sayfa yüklenemedi",
   "mic.helpLink": "🎤 Mikrofon çalışmıyor mu?",
-  "listen.attribution": "Kıraat: Şeyh Mahmud Halil el-Husarî — ses everyayah.com üzerinden"
+  "listen.attribution": "Kıraat: Şeyh Mahmud Halil el-Husarî — ses everyayah.com üzerinden",
+  "cert.title": "Tamamlama Sertifikası",
+  "cert.congrats": "Nimetiyle salih amellerin tamamlandığı Allah'a hamdolsun — bu mübarek başarından dolayı seni tebrik ederiz.",
+  "cert.completedSurah": "{surah} Suresi'nin ezberini tamamladı",
+  "cert.panelTitle": "Sertifikalarım",
+  "cert.empty": "Henüz sertifika yok — bir tane kazanmak için bir sure tamamla",
+  "cert.viewButton": "Sertifikayı görüntüle",
+  "cert.share": "Paylaş",
+  "cert.download": "İndir"
 }

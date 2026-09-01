@@ -6,6 +6,7 @@
   "nav.groups": "Grupos",
   "nav.settings": "Ajustes",
   "home.salam": "As-salamu alaykum",
+  "greeting.hello": "Bienvenido, {name} 🌙",
   "home.todayPlan": "Plan de hoy",
   "home.review": "Repaso",
   "home.newMemorization": "Nueva memorización",
@@ -115,6 +116,9 @@
   "account.whatsappMessage": "Este es mi código de guardado para la app Tasmee': {code}\nGuárdalo para iniciar sesión desde cualquier dispositivo.",
   "account.syncing": "Sincronizando…",
   "account.synced": "Sincronizado ✓",
+  "account.namePrompt": "¿Cómo te llamas? (opcional)",
+  "account.namePlaceholder": "Tu nombre",
+  "account.nameSkip": "Ahora no",
   "share.button": "Comparte tu logro",
   "share.pageDone": "Alhamdulillah — hoy completé la página {page} de la memorización del Sagrado Corán 📖✨\nApp gratuita Tasmee': {link}",
   "share.streakMilestone": "Alhamdulillah — {days} días seguidos memorizando el Sagrado Corán 🔥📖\nApp gratuita Tasmee': {link}",
@@ -134,5 +138,13 @@
   "progress.totalWords": "{count} palabras en total",
   "error.pageLoad": "No se pudo cargar la página",
   "mic.helpLink": "🎤 ¿El micrófono no funciona?",
-  "listen.attribution": "Recitación: Jeque Mahmoud Khalil al-Husary — audio cortesía de everyayah.com"
+  "listen.attribution": "Recitación: Jeque Mahmoud Khalil al-Husary — audio cortesía de everyayah.com",
+  "cert.title": "Certificado de Finalización",
+  "cert.congrats": "Alabado sea Al-lah, por cuya gracia se perfeccionan las buenas obras — te felicitamos por este bendito logro.",
+  "cert.completedSurah": "Ha completado la memorización de la sura {surah}",
+  "cert.panelTitle": "Mis certificados",
+  "cert.empty": "Aún no hay certificados — completa una sura para conseguir uno",
+  "cert.viewButton": "Ver certificado",
+  "cert.share": "Compartir",
+  "cert.download": "Descargar"
 }

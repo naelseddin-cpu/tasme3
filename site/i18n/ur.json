@@ -134,5 +134,17 @@
   "listen.attribution": "تلاوت: شیخ محمود خلیل حصری — آواز everyayah.com سے",
   "listen.reciterMinshawi": "المنشاوي — مرتل",
   "listen.reciterAbdulBasit": "عبد الباسط عبد الصمد — مرتل",
-  "listen.reciterAlafasy": "مشاري العفاسي"
+  "listen.reciterAlafasy": "مشاري العفاسي",
+  "greeting.hello": "خوش آمدید، {name} 🌙",
+  "account.namePrompt": "آپ کا نام کیا ہے؟ (اختیاری)",
+  "account.namePlaceholder": "آپ کا نام",
+  "account.nameSkip": "ابھی نہیں",
+  "cert.title": "سند تکمیل",
+  "cert.congrats": "تمام تعریفیں اللہ کے لیے ہیں جس کی نعمت سے نیک اعمال مکمل ہوتے ہیں، ہم آپ کو اس بابرکت کامیابی پر مبارک باد دیتے ہیں۔",
+  "cert.completedSurah": "نے سورۃ {surah} حفظ مکمل کر لی ہے",
+  "cert.panelTitle": "میری اسناد",
+  "cert.empty": "ابھی کوئی سند نہیں — ایک سورہ مکمل کریں تاکہ آپ کو مل جائے",
+  "cert.viewButton": "سند دیکھیں",
+  "cert.share": "شیئر کریں",
+  "cert.download": "ڈاؤن لوڈ"
 }

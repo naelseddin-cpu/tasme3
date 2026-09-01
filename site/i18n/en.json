@@ -134,5 +134,17 @@
   "listen.attribution": "Recitation: Sheikh Mahmoud Khalil al-Husary — audio courtesy of everyayah.com",
   "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
   "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
-  "listen.reciterAlafasy": "Mishary Alafasy"
+  "listen.reciterAlafasy": "Mishary Alafasy",
+  "greeting.hello": "Welcome, {name} 🌙",
+  "account.namePrompt": "What's your name? (optional)",
+  "account.namePlaceholder": "Your name",
+  "account.nameSkip": "Not now",
+  "cert.title": "Certificate of Completion",
+  "cert.congrats": "All praise is to Allah, by whose grace good deeds are perfected — we congratulate you on this blessed achievement.",
+  "cert.completedSurah": "Has completed the memorization of Surah {surah}",
+  "cert.panelTitle": "My Certificates",
+  "cert.empty": "No certificates yet — complete a surah to earn one",
+  "cert.viewButton": "View certificate",
+  "cert.share": "Share",
+  "cert.download": "Download"
 }

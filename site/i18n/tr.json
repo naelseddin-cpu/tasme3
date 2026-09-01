@@ -134,5 +134,17 @@
   "listen.attribution": "Kıraat: Şeyh Mahmud Halil el-Husarî — ses everyayah.com üzerinden",
   "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
   "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
-  "listen.reciterAlafasy": "Mishary Alafasy"
+  "listen.reciterAlafasy": "Mishary Alafasy",
+  "greeting.hello": "Hoş geldin, {name} 🌙",
+  "account.namePrompt": "Adın ne? (isteğe bağlı)",
+  "account.namePlaceholder": "Adın",
+  "account.nameSkip": "Şimdi değil",
+  "cert.title": "Tamamlama Sertifikası",
+  "cert.congrats": "Nimetiyle salih amellerin tamamlandığı Allah'a hamdolsun — bu mübarek başarından dolayı seni tebrik ederiz.",
+  "cert.completedSurah": "{surah} Suresi'nin ezberini tamamladı",
+  "cert.panelTitle": "Sertifikalarım",
+  "cert.empty": "Henüz sertifika yok — bir tane kazanmak için bir sure tamamla",
+  "cert.viewButton": "Sertifikayı görüntüle",
+  "cert.share": "Paylaş",
+  "cert.download": "İndir"
 }

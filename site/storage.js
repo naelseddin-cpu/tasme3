@@ -46,7 +46,8 @@
       level: 2,
       listenRepeat: false,
       reciterSet: 'murattal',
-      lastSyncedAt: null
+      lastSyncedAt: null,
+      name: null // optional, user-supplied, never required (founder feature)
     };
   }
   function defaultState() {
@@ -113,7 +114,8 @@
       level: [1, 2, 3, 4].indexOf(v.level) !== -1 ? v.level : d.level,
       listenRepeat: typeof v.listenRepeat === 'boolean' ? v.listenRepeat : d.listenRepeat,
       reciterSet: (VALID_RECITER_SETS.indexOf(v.reciterSet) !== -1) ? v.reciterSet : d.reciterSet,
-      lastSyncedAt: typeof v.lastSyncedAt === 'string' ? v.lastSyncedAt : null
+      lastSyncedAt: typeof v.lastSyncedAt === 'string' ? v.lastSyncedAt : null,
+      name: (typeof v.name === 'string' && v.name.trim()) ? v.name.trim().slice(0, 40) : null
     };
   }
 

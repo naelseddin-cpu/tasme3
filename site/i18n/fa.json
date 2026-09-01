@@ -134,5 +134,17 @@
   "listen.attribution": "تلاوت: شیخ محمود خلیل حصری — صدا از everyayah.com",
   "listen.reciterMinshawi": "المنشاوي — مرتل",
   "listen.reciterAbdulBasit": "عبد الباسط عبد الصمد — مرتل",
-  "listen.reciterAlafasy": "مشاري العفاسي"
+  "listen.reciterAlafasy": "مشاري العفاسي",
+  "greeting.hello": "خوش آمدی، {name} 🌙",
+  "account.namePrompt": "اسم شما چیست؟ (اختیاری)",
+  "account.namePlaceholder": "نام شما",
+  "account.nameSkip": "الان نه",
+  "cert.title": "گواهی اتمام",
+  "cert.congrats": "الحمد لله که به نعمت او کارهای نیک به کمال می‌رسد؛ این دستاورد پربرکت را به شما تبریک می‌گوییم.",
+  "cert.completedSurah": "حفظ سوره {surah} را به پایان رساند",
+  "cert.panelTitle": "گواهی‌های من",
+  "cert.empty": "هنوز گواهی‌ای نیست — یک سوره را کامل کن تا یکی بگیری",
+  "cert.viewButton": "مشاهده گواهی",
+  "cert.share": "اشتراک‌گذاری",
+  "cert.download": "دانلود"
 }

@@ -60,5 +60,32 @@ function copyI18n() {
   console.log(`Wrote ${files.length} catalogs to ${destDir}`);
 }
 
+// The certificate feature's basmala line must be byte-identical to the
+// verified mushaf text (never hand-typed — see site/certificate.js's
+// header comment for why). It's mechanically extracted from the same
+// source-of-truth page data used to render page 1 (app/mushaf/pages/
+// page-001.json's ayah 1:1 word tokens), not copied from anywhere else,
+// so there is exactly one place this string could ever get out of sync.
+function generateBasmala() {
+  const src = path.join(ROOT, 'app/mushaf/pages/page-001.json');
+  const data = JSON.parse(fs.readFileSync(src, 'utf8'));
+  const line = data.lines.find(
+    (l) => l.t === 'w' && l.tk && l.tk[0] && l.tk[0].k === '1:1'
+  );
+  if (!line) throw new Error('generateBasmala: ayah 1:1 not found in ' + src);
+  const words = line.tk.filter((t) => t.w).map((t) => t.w);
+  if (words.length !== 4) {
+    throw new Error(
+      `generateBasmala: expected 4 words for 1:1, got ${words.length} -- ` +
+        'page-001.json format may have changed, refusing to guess'
+    );
+  }
+  const text = words.join(' ');
+  const dest = path.join(__dirname, 'basmala.json');
+  fs.writeFileSync(dest, JSON.stringify({ text }, null, 2) + '\n');
+  console.log('Wrote', dest, '(extracted from', src + ', ayah 1:1)');
+}
+
 copyMatcher();
 copyI18n();
+generateBasmala();

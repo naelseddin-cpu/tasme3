@@ -6,6 +6,7 @@
   "nav.groups": "Groups",
   "nav.settings": "Settings",
   "home.salam": "Peace be upon you",
+  "greeting.hello": "Welcome, {name} 🌙",
   "home.todayPlan": "Today's plan",
   "home.review": "Review",
   "home.newMemorization": "New memorization",
@@ -115,6 +116,9 @@
   "account.whatsappMessage": "This is my save code for the Tasmee' app: {code}\nKeep it to log in from any device.",
   "account.syncing": "Syncing…",
   "account.synced": "Synced ✓",
+  "account.namePrompt": "What's your name? (optional)",
+  "account.namePlaceholder": "Your name",
+  "account.nameSkip": "Not now",
   "share.button": "Share your achievement",
   "share.pageDone": "Alhamdulillah — I completed page {page} of memorizing the Noble Quran today 📖✨\nFree Tasmee' app: {link}",
   "share.streakMilestone": "Alhamdulillah — {days} days in a row memorizing the Noble Quran 🔥📖\nFree Tasmee' app: {link}",
@@ -134,5 +138,13 @@
   "progress.totalWords": "{count} words in total",
   "error.pageLoad": "Could not load the page",
   "mic.helpLink": "🎤 Microphone not working?",
-  "listen.attribution": "Recitation: Sheikh Mahmoud Khalil al-Husary — audio courtesy of everyayah.com"
+  "listen.attribution": "Recitation: Sheikh Mahmoud Khalil al-Husary — audio courtesy of everyayah.com",
+  "cert.title": "Certificate of Completion",
+  "cert.congrats": "All praise is to Allah, by whose grace good deeds are perfected — we congratulate you on this blessed achievement.",
+  "cert.completedSurah": "Has completed the memorization of Surah {surah}",
+  "cert.panelTitle": "My Certificates",
+  "cert.empty": "No certificates yet — complete a surah to earn one",
+  "cert.viewButton": "View certificate",
+  "cert.share": "Share",
+  "cert.download": "Download"
 }

@@ -6,6 +6,7 @@
   "nav.groups": "Grup",
   "nav.settings": "Pengaturan",
   "home.salam": "Assalamu'alaikum",
+  "greeting.hello": "Selamat datang, {name} 🌙",
   "home.todayPlan": "Rencana hari ini",
   "home.review": "Ulang",
   "home.newMemorization": "Hafalan baru",
@@ -115,6 +116,9 @@
   "account.whatsappMessage": "Ini kode simpan saya untuk aplikasi Tasmee': {code}\nSimpan untuk masuk dari perangkat mana pun.",
   "account.syncing": "Menyinkronkan…",
   "account.synced": "Tersinkron ✓",
+  "account.namePrompt": "Siapa namamu? (opsional)",
+  "account.namePlaceholder": "Namamu",
+  "account.nameSkip": "Nanti saja",
   "share.button": "Bagikan pencapaian Anda",
   "share.pageDone": "Alhamdulillah — hari ini saya menyelesaikan halaman {page} hafalan Al-Qur'an 📖✨\nAplikasi gratis Tasmee': {link}",
   "share.streakMilestone": "Alhamdulillah — {days} hari berturut-turut menghafal Al-Qur'an 🔥📖\nAplikasi gratis Tasmee': {link}",
@@ -134,5 +138,13 @@
   "progress.totalWords": "{count} kata secara total",
   "error.pageLoad": "Tidak dapat memuat halaman",
   "mic.helpLink": "🎤 Mikrofon tidak berfungsi?",
-  "listen.attribution": "Bacaan: Syekh Mahmoud Khalil al-Husary — audio dari everyayah.com"
+  "listen.attribution": "Bacaan: Syekh Mahmoud Khalil al-Husary — audio dari everyayah.com",
+  "cert.title": "Sertifikat Penyelesaian",
+  "cert.congrats": "Segala puji bagi Allah, yang dengan nikmat-Nya amal saleh disempurnakan — selamat atas pencapaian yang penuh berkah ini.",
+  "cert.completedSurah": "Telah menyelesaikan hafalan Surah {surah}",
+  "cert.panelTitle": "Sertifikat Saya",
+  "cert.empty": "Belum ada sertifikat — selesaikan satu surat untuk mendapatkannya",
+  "cert.viewButton": "Lihat sertifikat",
+  "cert.share": "Bagikan",
+  "cert.download": "Unduh"
 }

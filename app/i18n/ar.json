@@ -6,6 +6,7 @@
   "nav.groups": "المجموعات",
   "nav.settings": "الإعدادات",
   "home.salam": "السلام عليكم",
+  "greeting.hello": "أهلًا وسهلًا يا {name} 🌙",
   "home.todayPlan": "خطتك لهذا اليوم",
   "home.review": "المراجعة",
   "home.newMemorization": "حفظ جديد",
@@ -115,6 +116,9 @@
   "account.whatsappMessage": "هذا رمز حفظ تقدمي في تطبيق تسميع: {code}\nاحتفظ به لتسجيل الدخول من أي جهاز.",
   "account.syncing": "جارٍ المزامنة…",
   "account.synced": "تمت المزامنة ✓",
+  "account.namePrompt": "ما اسمك؟ (اختياري)",
+  "account.namePlaceholder": "اسمك",
+  "account.nameSkip": "لاحقًا",
   "share.button": "شارك إنجازك",
   "share.pageDone": "الحمد لله — أتممتُ اليوم صفحة {page} من حفظ القرآن الكريم 📖✨\nتطبيق تسميع المجاني: {link}",
   "share.streakMilestone": "الحمد لله — أكملت {days} يومًا متتاليًا في حفظ القرآن الكريم 🔥📖\nتطبيق تسميع المجاني: {link}",
@@ -134,5 +138,13 @@
   "progress.totalWords": "{count} كلمة إجمالًا",
   "error.pageLoad": "تعذر تحميل الصفحة",
   "mic.helpLink": "🎤 الميكروفون لا يعمل؟",
-  "listen.attribution": "التلاوة: الشيخ محمود خليل الحصري — الصوت من everyayah.com"
+  "listen.attribution": "التلاوة: الشيخ محمود خليل الحصري — الصوت من everyayah.com",
+  "cert.title": "شهادة إتمام",
+  "cert.congrats": "الحمد لله الذي بنعمته تتم الصالحات، نبارك لكم هذا الإنجاز المبارك",
+  "cert.completedSurah": "أتمّ حفظ سورة {surah}",
+  "cert.panelTitle": "شهاداتي",
+  "cert.empty": "لا توجد شهادات بعد — أكمل حفظ سورة لتحصل على واحدة",
+  "cert.viewButton": "عرض الشهادة",
+  "cert.share": "مشاركة",
+  "cert.download": "تحميل"
 }

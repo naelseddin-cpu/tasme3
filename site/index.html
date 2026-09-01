@@ -28,6 +28,8 @@
     </div>
   </div>
 
+  <div class="greeting" id="greetingLine" hidden></div>
+
   <div class="zoomwarn" id="zoomWarn">⚠️ الصفحة مكبّرة من جلسة سابقة — أغلق هذا التبويب تمامًا وافتح الرابط في تبويب جديد</div>
 
   <div class="pagebox" id="pagebox"><canvas id="pagecanvas"></canvas>
@@ -36,6 +38,25 @@
 
   <div class="donebanner" id="doneBanner" data-i18n="recite.pageComplete">ما شاء الله! أتممت الصفحة ✓</div>
   <div class="sharebar" id="shareBar"><button id="shareBtn" data-i18n="share.button">شارك إنجازك</button></div>
+
+  <div class="surahcelebrate" id="surahCelebrate" hidden>
+    <div class="surahcelebrate-text" id="surahCelebrateText" data-i18n="recite.surahComplete">ماشاء الله! أكملت السورة</div>
+    <div class="surahcelebrate-actions">
+      <button id="viewCertBtn" class="bigbtn" data-i18n="cert.viewButton">عرض الشهادة</button>
+      <button class="iconbtn" id="surahCelebrateClose" data-i18n-aria-label="drawer.close">✕</button>
+    </div>
+  </div>
+
+  <div class="cert-modal" id="certModal" hidden>
+    <div class="cert-modal-inner">
+      <button class="iconbtn cert-close" id="certCloseBtn" data-i18n-aria-label="drawer.close">✕</button>
+      <div class="cert-canvas-wrap"><canvas id="certCanvas"></canvas></div>
+      <div class="cert-actions">
+        <button id="certShareBtn" class="ghostbtn" data-i18n="cert.share">مشاركة</button>
+        <button id="certDownloadBtn" class="ghostbtn" data-i18n="cert.download">تحميل</button>
+      </div>
+    </div>
+  </div>
 
   <div class="bottombar goldbar">
     <div class="status" id="status" data-i18n="recite.instruction">اضغط للبدء واقرأ غيبًا</div>
@@ -82,6 +103,12 @@
     <div class="panelrow"><span id="wordsTotalLabel">٠ كلمة إجمالًا</span><span class="num" id="wordsTotalNum"></span></div>
   </div>
 
+  <div class="panel" id="certListPanel">
+    <h3 data-i18n="cert.panelTitle">شهاداتي</h3>
+    <div id="certListEmpty" class="comingsoon" data-i18n="cert.empty" hidden>لا توجد شهادات بعد — أكمل حفظ سورة لتحصل على واحدة</div>
+    <div id="certList" class="cert-list"></div>
+  </div>
+
   <div class="panel" id="accountPanel">
     <h3 data-i18n="account.title">حسابك</h3>
     <div id="acctDisabled" class="comingsoon" data-i18n="account.comingSoon" hidden>متاح قريبًا</div>
@@ -105,6 +132,14 @@
     <div id="acctLoggedIn" hidden>
       <div class="panelrow"><span data-i18n="account.loggedInAs">مسجّل الدخول برمز الحفظ</span><span class="num" id="acctSyncState"></span></div>
       <button id="logoutBtn" class="ghostbtn" data-i18n="account.logout">تسجيل الخروج</button>
+    </div>
+    <div id="namePromptRow" class="namerow" hidden>
+      <p data-i18n="account.namePrompt">ما اسمك؟ (اختياري)</p>
+      <div class="namerow-inputs">
+        <input id="nameInput" data-i18n-placeholder="account.namePlaceholder" maxlength="40">
+        <button id="nameSaveBtn" class="ghostbtn" data-i18n="common.save">حفظ</button>
+      </div>
+      <button id="nameSkipBtn" class="ghostbtn" data-i18n="account.nameSkip">لاحقًا</button>
     </div>
   </div>
 
@@ -141,6 +176,7 @@
 <script src="vendor/matcher.js"></script>
 <script src="account.js"></script>
 <script src="share.js"></script>
+<script src="certificate.js"></script>
 <script src="listen.js"></script>
 <script src="recorder.js"></script>
 <script src="app.js"></script>

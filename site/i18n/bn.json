@@ -134,5 +134,17 @@
   "listen.attribution": "তিলাওয়াত: শায়খ মাহমুদ খলিল আল-হুসারি — অডিও everyayah.com থেকে",
   "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
   "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
-  "listen.reciterAlafasy": "Mishary Alafasy"
+  "listen.reciterAlafasy": "Mishary Alafasy",
+  "greeting.hello": "স্বাগতম, {name} 🌙",
+  "account.namePrompt": "আপনার নাম কী? (ঐচ্ছিক)",
+  "account.namePlaceholder": "আপনার নাম",
+  "account.nameSkip": "এখন নয়",
+  "cert.title": "সমাপনী সনদ",
+  "cert.congrats": "সমস্ত প্রশংসা আল্লাহর, যাঁর অনুগ্রহে সৎকর্ম সম্পন্ন হয় — আপনার এই বরকতময় অর্জনের জন্য অভিনন্দন।",
+  "cert.completedSurah": "সূরা {surah} মুখস্থ সম্পন্ন করেছে",
+  "cert.panelTitle": "আমার সার্টিফিকেট",
+  "cert.empty": "এখনও কোনো সার্টিফিকেট নেই — একটি পেতে একটি সূরা সম্পন্ন করুন",
+  "cert.viewButton": "সার্টিফিকেট দেখুন",
+  "cert.share": "শেয়ার করুন",
+  "cert.download": "ডাউনলোড"
 }

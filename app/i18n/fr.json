@@ -6,6 +6,7 @@
   "nav.groups": "Groupes",
   "nav.settings": "Paramètres",
   "home.salam": "As-salamu alaykum",
+  "greeting.hello": "Bienvenue, {name} 🌙",
   "home.todayPlan": "Le plan du jour",
   "home.review": "Révision",
   "home.newMemorization": "Nouvelle mémorisation",
@@ -115,6 +116,9 @@
   "account.whatsappMessage": "Voici mon code de sauvegarde pour l'application Tasmee' : {code}\nGardez-le pour vous connecter depuis n'importe quel appareil.",
   "account.syncing": "Synchronisation…",
   "account.synced": "Synchronisé ✓",
+  "account.namePrompt": "Quel est ton prénom ? (facultatif)",
+  "account.namePlaceholder": "Ton prénom",
+  "account.nameSkip": "Pas maintenant",
   "share.button": "Partagez votre réussite",
   "share.pageDone": "Alhamdulillah — j'ai terminé aujourd'hui la page {page} de la mémorisation du Noble Coran 📖✨\nApplication gratuite Tasmee' : {link}",
   "share.streakMilestone": "Alhamdulillah — {days} jours d'affilée à mémoriser le Noble Coran 🔥📖\nApplication gratuite Tasmee' : {link}",
@@ -134,5 +138,13 @@
   "progress.totalWords": "{count} mots au total",
   "error.pageLoad": "Impossible de charger la page",
   "mic.helpLink": "🎤 Le microphone ne fonctionne pas ?",
-  "listen.attribution": "Récitation : Cheikh Mahmoud Khalil al-Husary — audio fourni par everyayah.com"
+  "listen.attribution": "Récitation : Cheikh Mahmoud Khalil al-Husary — audio fourni par everyayah.com",
+  "cert.title": "Certificat d'Achèvement",
+  "cert.congrats": "Louange à Allah, par la grâce de qui les bonnes œuvres s'accomplissent — nous te félicitons pour cette réussite bénie.",
+  "cert.completedSurah": "A achevé la mémorisation de la sourate {surah}",
+  "cert.panelTitle": "Mes certificats",
+  "cert.empty": "Aucun certificat pour l'instant — termine une sourate pour en obtenir un",
+  "cert.viewButton": "Voir le certificat",
+  "cert.share": "Partager",
+  "cert.download": "Télécharger"
 }
