@@ -146,5 +146,7 @@
   "cert.empty": "Nog geen certificaten — voltooi een soera om er een te verdienen",
   "cert.viewButton": "Certificaat bekijken",
   "cert.share": "Delen",
-  "cert.download": "Downloaden"
+  "cert.download": "Downloaden",
+  "nav.frontPagesInProgress": "De pagina's van Al-Fatiha en het begin van Al-Baqarah worden nog voorbereid",
+  "listen.panelToggle": "Luisteropties"
 }

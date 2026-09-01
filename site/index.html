@@ -59,18 +59,22 @@
   </div>
 
   <div class="bottombar goldbar">
-    <div class="status" id="status" data-i18n="recite.instruction">اضغط للبدء واقرأ غيبًا</div>
-    <div class="controls">
+    <div class="progressbar"><div id="pbar"></div></div>
+    <div class="mainrow">
       <button class="recbtn" id="recBtn" data-i18n-aria-label="record.tapToStart">🎙️</button>
+      <div class="status" id="status" data-i18n="recite.instruction">اضغط للبدء واقرأ غيبًا</div>
+    </div>
+    <div class="controlsrow">
       <div class="levels" id="levels">
-        <div class="level" data-l="1"><div class="dot"></div><span data-i18n="level.beginner">مبتدئ</span></div>
-        <div class="level active" data-l="2"><div class="dot"></div><span data-i18n="level.intermediate">متوسط</span></div>
-        <div class="level" data-l="3"><div class="dot"></div><span data-i18n="level.precise">متقن</span></div>
-        <div class="level" data-l="4"><div class="dot"></div><span data-i18n="level.ijazah">إجازة</span></div>
+        <button type="button" class="level-seg" data-l="1" data-i18n-title="level.beginner"></button>
+        <button type="button" class="level-seg active" data-l="2" data-i18n-title="level.intermediate"></button>
+        <button type="button" class="level-seg" data-l="3" data-i18n-title="level.precise"></button>
+        <button type="button" class="level-seg" data-l="4" data-i18n-title="level.ijazah"></button>
       </div>
       <div class="stats"><span id="count">٠</span>/<span id="total">٠</span></div>
+      <button type="button" class="listentoggle" id="listenToggle" aria-expanded="false" data-i18n-aria-label="listen.panelToggle">🎧</button>
     </div>
-    <div class="listenrow">
+    <div class="listenpanel" id="listenPanel">
       <button id="listenBtn" data-i18n="listen.button">استمع</button>
       <button id="repeatBtn" data-i18n="listen.repeat">تكرار</button>
       <select id="reciterSelect">
@@ -81,7 +85,6 @@
         <option value="alafasy" data-i18n="listen.reciterAlafasy">مشاري العفاسي</option>
       </select>
     </div>
-    <div class="progressbar"><div id="pbar"></div></div>
   </div>
   <div class="listen-attribution" id="listenAttribution" data-i18n="listen.attribution">التلاوة: الشيخ محمود خليل الحصري — الصوت من everyayah.com</div>
 

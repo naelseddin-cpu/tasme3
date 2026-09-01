@@ -146,5 +146,7 @@
   "cert.empty": "Belum ada sertifikat — selesaikan satu surat untuk mendapatkannya",
   "cert.viewButton": "Lihat sertifikat",
   "cert.share": "Bagikan",
-  "cert.download": "Unduh"
+  "cert.download": "Unduh",
+  "nav.frontPagesInProgress": "Halaman Al-Fatihah dan awal Al-Baqarah sedang dipersiapkan",
+  "listen.panelToggle": "Opsi dengar"
 }

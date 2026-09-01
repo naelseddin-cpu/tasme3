@@ -83,6 +83,10 @@
     for (i = 0; i < al.length; i++) {
       al[i].setAttribute('aria-label', t(al[i].getAttribute('data-i18n-aria-label')));
     }
+    var tl = root.querySelectorAll('[data-i18n-title]');
+    for (i = 0; i < tl.length; i++) {
+      tl[i].title = t(tl[i].getAttribute('data-i18n-title'));
+    }
   }
 
   function setLanguage(lang) {

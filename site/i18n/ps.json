@@ -146,5 +146,7 @@
   "cert.empty": "تر اوسه هېڅ تصدیقنامه نشته — د یوې ترلاسه کولو لپاره یو سورت بشپړ کړئ",
   "cert.viewButton": "تصدیقنامه وګورئ",
   "cert.share": "شریکول",
-  "cert.download": "ډاونلوډ"
+  "cert.download": "ډاونلوډ",
+  "nav.frontPagesInProgress": "د الفاتحې او د بقرې د پیل مخونه لا تر اوسه چمتو کیږي",
+  "listen.panelToggle": "د اورېدو غوراوي"
 }

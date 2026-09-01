@@ -146,5 +146,7 @@
   "cert.empty": "Hali sertifikat yo'q — birini qo'lga kiritish uchun bitta surani tugating",
   "cert.viewButton": "Sertifikatni ko'rish",
   "cert.share": "Ulashish",
-  "cert.download": "Yuklab olish"
+  "cert.download": "Yuklab olish",
+  "nav.frontPagesInProgress": "Fotiha va Baqara surasi boshlanishi sahifalari hali tayyorlanmoqda",
+  "listen.panelToggle": "Tinglash sozlamalari"
 }

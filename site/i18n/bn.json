@@ -146,5 +146,7 @@
   "cert.empty": "এখনও কোনো সার্টিফিকেট নেই — একটি পেতে একটি সূরা সম্পন্ন করুন",
   "cert.viewButton": "সার্টিফিকেট দেখুন",
   "cert.share": "শেয়ার করুন",
-  "cert.download": "ডাউনলোড"
+  "cert.download": "ডাউনলোড",
+  "nav.frontPagesInProgress": "আল-ফাতিহা ও আল-বাকারার শুরুর পৃষ্ঠাগুলো প্রস্তুত করা হচ্ছে",
+  "listen.panelToggle": "শোনার বিকল্প"
 }

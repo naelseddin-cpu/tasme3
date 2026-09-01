@@ -146,5 +146,7 @@
   "cert.empty": "Još nema sertifikata — završi jednu suru da ga zaradiš",
   "cert.viewButton": "Pogledaj sertifikat",
   "cert.share": "Podijeli",
-  "cert.download": "Preuzmi"
+  "cert.download": "Preuzmi",
+  "nav.frontPagesInProgress": "Stranice Al-Fatihe i početka Al-Bekare još se pripremaju",
+  "listen.panelToggle": "Opcije slušanja"
 }

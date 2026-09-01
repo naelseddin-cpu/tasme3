@@ -146,5 +146,7 @@
   "cert.empty": "Noch keine Zertifikate — schließe eine Sure ab, um eines zu erhalten",
   "cert.viewButton": "Zertifikat ansehen",
   "cert.share": "Teilen",
-  "cert.download": "Herunterladen"
+  "cert.download": "Herunterladen",
+  "nav.frontPagesInProgress": "Die Seiten von Al-Fatiha und dem Beginn von Al-Baqara werden noch vorbereitet",
+  "listen.panelToggle": "Höroptionen"
 }

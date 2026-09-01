@@ -146,5 +146,7 @@
   "cert.empty": "还没有证书——完成一章即可获得",
   "cert.viewButton": "查看证书",
   "cert.share": "分享",
-  "cert.download": "下载"
+  "cert.download": "下载",
+  "nav.frontPagesInProgress": "法蒂哈章和黄牛章开头的页面还在制作中",
+  "listen.panelToggle": "收听选项"
 }

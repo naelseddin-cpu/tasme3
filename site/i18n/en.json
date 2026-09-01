@@ -146,5 +146,7 @@
   "cert.empty": "No certificates yet — complete a surah to earn one",
   "cert.viewButton": "View certificate",
   "cert.share": "Share",
-  "cert.download": "Download"
+  "cert.download": "Download",
+  "nav.frontPagesInProgress": "Al-Fatihah and the start of Al-Baqarah pages are being prepared",
+  "listen.panelToggle": "Listen options"
 }

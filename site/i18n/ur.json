@@ -146,5 +146,7 @@
   "cert.empty": "ابھی کوئی سند نہیں — ایک سورہ مکمل کریں تاکہ آپ کو مل جائے",
   "cert.viewButton": "سند دیکھیں",
   "cert.share": "شیئر کریں",
-  "cert.download": "ڈاؤن لوڈ"
+  "cert.download": "ڈاؤن لوڈ",
+  "nav.frontPagesInProgress": "الفاتحہ اور سورۃ البقرہ کے آغاز کے صفحات ابھی تیار کیے جا رہے ہیں",
+  "listen.panelToggle": "سننے کے اختیارات"
 }

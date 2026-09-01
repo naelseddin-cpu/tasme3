@@ -146,5 +146,7 @@
   "cert.empty": "Aucun certificat pour l'instant — termine une sourate pour en obtenir un",
   "cert.viewButton": "Voir le certificat",
   "cert.share": "Partager",
-  "cert.download": "Télécharger"
+  "cert.download": "Télécharger",
+  "nav.frontPagesInProgress": "Les pages d'Al-Fatiha et du début d'Al-Baqarah sont en cours de préparation",
+  "listen.panelToggle": "Options d'écoute"
 }

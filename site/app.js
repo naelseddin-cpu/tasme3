@@ -43,7 +43,7 @@
     'menuBtn', 'langSelect', 'fsBtn', 'nextPg', 'prevPg', 'pageChip', 'zoomWarn',
     'pagecanvas', 'pageError', 'pageErrorRetry', 'doneBanner', 'shareBar', 'shareBtn',
     'status', 'recBtn', 'levels', 'count', 'total', 'listenBtn', 'repeatBtn',
-    'reciterSelect', 'pbar', 'micHelpLink', 'fallback', 'typeInput', 'helpBox',
+    'reciterSelect', 'listenToggle', 'listenPanel', 'pbar', 'micHelpLink', 'fallback', 'typeInput', 'helpBox',
     'openTab', 'streakNum', 'wordsTodayLabel', 'wordsTodayNum', 'wordsTotalLabel',
     'wordsTotalNum', 'acctDisabled', 'acctGuest', 'acctCodeShown', 'acctLoggedIn',
     'saveProgressBtn', 'showLoginBtn', 'loginRow', 'loginInput', 'loginBtn', 'acctMsg',
@@ -108,7 +108,11 @@
   var frameEl = document.querySelector('.frame'), bottombarEl = document.querySelector('.bottombar');
   function syncFramePadding() {
     if (!frameEl || !bottombarEl) return;
+    // .bottombar's own rendered height only -- the listen/reciter slide-up
+    // panel is absolutely positioned above it (see .listenpanel) precisely
+    // so opening/closing it never perturbs this measurement.
     var h = bottombarEl.getBoundingClientRect().height;
+    document.documentElement.style.setProperty('--bar-h', h + 'px');
     frameEl.style.paddingBottom = 'calc(' + h + 'px + env(safe-area-inset-bottom) + 16px)';
   }
   window.addEventListener('load', syncFramePadding);
@@ -166,7 +170,10 @@
   function showPageError() { pageImage = null; el.pageError.style.display = 'flex'; }
 
   function loadPage(p) {
-    p = Utils.clamp(p, MIN_PAGE, MAX_PAGE);
+    // Pages 1-2 are ornamental and excluded from the standard flow until
+    // built properly (founder decision) -- every caller of loadPage funnels
+    // through this one clamp, so no path can ever land on page 1 or 2.
+    p = Utils.clamp(p, NAV_MIN, NAV_MAX);
     pageNum = p;
     recorder.abort();
     listener.stop();
@@ -199,7 +206,10 @@
 
   el.pageErrorRetry.onclick = function () { loadPage(pageNum); };
   el.nextPg.onclick = function () { loadPage(pageNum >= NAV_MAX ? NAV_MIN : Math.max(pageNum + 1, NAV_MIN)); };
-  el.prevPg.onclick = function () { loadPage(pageNum <= NAV_MIN ? NAV_MAX : pageNum - 1); };
+  // Prev stops dead at page 3 -- pages 1-2 are ornamental/excluded, so unlike
+  // "next" (which wraps around at the end), "prev" must never wrap back
+  // into them.
+  el.prevPg.onclick = function () { if (pageNum > NAV_MIN) loadPage(pageNum - 1); };
   el.pageChip.onclick = function () { openDrawer('page'); };
 
   document.addEventListener('keydown', function (e) {
@@ -255,17 +265,26 @@
   }
 
   // ------------------------------------------------------ level selector
+  // Compact 4-segment control (numbers, not full labels) -- each segment's
+  // `title` carries the full level name (level.beginner/intermediate/
+  // precise/ijazah) for anyone who long-presses or hovers.
   el.levels.addEventListener('click', function (e) {
-    var elm = e.target.closest('.level');
+    var elm = e.target.closest('.level-seg');
     if (!elm) return;
     level = +elm.dataset.l;
     state.settings.level = level;
     Storage.save(state);
-    document.querySelectorAll('.level').forEach(function (x) { x.classList.toggle('active', x === elm); });
+    document.querySelectorAll('.level-seg').forEach(function (x) { x.classList.toggle('active', x === elm); });
     syncReciterDefault();
   });
   function activateLevelUI() {
-    document.querySelectorAll('.level').forEach(function (x) { x.classList.toggle('active', +x.dataset.l === level); });
+    document.querySelectorAll('.level-seg').forEach(function (x) { x.classList.toggle('active', +x.dataset.l === level); });
+  }
+  // The visible digit inside each segment must follow the current
+  // language's numeral system (Arabic-Indic vs. Latin), same as every other
+  // on-screen count -- re-run whenever the language changes.
+  function populateLevelSegDigits() {
+    document.querySelectorAll('.level-seg').forEach(function (x) { x.textContent = digits(x.dataset.l); });
   }
 
   // --------------------------------------------------- server ASR (tap/tap)
@@ -427,6 +446,17 @@
     state.settings.listenRepeat = on;
     Storage.save(state);
   };
+  // Listen/repeat/reciter live inside a slide-up panel behind the compact
+  // 🎧 toggle (bottom bar space is tight on phones) -- state remembered so
+  // a user who keeps it open sees it open again next visit.
+  function setListenPanelOpen(open) {
+    el.listenPanel.classList.toggle('open', open);
+    el.listenToggle.classList.toggle('active', open);
+    el.listenToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+    state.settings.listenPanelOpen = open;
+    Storage.save(state);
+  }
+  el.listenToggle.onclick = function () { setListenPanelOpen(!el.listenPanel.classList.contains('open')); };
   el.reciterSelect.onchange = function () {
     state.settings.reciterSet = el.reciterSelect.value;
     Storage.save(state);
@@ -671,13 +701,26 @@
       var label = nameKey ? (digits(it[numKey]) + '. ' + it[nameKey]) :
         (t('nav.juzs').replace(/s$/, '') + ' ' + digits(it[numKey]));
       row.innerHTML = '<span>' + label + '</span><span class="pg">' + digits(it.firstPage) + '</span>';
-      row.onclick = function () { loadPage(it.firstPage); closeDrawer(); };
+      row.onclick = function () {
+        // Surah 1 (al-Fatihah) and Juz 1 both start on page 1, which is
+        // excluded from the standard flow (founder decision) -- land on the
+        // first navigable page instead and say why.
+        if (it.firstPage < NAV_MIN) {
+          showToast(t('nav.frontPagesInProgress'));
+          loadPage(NAV_MIN);
+        } else {
+          loadPage(it.firstPage);
+        }
+        closeDrawer();
+      };
       el.drawerList.appendChild(row);
     });
   }
   el.drawerGoBtn.onclick = function () {
     var n = parseInt(window.Tasme3Account.normalizeCode(el.drawerPageInput.value), 10);
-    if (n >= MIN_PAGE && n <= MAX_PAGE) { loadPage(n); closeDrawer(); }
+    if (!Number.isFinite(n)) return;
+    if (n >= MIN_PAGE && n < NAV_MIN) { showToast(t('nav.frontPagesInProgress')); return; }
+    if (n >= NAV_MIN && n <= NAV_MAX) { loadPage(n); closeDrawer(); }
   };
 
   fetch('surah-index.json').then(function (r) { return r.json(); }).then(function (data) {
@@ -725,6 +768,7 @@
     renderGreeting();
     el.privacyLine.setAttribute('data-i18n', SERVER_MODE ? 'server.privacyServer' : 'server.privacyInterim');
     window.Tasme3I18n.applyTranslations(document);
+    populateLevelSegDigits();
     if (surahIndex) {
       var activeTab = document.querySelector('.drawer-tabs button.active');
       if (activeTab) setDrawerTab(activeTab.dataset.tab);
@@ -738,15 +782,24 @@
     el.privacyLine.setAttribute('data-i18n', SERVER_MODE ? 'server.privacyServer' : 'server.privacyInterim');
     window.Tasme3I18n.applyTranslations(document);
     activateLevelUI();
+    populateLevelSegDigits();
+    setListenPanelOpen(!!state.settings.listenPanelOpen);
     syncReciterDefault();
     renderAccountPanel();
     renderProgressPanel();
     renderGreeting();
     renderCertList();
 
+    // Fresh user (or a stored lastPage that predates this restriction) lands
+    // on NAV_MIN (3), never page 1 -- pages 1-2 are ornamental and excluded
+    // from the standard flow until built properly (founder decision). A
+    // deep link (?page=) is likewise clamped into [3,604] rather than
+    // trusted verbatim.
     var params = new URLSearchParams(location.search);
     var qp = parseInt(params.get('page'), 10);
-    var startPage = (qp >= MIN_PAGE && qp <= MAX_PAGE) ? qp : (state.settings.lastPage || NAV_MIN);
+    var restored = Number.isFinite(state.settings.lastPage)
+      ? Utils.clamp(state.settings.lastPage, NAV_MIN, NAV_MAX) : NAV_MIN;
+    var startPage = Number.isFinite(qp) ? Utils.clamp(qp, NAV_MIN, NAV_MAX) : restored;
     loadPage(startPage);
   });
 

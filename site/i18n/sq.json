@@ -146,5 +146,7 @@
   "cert.empty": "Ende pa certifikata — përfundo një sure për ta fituar një",
   "cert.viewButton": "Shiko certifikatën",
   "cert.share": "Ndaj",
-  "cert.download": "Shkarko"
+  "cert.download": "Shkarko",
+  "nav.frontPagesInProgress": "Faqet e Fatihasë dhe fillimi i Bekaresë ende po përgatiten",
+  "listen.panelToggle": "Opsionet e dëgjimit"
 }

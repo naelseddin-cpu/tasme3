@@ -146,5 +146,7 @@
   "cert.empty": "لا توجد شهادات بعد — أكمل حفظ سورة لتحصل على واحدة",
   "cert.viewButton": "عرض الشهادة",
   "cert.share": "مشاركة",
-  "cert.download": "تحميل"
+  "cert.download": "تحميل",
+  "nav.frontPagesInProgress": "صفحتا الفاتحة وبداية البقرة قيد الإعداد",
+  "listen.panelToggle": "خيارات الاستماع"
 }

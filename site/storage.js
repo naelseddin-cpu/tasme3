@@ -47,7 +47,12 @@
       listenRepeat: false,
       reciterSet: 'murattal',
       lastSyncedAt: null,
-      name: null // optional, user-supplied, never required (founder feature)
+      name: null, // optional, user-supplied, never required (founder feature)
+      lastPage: null, // raw 1..604 page number; app.js clamps to the navigable
+                       // range [3,604] on restore -- pages 1-2 are ornamental
+                       // and excluded from the standard flow (founder decision)
+      listenPanelOpen: false // remembers whether the compact bottom bar's
+                              // listen/reciter slide-up panel was left open
     };
   }
   function defaultState() {
@@ -115,7 +120,9 @@
       listenRepeat: typeof v.listenRepeat === 'boolean' ? v.listenRepeat : d.listenRepeat,
       reciterSet: (VALID_RECITER_SETS.indexOf(v.reciterSet) !== -1) ? v.reciterSet : d.reciterSet,
       lastSyncedAt: typeof v.lastSyncedAt === 'string' ? v.lastSyncedAt : null,
-      name: (typeof v.name === 'string' && v.name.trim()) ? v.name.trim().slice(0, 40) : null
+      name: (typeof v.name === 'string' && v.name.trim()) ? v.name.trim().slice(0, 40) : null,
+      lastPage: (Number.isFinite(v.lastPage) && v.lastPage >= 1 && v.lastPage <= 604) ? v.lastPage : null,
+      listenPanelOpen: typeof v.listenPanelOpen === 'boolean' ? v.listenPanelOpen : false
     };
   }
 
