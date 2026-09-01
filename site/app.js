@@ -1248,11 +1248,27 @@
   }
 
   // ---------------------------------------------------------------- listen
+  // Wave-2 fix #10 (a3 G2/G3): the button used to sit on its idle "Listen"
+  // text/state for the ENTIRE stall while audio was fetching (everyayah.com
+  // can take many seconds on a slow link) -- zero feedback that the tap even
+  // registered, and a second tap mid-stall just called play() again with a
+  // fresh <audio>.src (restarting the fetch) rather than offering any way to
+  // cancel. listener.onStateChange now also fires a 'loading' state (added
+  // in listen.js's play(), right before the network request starts) so the
+  // button can show a distinct pending look+label, and a retap while pending
+  // calls listener.cancel() (pause + clear src) instead of play() again.
   listener.onStateChange(function (s) {
-    if (s === 'error') { showToast(t('listen.error')); el.listenBtn.classList.remove('on'); }
-    else if (s === 'playing') { el.listenBtn.classList.add('on'); el.listenBtn.textContent = t('listen.playing'); }
-    else { el.listenBtn.classList.remove('on'); el.listenBtn.textContent = t('listen.button'); }
+    if (s === 'error') { showToast(t('listen.error')); el.listenBtn.classList.remove('on', 'pending'); el.listenBtn.textContent = t('listen.button'); }
+    else if (s === 'loading') { el.listenBtn.classList.add('pending'); el.listenBtn.classList.remove('on'); el.listenBtn.textContent = t('listen.loading'); }
+    else if (s === 'playing') { el.listenBtn.classList.remove('pending'); el.listenBtn.classList.add('on'); el.listenBtn.textContent = t('listen.playing'); }
+    else { el.listenBtn.classList.remove('on', 'pending'); el.listenBtn.textContent = t('listen.button'); }
+    updateListenBtnLabel();
   });
+  function updateListenBtnLabel() {
+    if (!t) return;
+    var key = listener.isPending() ? 'listen.loading' : (listener.isPlaying() ? 'listen.playing' : 'listen.button');
+    el.listenBtn.setAttribute('aria-label', t(key));
+  }
   function currentAyahKey() {
     var idx = Utils.clamp(pointer, 0, words.length - 1);
     var w = words[idx];
@@ -1261,6 +1277,13 @@
     return { surah: +parts[0], ayah: +parts[1] };
   }
   el.listenBtn.onclick = function () {
+    if (listener.isPending()) {
+      listener.cancel();
+      el.listenBtn.classList.remove('on', 'pending');
+      el.listenBtn.textContent = t('listen.button');
+      updateListenBtnLabel();
+      return;
+    }
     var ay = currentAyahKey();
     if (!ay) { showToast(t('listen.error')); return; }
     listener.play(ay.surah, ay.ayah, el.reciterSelect.value);
@@ -1843,11 +1866,16 @@
     t = window.Tasme3I18n.t;
     el.langSelect.value = window.Tasme3I18n.currentLang();
     updatePageChip();
+    updateCounter(); // wave-2 fix #6: the page/total counters (and their progress bars) carry
+                      // digits() output baked in at render time -- a language switch alone
+                      // never re-ran it, so an Arabic-Indic count kept showing after e.g.
+                      // switching to English until the next reveal.
     renderStatusIdle();
     renderProgressPanel();
     renderGreeting();
     updateRecBtnLabel();
     updateFsBtnLabel();
+    updateListenBtnLabel();
     el.privacyLine.setAttribute('data-i18n', SERVER_MODE ? 'server.privacyServer' : 'server.privacyInterim');
     window.Tasme3I18n.applyTranslations(document);
     populateLevelSegDigits();
@@ -1895,6 +1923,7 @@
     renderCertList();
     updateRecBtnLabel();
     updateFsBtnLabel();
+    updateListenBtnLabel();
     maybeShowFirstRunHint();
 
     // Idea #2: every fresh page load is one "session" -- the install-promo
