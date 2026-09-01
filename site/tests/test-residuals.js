@@ -22,7 +22,7 @@ function isExpectedNoise(url) {
 }
 
 async function freshPage(browser, consoleErrors, opts) {
-  const context = await browser.newContext();
+  const context = await browser.newContext(opts && opts.contextOptions);
   const page = await context.newPage();
   page.on('console', function (msg) {
     if (msg.type() !== 'error') return;
@@ -269,23 +269,75 @@ async function typeWords(page, words, n) {
   }
 
   // ==================================================================
-  // C3: a second ☰ tap while the drawer is open closes it (toggle).
+  // C3: a second ☰ tap, at the SAME physical spot, closes the open drawer.
+  //
+  // The open drawer (z-index 31) slides in OVER the ☰ button's own screen
+  // position (both are anchored to the same screen edge, mirrored by
+  // `dir`) -- previously the element that ended up under that exact spot
+  // was the drawer header's <h2> title (see the .drawer-head fix in
+  // style.css), so a real second tap there hit inert title text and never
+  // reached #menuBtn's own toggle logic at all. Dispatching the click
+  // event straight at #menuBtn (the old approach) could never have caught
+  // that -- it bypasses hit-testing entirely -- so this drives it with
+  // real page.mouse.click()s at the ☰ button's own on-screen coordinates,
+  // exactly as an elderly user's second tap would land, in both RTL and
+  // LTR. It also re-checks the accessibility expectations a header
+  // reshuffle could plausibly have broken: #drawerClose stays a 44x44
+  // target, opening still moves focus into the drawer, and Escape still
+  // closes it.
   // ==================================================================
-  {
-    const { context, page } = await freshPage(browser, consoleErrors);
-    await page.click('#menuBtn');
+  for (const loc of [{ locale: 'ar-SA', dir: 'rtl' }, { locale: 'en-US', dir: 'ltr' }]) {
+    const { context, page } = await freshPage(browser, consoleErrors, {
+      contextOptions: { locale: loc.locale, viewport: { width: 390, height: 844 } }
+    });
+    const dir = await page.evaluate(function () { return document.documentElement.dir; });
+    check('(C3) ' + loc.locale + ' context actually renders dir=' + loc.dir, dir === loc.dir, dir);
+
+    // The topbar is hidden (translated off-screen) until showChrome() runs
+    // on initial load and its .28s CSS transition settles -- read ☰'s
+    // coordinates only once that's done, or they'd be a mid-transition
+    // position rather than its real resting spot.
+    await page.waitForFunction(function () { return document.body.classList.contains('chrome-visible'); }, { timeout: 5000 });
+    await page.waitForTimeout(350);
+    const menuBox = await page.locator('#menuBtn').boundingBox();
+    const cx = menuBox.x + menuBox.width / 2, cy = menuBox.y + menuBox.height / 2;
+
+    // ---- first tap: opens the drawer ----
+    await page.mouse.click(cx, cy);
     await page.waitForFunction(function () { return document.getElementById('drawer').classList.contains('open'); }, { timeout: 5000 });
-    // The open drawer (z-index 31) visually covers the ☰ button's own
-    // position (both are anchored to the same screen edge in RTL) exactly
-    // like it covers everything else behind it -- a real second tap on that
-    // same physical spot would land on the drawer, not the button underneath
-    // it, so this dispatches the click event directly on #menuBtn (same
-    // convention as e.g. test-surah-start-jump.js's typeRecite()) to
-    // exercise the handler's own toggle logic.
-    await page.evaluate(function () { document.getElementById('menuBtn').click(); });
-    await page.waitForTimeout(300);
-    const open = await page.evaluate(function () { return document.getElementById('drawer').classList.contains('open'); });
-    check('(C3) a second ☰ tap closes the already-open drawer', open === false, open);
+    await page.waitForTimeout(350); // let the drawer's own .25s slide-in transition settle
+
+    const closeBox = await page.locator('#drawerClose').boundingBox();
+    check('(a11y) ' + loc.locale + ' #drawerClose is a 44x44 touch target',
+      closeBox.width === 44 && closeBox.height === 44, closeBox);
+    const closeCenter = { x: closeBox.x + closeBox.width / 2, y: closeBox.y + closeBox.height / 2 };
+    // #drawerClose's center must land inside ☰'s own on-screen box -- the
+    // same physical spot a second tap targets.
+    const withinMenuBox = closeCenter.x >= menuBox.x && closeCenter.x <= menuBox.x + menuBox.width &&
+      closeCenter.y >= menuBox.y && closeCenter.y <= menuBox.y + menuBox.height;
+    check('(C3) ' + loc.locale + ' #drawerClose sits under ☰\'s own spot', withinMenuBox, { menuBox, closeBox, closeCenter });
+
+    const focusInDrawer = await page.evaluate(function () {
+      var a = document.activeElement;
+      return !!(a && document.getElementById('drawer').contains(a));
+    });
+    check('(a11y) ' + loc.locale + ' focus moved into the drawer on open', focusInDrawer, focusInDrawer);
+
+    // ---- second tap, same physical (cx, cy): must close the drawer ----
+    await page.mouse.click(cx, cy);
+    await page.waitForTimeout(350);
+    const openAfterSecondTap = await page.evaluate(function () { return document.getElementById('drawer').classList.contains('open'); });
+    check('(C3) ' + loc.locale + ' a second tap at the SAME ☰ spot closes the already-open drawer',
+      openAfterSecondTap === false, openAfterSecondTap);
+
+    // ---- Escape still closes the drawer too ----
+    await page.mouse.click(cx, cy);
+    await page.waitForFunction(function () { return document.getElementById('drawer').classList.contains('open'); }, { timeout: 5000 });
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(100);
+    const openAfterEscape = await page.evaluate(function () { return document.getElementById('drawer').classList.contains('open'); });
+    check('(a11y) ' + loc.locale + ' Escape still closes the drawer', openAfterEscape === false, openAfterEscape);
+
     await context.close();
   }
 

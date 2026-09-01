@@ -273,10 +273,25 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
    .drawer's own overflow:auto above), the head -- and #drawerClose inside
    it -- must stay reachable at the top rather than scrolling out of view
    at high zoom. */
-.drawer-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px;
+/* Residual audit C3-touch: the drawer slides in over the ☰ button, and
+   `justify-content:space-between` used to leave the DOM's first child
+   (the <h2> title) sitting at the head's outer edge -- the same physical
+   spot ☰ occupies (both are anchored to the same screen edge, mirrored by
+   `dir`) -- with #drawerClose pushed to the far inner edge instead. A
+   second tap on ☰'s own spot therefore landed on inert title text, not the
+   close button, so nothing happened (elderly-audit finding: "tapping ☰
+   again does nothing"). `row-reverse` swaps which end is the head's outer
+   edge WITHOUT any physical left/right: it flips relative to `dir` in
+   lockstep with the h2/topbar-right *and* every other place `dir`-mirrored
+   layout already relies on (e.g. .drawer's own right:0/left:0 pairing
+   above), so #drawerClose ends up flush against the outer edge -- directly
+   under ☰ -- in both RTL and LTR. */
+.drawer-head { display:flex; flex-direction:row-reverse; align-items:center; justify-content:space-between;
+  padding:12px 14px;
   border-bottom:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#e4d9b8);
   position:sticky; top:0; z-index:2; }
-.drawer-head h2 { font-size:1rem; color:var(--green-deep); }
+.drawer-head h2 { font-size:1rem; color:var(--green-deep); min-width:0; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; }
 /* min-width:0 on the select alone (B5) turned out not to be enough on its
    own in Chromium's flex-shrink resolution here: .topbar-right is itself a
    flex CONTAINER nested as one flex ITEM of .drawer-head, and its own
@@ -285,7 +300,13 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
    at its max-width and let it spill off-screen at a narrow drawer width
    instead of shrinking. min-width:0 here too unblocks that outer level so
    the shrink actually reaches the select. */
-.drawer-head .topbar-right { min-width:0; }
+/* Same row-reverse as .drawer-head above, applied one level down: without
+   it, #drawerClose (the *second* child of .topbar-right, after
+   #langSelect) would land at .topbar-right's own inner edge once
+   .topbar-right itself moves to the head's outer edge -- #langSelect would
+   be the thing flush against ☰'s spot instead. Reversing this inner row
+   too puts #drawerClose, specifically, flush against the outer edge. */
+.drawer-head .topbar-right { min-width:0; flex-direction:row-reverse; }
 .drawer-head .lang-select { max-width:120px; min-width:0; font-size:.78rem; padding:5px 6px; }
 .drawer-tabs { display:flex; border-bottom:1px solid var(--gold-line); }
 .drawer-tabs button { flex:1; min-height:44px; padding:10px; font-size:.85rem; background:none; border:none; cursor:pointer;
