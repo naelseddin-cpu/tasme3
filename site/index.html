@@ -24,9 +24,11 @@
       <div class="chip" id="pageChip"></div>
     </div>
     <div class="topbar-right">
-      <button id="fsBtn" class="iconbtn" aria-label="fullscreen">⛶</button>
+      <button id="fsBtn" class="iconbtn">⛶</button>
     </div>
   </div>
+
+  <button class="chrome-handle" id="chromeHandle" type="button" data-i18n-aria-label="nav.showBar"></button>
 
   <div class="zoomwarn" id="zoomWarn">⚠️ الصفحة مكبّرة من جلسة سابقة — أغلق هذا التبويب تمامًا وافتح الرابط في تبويب جديد</div>
 
@@ -71,9 +73,14 @@
     </div>
   </div>
 
+  <div class="first-run-hint" id="firstRunHint" hidden>
+    <div class="first-run-hint-arrow" aria-hidden="true">↓</div>
+    <p data-i18n="hint.firstRun"></p>
+  </div>
+
   <div class="floatbar">
     <button class="iconbtn setupbtn" id="setupBtn" data-i18n-aria-label="nav.settings">⚙️</button>
-    <button class="recbtn" id="recBtn" data-i18n-aria-label="record.tapToStart">🎙️</button>
+    <button class="recbtn" id="recBtn">🎙️</button>
   </div>
 </div>
 
@@ -90,19 +97,19 @@
     <section class="sheet-section">
       <h3 data-i18n="focusLine.label">وضع السطر الكبير</h3>
       <div class="levels focusline-toggle" id="focusLineToggle">
-        <button type="button" class="level-seg" data-mode="auto" data-i18n="focusLine.auto">تلقائي</button>
-        <button type="button" class="level-seg" data-mode="on" data-i18n="focusLine.on">مفعّل</button>
-        <button type="button" class="level-seg" data-mode="off" data-i18n="focusLine.off">متوقف</button>
+        <button type="button" class="level-seg" data-mode="auto" aria-pressed="true" data-i18n="focusLine.auto">تلقائي</button>
+        <button type="button" class="level-seg" data-mode="on" aria-pressed="false" data-i18n="focusLine.on">مفعّل</button>
+        <button type="button" class="level-seg" data-mode="off" aria-pressed="false" data-i18n="focusLine.off">متوقف</button>
       </div>
     </section>
 
     <section class="sheet-section">
       <h3 data-i18n="level.label">مستوى الصعوبة</h3>
       <div class="levels" id="levels">
-        <button type="button" class="level-seg" data-l="1" data-i18n-title="level.beginner"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.beginner"></span></button>
-        <button type="button" class="level-seg active" data-l="2" data-i18n-title="level.intermediate"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.intermediate"></span></button>
-        <button type="button" class="level-seg" data-l="3" data-i18n-title="level.precise"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.precise"></span></button>
-        <button type="button" class="level-seg" data-l="4" data-i18n-title="level.ijazah"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.ijazah"></span></button>
+        <button type="button" class="level-seg" data-l="1" aria-pressed="false" data-i18n-title="level.beginner"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.beginner"></span></button>
+        <button type="button" class="level-seg active" data-l="2" aria-pressed="true" data-i18n-title="level.intermediate"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.intermediate"></span></button>
+        <button type="button" class="level-seg" data-l="3" aria-pressed="false" data-i18n-title="level.precise"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.precise"></span></button>
+        <button type="button" class="level-seg" data-l="4" aria-pressed="false" data-i18n-title="level.ijazah"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.ijazah"></span></button>
       </div>
     </section>
 
@@ -190,7 +197,7 @@
     </div>
   </div>
   <div class="drawer-tabs">
-    <button class="active" data-tab="surah" data-i18n="nav.surahs">السور</button>
+    <button class="active" data-tab="surah" aria-current="true" data-i18n="nav.surahs">السور</button>
     <button data-tab="juz" data-i18n="nav.juzs">الأجزاء</button>
     <button data-tab="page" data-i18n="nav.goToPage">صفحة</button>
   </div>
@@ -218,8 +225,8 @@
   <button class="ghostbtn" id="installPromoDismiss" data-i18n="install.dismiss">ليس الآن</button>
 </div>
 
-<div class="toast" id="toast"></div>
-<div id="status" hidden></div>
+<div class="toast" id="toast" aria-live="polite"></div>
+<div id="status" class="visually-hidden" role="status" aria-live="polite"></div>
 
 <script src="config.js"></script>
 <script src="utils.js"></script>
