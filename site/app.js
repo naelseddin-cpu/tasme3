@@ -1569,9 +1569,36 @@
       if (active) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
     });
     el.drawerJump.hidden = tab !== 'page';
-    if (tab === 'surah') renderDrawerList(surahIndex ? surahIndex.surahs : [], 'name', 'number', true);
-    else if (tab === 'juz') renderDrawerList(surahIndex ? surahIndex.juz : [], null, 'number', false);
+    // Wave-2 fix #2 (a3 F1): surah-index.json failing used to leave the
+    // surah/juz tabs silently empty forever, indistinguishable from "there's
+    // just nothing here" -- render a retry row instead whenever the last
+    // fetch attempt failed (see loadSurahIndex() below), on EITHER of the
+    // two tabs that actually depend on it (the page-jump tab never did).
+    if (tab === 'surah') { if (surahIndexFailed) renderDrawerIndexError(); else renderDrawerList(surahIndex ? surahIndex.surahs : [], 'name', 'number', true); }
+    else if (tab === 'juz') { if (surahIndexFailed) renderDrawerIndexError(); else renderDrawerList(surahIndex ? surahIndex.juz : [], null, 'number', false); }
     else el.drawerList.innerHTML = '';
+  }
+  // Error row shown in place of the surah/juz list when surah-index.json's
+  // most recent fetch failed -- a visible "couldn't load, tap to retry"
+  // instead of an unexplained empty drawer (audit finding: "looks broken/
+  // empty rather than couldn't load index, tap to retry").
+  function renderDrawerIndexError() {
+    el.drawerList.innerHTML = '';
+    var wrap = document.createElement('div');
+    wrap.className = 'drawer-error';
+    var p = document.createElement('p');
+    p.textContent = t('drawer.indexLoadError');
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ghostbtn';
+    btn.textContent = t('common.retry');
+    btn.onclick = function () {
+      btn.disabled = true;
+      loadSurahIndex().then(function () { btn.disabled = false; });
+    };
+    wrap.appendChild(p);
+    wrap.appendChild(btn);
+    el.drawerList.appendChild(wrap);
   }
   document.querySelectorAll('.drawer-tabs button').forEach(function (b) {
     b.addEventListener('click', function () { setDrawerTab(b.dataset.tab); });
@@ -1657,12 +1684,38 @@
     if (e.key === 'Enter') { e.preventDefault(); submitGoToPage(); }
   });
 
-  fetch('surah-index.json').then(function (r) { return r.json(); }).then(function (data) {
-    surahIndex = data;
-    updatePageChip(); // the chip may have rendered with just the page number before this arrived
-    if (el.drawer.classList.contains('open')) setDrawerTab(document.querySelector('.drawer-tabs button.active').dataset.tab);
-    renderCertList();
-  }).catch(function () { surahIndex = { surahs: [], juz: [] }; });
+  // Wave-2 fix #2 (a3 F1): wrapped in a named, re-callable function so a
+  // failed fetch can be retried on demand (the drawer's error-row button --
+  // see renderDrawerIndexError() above) instead of failing silently forever.
+  // surahIndexFailed distinguishes "the most recent attempt failed" (show
+  // the retry row) from "still loading" or "loaded, genuinely has content"
+  // (both render the normal list -- an in-flight first load simply renders
+  // an empty list exactly as it always did, no retry row needed since
+  // nothing has failed yet).
+  var surahIndexFailed = false;
+  function loadSurahIndex() {
+    return fetch('surah-index.json').then(function (r) {
+      if (!r.ok) throw new Error('surah-index http_' + r.status);
+      return r.json();
+    }).then(function (data) {
+      surahIndex = data;
+      surahIndexFailed = false;
+      updatePageChip(); // the chip may have rendered with just the page number before this arrived
+      if (el.drawer.classList.contains('open')) {
+        var activeTab = document.querySelector('.drawer-tabs button.active');
+        if (activeTab) setDrawerTab(activeTab.dataset.tab);
+      }
+      renderCertList();
+    }).catch(function () {
+      surahIndex = surahIndex || { surahs: [], juz: [] };
+      surahIndexFailed = true;
+      if (el.drawer.classList.contains('open')) {
+        var activeTab2 = document.querySelector('.drawer-tabs button.active');
+        if (activeTab2) setDrawerTab(activeTab2.dataset.tab);
+      }
+    });
+  }
+  loadSurahIndex();
 
   // --------------------------------------------------------------- header
   // a11y F6: aria-label reflects the actual toggle direction (enter/exit)
