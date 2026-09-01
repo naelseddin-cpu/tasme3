@@ -215,13 +215,32 @@ async function typeWords(page, words, n) {
     ];
     for (const c of cases) {
       const { context, page } = await freshPage(browser, consoleErrors, { qs: '?page=' + c.page });
-      const chipText = await page.evaluate(function () { return document.getElementById('pageChip').textContent; });
-      check('(A5) page ' + c.page + ' chip shows ' + c.name, chipText.indexOf(c.name) !== -1, chipText);
+      // #pageChip is first rendered from surahForPage()'s cheap synchronous
+      // guess (the bare "Page NNN" label) and only gets the real per-token
+      // surah name once site/surah-index.json's fetch resolves -- reading it
+      // right away is a race that flakes on a slow/cold fetch. Wait for the
+      // chip to actually carry the expected surah name (or, failing that,
+      // for it to at least have moved off the bare page-number label) before
+      // asserting anything.
+      await page.waitForFunction(function (name) {
+        var el = document.getElementById('pageChip');
+        var txt = el && el.textContent || '';
+        return txt.indexOf(name) !== -1 || !/^Page \d+$/.test(txt.trim());
+      }, c.name, { timeout: 5000 }).catch(function () {});
+      // Read the chip text and the aria-label together in one evaluate() so
+      // a second surah-index resolution landing between two separate reads
+      // can never make them drift relative to each other.
+      const snap = await page.evaluate(function () {
+        return {
+          chipText: document.getElementById('pageChip').textContent,
+          ariaLabel: document.getElementById('pagecanvas').getAttribute('aria-label'),
+          role: document.getElementById('pagecanvas').getAttribute('role')
+        };
+      });
+      check('(A5) page ' + c.page + ' chip shows ' + c.name, snap.chipText.indexOf(c.name) !== -1, snap.chipText);
       // C7: #pagecanvas's aria-label must be kept in sync with the chip.
-      const ariaLabel = await page.evaluate(function () { return document.getElementById('pagecanvas').getAttribute('aria-label'); });
-      check('(C7) page ' + c.page + ' #pagecanvas aria-label matches the chip text', ariaLabel === chipText, { chipText, ariaLabel });
-      const role = await page.evaluate(function () { return document.getElementById('pagecanvas').getAttribute('role'); });
-      check('(C7) page ' + c.page + ' #pagecanvas has role="img"', role === 'img', role);
+      check('(C7) page ' + c.page + ' #pagecanvas aria-label matches the chip text', snap.ariaLabel === snap.chipText, snap);
+      check('(C7) page ' + c.page + ' #pagecanvas has role="img"', snap.role === 'img', snap.role);
       await context.close();
     }
   }
