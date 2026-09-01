@@ -116,8 +116,18 @@ async function typeRecite(page, text) {
     const { context, page } = await freshPage(browser, consoleErrors);
     // Force Arabic so the counter's digit assertions below are deterministic
     // regardless of the headless browser's default Accept-Language.
+    // #langSelect lives inside the drawer, which (wave-1 a11y fix: a closed
+    // drawer is now genuinely invisible/unfocusable, not just off-screen)
+    // must be opened before Playwright can interact with it -- same as a
+    // real user would have to. Escape re-closes it afterwards (also a wave-1
+    // fix) so pickSurahFromDrawer's own #menuBtn click below reopens a
+    // genuinely-closed drawer rather than fighting an already-open one for
+    // the same on-screen click target.
+    await page.click('#menuBtn');
     await page.selectOption('#langSelect', 'ar');
     await page.waitForTimeout(200);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
     await pickSurahFromDrawer(page, 'النصر', 603);
 
     let st = await readState(page);
@@ -253,8 +263,14 @@ async function typeRecite(page, text) {
   // ---- Scenario D: same jump, English UI ----
   {
     const { context, page } = await freshPage(browser, consoleErrors);
+    // See Scenario A's comment: the drawer must be open for #langSelect to
+    // be interactable now that a closed drawer is genuinely hidden, and
+    // closed again (Escape) before pickSurahFromDrawer reopens it fresh.
+    await page.click('#menuBtn');
     await page.selectOption('#langSelect', 'en');
     await page.waitForTimeout(200);
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(300);
     await pickSurahFromDrawer(page, 'النصر', 603);
     const st = await readState(page);
     const entry = st.progressByPage['603'];
