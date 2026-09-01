@@ -1,4 +1,12 @@
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+/* Bulletproofs the `hidden` attribute against any element rule that sets its
+   own unconditional `display` (a real bug this caught: .install-promo's own
+   `display:flex` had EQUAL CSS specificity to the UA stylesheet's
+   `[hidden]{display:none}` and, being defined later, silently won -- the
+   install card rendered fully visible even while `.hidden` was true). This
+   single higher-specificity rule guarantees `[hidden]` always wins, for
+   every current and future toggled-via-.hidden element alike. */
+[hidden] { display:none !important; }
 :root {
   --velvet:#0c2e1b; --velvet2:#14452a;
   --gold:#d4b96a; --gold-deep:#a8862f; --gold-line:#b8a24a;
@@ -27,8 +35,20 @@ html[dir="ltr"] body { direction:ltr; }
   border-bottom:1px solid #8f7226;
   box-shadow:0 2px 8px rgba(0,0,0,.35);
 }
-.topbar { position:sticky; top:0; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:6px;
-  padding:6px 10px; }
+/* Immersive mode (founder idea #1): the top bar is an OVERLAY, not a flex
+   participant -- .pagebox already starts right after the always-visible 3px
+   progress strip regardless of the bar's visibility, so toggling it never
+   reflows/jumps the canvas underneath (spec: "keep layout stable by
+   overlaying the bar rather than displacing content"). Default state is
+   hidden; body.chrome-visible reveals it. transform+opacity only (GPU, no
+   layout) so the transition is cheap and never fights the canvas resize. */
+.topbar { position:fixed; top:3px; left:0; right:0; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:6px;
+  padding:6px 10px; transform:translateY(-120%); opacity:0; pointer-events:none;
+  transition:transform .28s ease, opacity .28s ease; }
+body.chrome-visible .topbar { transform:translateY(0); opacity:1; pointer-events:auto; }
+@media (prefers-reduced-motion: reduce) {
+  .topbar { transition:none; }
+}
 .logo { font-family:'UthmanicHafs',serif; font-size:1.4rem; font-weight:bold; color:var(--green-deep);
   text-shadow:0 1px 0 rgba(255,250,225,.75); white-space:nowrap; }
 .iconbtn { border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#e4d9b8);
@@ -91,6 +111,10 @@ html[dir="ltr"] body { direction:ltr; }
 .sheet-section h3 { font-size:.85rem; color:var(--muted); margin-bottom:8px; font-weight:700; }
 
 .levels { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+/* Focus-line auto/on/off toggle (founder idea #3) reuses the level-seg look
+   but as a flat 3-up row rather than the level selector's 2x2 grid. */
+.focusline-toggle { grid-template-columns:1fr 1fr 1fr; }
+.focusline-toggle .level-seg { min-height:40px; font-size:.82rem; font-weight:600; }
 .level-seg { flex-direction:column; gap:2px; min-height:56px; border-radius:10px; border:1px solid var(--gold-deep);
   background:linear-gradient(180deg,var(--pearl),#e4d9b8); color:#5d5133; cursor:pointer;
   display:flex; align-items:center; justify-content:center; box-shadow:inset 0 1px 0 #fff; }
@@ -220,6 +244,22 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
 .surahcelebrate-actions { display:flex; align-items:center; justify-content:center; gap:10px; }
 .surahcelebrate-actions .bigbtn { flex:1; margin-top:0; max-width:220px; }
 .surahcelebrate-actions .iconbtn { flex-shrink:0; }
+
+/* ---- PWA install promotion card (founder idea #2) -- one-time, dismissible
+   forever, shown only from the user's second session onward, never inside
+   an already-installed standalone window. Sits above the surah-celebrate/
+   sharebar/donebanner stack (z-index 23 > 22/21) since it can in principle
+   coincide with any of them, but in practice fires at most once ever. ---- */
+.install-promo { display:flex; flex-direction:column; gap:8px; position:fixed;
+  left:12px; right:12px; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 108px);
+  z-index:23; background:var(--sheet); border:1px solid var(--gold-deep); border-radius:14px;
+  padding:14px 16px; box-shadow:0 8px 28px rgba(0,0,0,.4); }
+.install-promo-close { position:absolute; top:8px; inset-inline-end:8px; width:28px; height:28px; font-size:.85rem; }
+.install-promo-title { font-weight:700; font-size:.92rem; color:var(--green-deep); padding-inline-end:26px; }
+.install-promo-ios { display:flex; flex-direction:column; gap:8px; }
+.install-step { display:flex; align-items:center; gap:10px; font-size:.85rem; }
+.install-icon { width:26px; height:26px; flex-shrink:0; color:var(--green-deep); }
+.install-promo .bigbtn, .install-promo .ghostbtn { margin-top:0; }
 
 .cert-list { display:flex; flex-direction:column; gap:0; }
 .cert-item { display:flex; justify-content:space-between; align-items:center; padding:10px 4px;

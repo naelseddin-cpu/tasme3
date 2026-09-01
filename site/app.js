@@ -38,6 +38,18 @@
   var listener = new window.Tasme3Listen.Listener();
   var pageBoxesPromise = null;
 
+  // Lines derived from the current page's word tokens (founder idea #3,
+  // landscape focus-line mode) -- see computeLines()/updateFocusMode() below.
+  var pageLines = []; // [{y, h, indices:[wordIndex,...]}], sorted top-to-bottom
+  var wordLine = []; // wordLine[wordIndex] -> index into pageLines
+  var focusCropY0 = null, focusCropY1 = null; // currently-drawn crop, fraction 0..1 of page height (null = full page)
+  var focusAnimFrame = null;
+  var lastFocusActive = false, lastFocusLine = null;
+
+  function prefersReducedMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
   function pad3(n) { return String(n).padStart(3, '0'); }
   function digits(n) {
     var lang = window.Tasme3I18n.currentLang();
@@ -61,7 +73,9 @@
     'greetingLine', 'namePromptRow', 'nameInput', 'nameSaveBtn', 'nameSkipBtn',
     'surahCelebrate', 'surahCelebrateText', 'viewCertBtn', 'surahCelebrateClose',
     'certModal', 'certCanvas', 'certCloseBtn', 'certShareBtn', 'certDownloadBtn',
-    'certListPanel', 'certList', 'certListEmpty'
+    'certListPanel', 'certList', 'certListEmpty',
+    'topBar', 'focusLineToggle',
+    'installPromo', 'installPromoClose', 'installPromoIos', 'installPromoBtn', 'installPromoDismiss'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
   window.Tasme3Account.attachGroupedInput(el.loginInput);
   var ctx = el.pagecanvas.getContext('2d');
@@ -85,18 +99,34 @@
   }
 
   // ------------------------------------------------------------ rendering
+  // useFocus/cropY0/cropY1: founder idea #3 (landscape focus-line mode).
+  // cropY0/cropY1 are fractions (0..1) of the FULL page image height; when
+  // null (or the setting is off), the whole page renders exactly as before
+  // -- the math below reduces to the original full-page draw() byte-for-byte
+  // when cropY0=0/cropY1=1, so normal portrait/tall-landscape rendering is
+  // unchanged. Both branches share one pxPerUnitY (px per unit of the
+  // FULL page's y-fraction) so a word's on-screen size only ever grows when
+  // the container is wider (e.g. landscape vs portrait), never as a side
+  // effect of cropping alone.
   function draw() {
     if (!pageImage || !pageImage.naturalWidth) return;
     var cssW = el.pagecanvas.parentElement.clientWidth;
     var scale = cssW / pageImage.naturalWidth;
-    var cssH = Math.round(pageImage.naturalHeight * scale);
     var dpr = window.devicePixelRatio || 1;
+    var useFocus = focusCropY0 != null && focusCropY1 != null;
+    var cropY0 = useFocus ? focusCropY0 : 0;
+    var cropY1 = useFocus ? focusCropY1 : 1;
+    var cropFrac = Math.max(0.001, cropY1 - cropY0);
+    var pxPerUnitY = pageImage.naturalHeight * scale;
+    var cssH = Math.round(cropFrac * pxPerUnitY);
     el.pagecanvas.style.width = cssW + 'px';
     el.pagecanvas.style.height = cssH + 'px';
     el.pagecanvas.width = Math.round(cssW * dpr);
     el.pagecanvas.height = Math.round(cssH * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.drawImage(pageImage, 0, 0, cssW, cssH);
+    var sy = cropY0 * pageImage.naturalHeight;
+    var sh = cropFrac * pageImage.naturalHeight;
+    ctx.drawImage(pageImage, 0, sy, pageImage.naturalWidth, sh, 0, 0, cssW, cssH);
     var px = 0.005 * cssW, py = 0.004 * cssH;
     words.forEach(function (w, i) {
       // A context word is printed text the reader can already see (it's
@@ -104,17 +134,186 @@
       // unveiled exactly like a genuinely-recited word, just never counted
       // as one (see updateCounter()/applyMatches()).
       if (revealed.has(i) || contextRevealed.has(i)) return;
+      var wy = (w.y - cropY0) * pxPerUnitY, wh = w.h * pxPerUnitY;
+      if (useFocus && (wy + wh < 0 || wy > cssH)) return; // outside the drawn crop
       ctx.fillStyle = currentVeil;
-      ctx.fillRect(w.x * cssW - px, w.y * cssH - py, w.w * cssW + 2 * px, w.h * cssH + 2 * py);
+      ctx.fillRect(w.x * cssW - px, wy - py, w.w * cssW + 2 * px, wh + 2 * py);
       if (markersByWord[i]) markersByWord[i].forEach(function (m) {
-        ctx.fillRect(m.x * cssW - px, m.y * cssH - py, m.w * cssW + 2 * px, m.h * cssH + 2 * py);
+        var my = (m.y - cropY0) * pxPerUnitY, mh = m.h * pxPerUnitY;
+        ctx.fillRect(m.x * cssW - px, my - py, m.w * cssW + 2 * px, mh + 2 * py);
       });
     });
     if (pointer < words.length) {
       var w = words[pointer];
+      var wy = (w.y - cropY0) * pxPerUnitY, wh = w.h * pxPerUnitY;
       ctx.strokeStyle = GOLD; ctx.lineWidth = 2;
-      ctx.strokeRect(w.x * cssW - px, w.y * cssH - py, w.w * cssW + 2 * px, w.h * cssH + 2 * py);
+      ctx.strokeRect(w.x * cssW - px, wy - py, w.w * cssW + 2 * px, wh + 2 * py);
     }
+  }
+
+  // ----------------------------------------------- focus-line mode (idea #3)
+  // Mushaf pages have a fixed 15-line layout; tokens on the same visual line
+  // share (to floating-point noise) the same `y` -- bucketing by a rounded
+  // key is exact for every page in this corpus and needs no font-metric
+  // guessing.
+  function computeLines() {
+    var buckets = {};
+    words.forEach(function (w, i) {
+      var key = Math.round(w.y * 2000);
+      var b = buckets[key];
+      if (!b) { b = buckets[key] = { y: w.y, h: w.h, indices: [] }; }
+      else if (w.h > b.h) b.h = w.h;
+      b.indices.push(i);
+    });
+    pageLines = Object.keys(buckets).map(function (k) { return buckets[k]; })
+      .sort(function (a, b) { return a.y - b.y; });
+    wordLine = new Array(words.length);
+    pageLines.forEach(function (line, li) {
+      line.indices.forEach(function (i) { wordLine[i] = li; });
+    });
+  }
+
+  function currentLineIndex() {
+    if (!words.length || !pageLines.length) return 0;
+    var idx = Utils.clamp(pointer, 0, words.length - 1);
+    return wordLine[idx] != null ? wordLine[idx] : 0;
+  }
+
+  function focusLineSettingActive() {
+    var mode = state.settings.focusLineMode || 'auto';
+    if (mode === 'off') return false;
+    if (mode === 'on') return true;
+    // auto: the founder's height heuristic -- landscape AND short (<~500px)
+    return window.innerHeight < 500 && window.innerWidth > window.innerHeight;
+  }
+
+  function targetCropForLine(li) {
+    var n = pageLines.length;
+    if (!n) return null;
+    var lo = Math.max(0, li - 1), hi = Math.min(n - 1, li + 1);
+    var pad = 0.012;
+    return {
+      y0: Math.max(0, pageLines[lo].y - pad),
+      y1: Math.min(1, pageLines[hi].y + pageLines[hi].h + pad)
+    };
+  }
+
+  function setFocusCrop(y0, y1, animate) {
+    if (focusAnimFrame) { cancelAnimationFrame(focusAnimFrame); focusAnimFrame = null; }
+    if (!animate || prefersReducedMotion()) {
+      focusCropY0 = y0; focusCropY1 = y1;
+      draw();
+      return;
+    }
+    var fromY0 = focusCropY0 == null ? y0 : focusCropY0;
+    var fromY1 = focusCropY1 == null ? y1 : focusCropY1;
+    var start = null, dur = 240;
+    function step(ts) {
+      if (start == null) start = ts;
+      var p = Math.min(1, (ts - start) / dur);
+      var e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2; // easeInOutQuad
+      focusCropY0 = fromY0 + (y0 - fromY0) * e;
+      focusCropY1 = fromY1 + (y1 - fromY1) * e;
+      draw();
+      if (p < 1) focusAnimFrame = requestAnimationFrame(step);
+      else focusAnimFrame = null;
+    }
+    focusAnimFrame = requestAnimationFrame(step);
+  }
+
+  // Recomputes whether focus-line mode should be active and, if so, which
+  // line-cluster crop should be showing -- called after every pointer
+  // change, on page load, on resize/orientation/fullscreen changes, and
+  // when the sheet's auto/on/off toggle changes. `animate` is ignored (and
+  // treated as false) the moment the mode itself switches on/off, or on a
+  // fresh page, since sliding FROM nothing (or from a wholly different
+  // page's line geometry) is not a meaningful motion to animate.
+  function updateFocusMode(animate) {
+    var active = focusLineSettingActive() && pageLines.length > 0;
+    if (!active) {
+      var wasActive = lastFocusActive;
+      lastFocusActive = false; lastFocusLine = null;
+      if (wasActive) { focusCropY0 = focusCropY1 = null; }
+      draw();
+      return;
+    }
+    var li = currentLineIndex();
+    var justActivated = !lastFocusActive;
+    if (li === lastFocusLine && !justActivated && focusCropY0 !== null) { draw(); return; }
+    lastFocusActive = true;
+    lastFocusLine = li;
+    var crop = targetCropForLine(li);
+    if (!crop) { draw(); return; }
+    setFocusCrop(crop.y0, crop.y1, !!animate && !justActivated);
+  }
+
+  // ------------------------------------------------- auto-follow scroll (idea #4)
+  // Full-page PORTRAIT view only (focus-line mode, when active, already
+  // keeps the active line centered in its own crop -- see updateFocusMode()
+  // above, which skips this call whenever it is). Never fights the user: any
+  // manual scroll/touch/wheel pauses auto-follow for AUTO_FOLLOW_PAUSE_MS.
+  //
+  // Which element actually scrolls: html/body both carry `overflow-x:hidden`
+  // (style.css), and per the CSS overflow spec that forces the OTHER axis to
+  // compute as `auto` rather than `visible` -- combined with body's own
+  // `height:100%` this makes BODY (not the document/window) the real
+  // scrolling container here, so window.scrollBy()/window.scrollY would
+  // silently do nothing. autoScrollEl() finds whichever of
+  // document.scrollingElement / document.body actually has overflow, so
+  // this keeps working even if that CSS changes later.
+  var AUTO_FOLLOW_PAUSE_MS = 5000;
+  var autoFollowPausedUntil = 0;
+  var autoFollowProgrammatic = false;
+  function pauseAutoFollow() { autoFollowPausedUntil = Date.now() + AUTO_FOLLOW_PAUSE_MS; }
+  function autoScrollEl() {
+    var se = document.scrollingElement || document.documentElement;
+    if (se && se.scrollHeight > se.clientHeight + 1) return se;
+    if (document.body && document.body.scrollHeight > document.body.clientHeight + 1) return document.body;
+    return se;
+  }
+  // wheel/touchmove are genuine scroll-drag gestures; deliberately NOT
+  // 'pointerdown' -- that would fire on every ordinary tap anywhere on the
+  // page (the mic button, ⚙️, a drawer row...), pausing auto-follow as an
+  // unwanted side effect of actions that have nothing to do with scrolling.
+  ['wheel', 'touchmove'].forEach(function (ev) {
+    window.addEventListener(ev, pauseAutoFollow, { passive: true });
+  });
+  // 'scroll' does not bubble for element-level scrolling, so both the
+  // window (document/viewport scrolling) and document.body (this page's
+  // actual scroll container) are listened on directly; whichever one never
+  // actually scrolls simply never fires.
+  [window, document.body].forEach(function (target) {
+    target.addEventListener('scroll', function () {
+      if (autoFollowProgrammatic) return;
+      pauseAutoFollow();
+    }, { passive: true });
+  });
+
+  function maybeAutoFollow() {
+    if (Date.now() < autoFollowPausedUntil) return;
+    if (!pageImage || !pageImage.naturalWidth) return;
+    if (!words.length) return;
+    if (focusCropY0 != null) return; // idea #3's own crop is centering the view instead
+    // Portrait (or square) only -- a wide/short viewport is landscape's job
+    // (idea #3), not this one.
+    if (window.innerWidth > window.innerHeight) return;
+    var rect = el.pagecanvas.getBoundingClientRect();
+    if (rect.height <= window.innerHeight + 1) return; // page already fits -- nothing to follow
+    var idx = Utils.clamp(pointer, 0, words.length - 1);
+    var w = words[idx];
+    if (!w) return;
+    var cssW = el.pagecanvas.clientWidth;
+    var pxPerUnitY = (cssW / pageImage.naturalWidth) * pageImage.naturalHeight;
+    var wordCenterInCanvas = (w.y + w.h / 2) * pxPerUnitY;
+    var wordViewportY = rect.top + wordCenterInCanvas;
+    var vh = window.innerHeight;
+    var lowBand = vh * 0.2, highBand = vh * 0.8; // middle 60%
+    if (wordViewportY >= lowBand && wordViewportY <= highBand) return;
+    var desiredY = vh * 0.4;
+    var delta = wordViewportY - desiredY;
+    autoFollowProgrammatic = true;
+    autoScrollEl().scrollBy({ top: delta, left: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    setTimeout(function () { autoFollowProgrammatic = false; }, 600);
   }
 
   function zoomCheck() {
@@ -129,11 +328,13 @@
   }
 
   // No more --bar-h to measure (no persistent bottom bar) -- .frame's
-  // padding-bottom is a static safe-area-only value set in CSS. Only the
-  // canvas redraw on resize/rotate/fullscreen remains.
-  window.addEventListener('resize', draw);
-  window.addEventListener('orientationchange', function () { setTimeout(draw, 250); });
-  document.addEventListener('fullscreenchange', function () { setTimeout(draw, 50); });
+  // padding-bottom is a static safe-area-only value set in CSS. Resize/
+  // rotate/fullscreen all re-run the focus-line heuristic (idea #3's
+  // auto mode keys off innerWidth/innerHeight) before redrawing.
+  function handleViewportChange() { updateFocusMode(false); }
+  window.addEventListener('resize', handleViewportChange);
+  window.addEventListener('orientationchange', function () { setTimeout(handleViewportChange, 250); });
+  document.addEventListener('fullscreenchange', function () { setTimeout(handleViewportChange, 50); });
 
   // Word-progress counter: mirrored in two places -- the always-visible 3px
   // strip under the top bar, and the fuller "N/total" counter inside the
@@ -213,10 +414,18 @@
       pointer = 0; revealed = new Set(); contextRevealed = new Set();
     }
     applySurahStartJump(opts);
+    // A new page has entirely different line geometry -- force updateFocusMode
+    // to treat this as a fresh entry (no slide-from-the-old-page's crop) and
+    // never carry the previous page's completed animation frame across.
+    if (focusAnimFrame) { cancelAnimationFrame(focusAnimFrame); focusAnimFrame = null; }
+    focusCropY0 = focusCropY1 = null;
+    lastFocusActive = false; lastFocusLine = null;
+    computeLines();
     updateCounter();
     el.doneBanner.style.display = (pointer >= expected.length && expected.length > 0) ? 'block' : 'none';
     el.shareBar.style.display = 'none';
     updatePageChip(); // words[]/pointer for this page are ready now -- safe to derive the surah
+    updateFocusMode(false); // immediate: no slide-in on a fresh page
   }
 
   // Founder-reported bug: choosing سورة النصر from the drawer landed on its
@@ -332,6 +541,7 @@
     el.pageChip.textContent = pageLabel(p);
     state.settings.lastPage = p;
     Storage.save(state);
+    showChrome(true); // briefly reveal the bar (with the new surah·page chip) on every page change
 
     var nnn = pad3(p);
     fetch('pages/page-' + nnn + '.json').then(function (r) {
@@ -400,6 +610,66 @@
     }, { passive: true });
   })();
 
+  // -------------------------------------------------- immersive mode (idea #1)
+  // The top bar is hidden by default (see .topbar's overlay CSS); a single
+  // TAP on the page canvas toggles it, distinguished from the swipe-to-turn
+  // gesture above by a much smaller movement threshold. Both listeners sit
+  // on the same el.pagebox and run independently: a real swipe (dx>=40 in
+  // wireSwipe's own check) always exceeds this tap's tiny TAP_MAX_MOVE, so
+  // it never also toggles the bar; a genuine tap (dx/dy under 10px) never
+  // reaches wireSwipe's MIN_DX=40 threshold, so it never also turns the page.
+  var CHROME_AUTOHIDE_MS = 4000;
+  var chromeVisible = false, chromeHideTimer = null;
+  function isOverlayOpen() {
+    return el.drawer.classList.contains('open') || el.setupSheet.classList.contains('open');
+  }
+  function showChrome(autoHide) {
+    chromeVisible = true;
+    document.body.classList.add('chrome-visible');
+    clearTimeout(chromeHideTimer);
+    if (autoHide && !isOverlayOpen()) {
+      chromeHideTimer = setTimeout(function () {
+        if (!isOverlayOpen()) hideChrome();
+      }, CHROME_AUTOHIDE_MS);
+    }
+  }
+  function hideChrome() {
+    if (isOverlayOpen()) return;
+    chromeVisible = false;
+    document.body.classList.remove('chrome-visible');
+    clearTimeout(chromeHideTimer);
+  }
+  function toggleChrome() {
+    if (chromeVisible) hideChrome(); else showChrome(true);
+  }
+
+  (function wireImmersiveTap() {
+    var target = el.pagebox;
+    if (!target) return;
+    var tStartX = null, tStartY = null, tStartT = 0;
+    var TAP_MAX_MOVE = 10, TAP_MAX_MS = 500;
+    var suppressClickUntil = 0;
+    target.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1) { tStartX = null; return; }
+      tStartX = e.touches[0].clientX; tStartY = e.touches[0].clientY; tStartT = Date.now();
+    }, { passive: true });
+    target.addEventListener('touchend', function (e) {
+      if (tStartX === null) return;
+      var touch = e.changedTouches[0];
+      var dx = touch.clientX - tStartX, dy = touch.clientY - tStartY;
+      tStartX = null;
+      if (Date.now() - tStartT > TAP_MAX_MS) return;
+      if (Math.abs(dx) > TAP_MAX_MOVE || Math.abs(dy) > TAP_MAX_MOVE) return; // a swipe, not a tap
+      suppressClickUntil = Date.now() + 500; // the synthetic mouse click that follows this touch must not double-toggle
+      toggleChrome();
+    }, { passive: true });
+    // Non-touch (mouse/trackpad) input never fires touchstart/touchend above.
+    target.addEventListener('click', function () {
+      if (Date.now() < suppressClickUntil) return;
+      toggleChrome();
+    });
+  })();
+
   // ------------------------------------------------------------- matching
   // Surah number of a word index, read straight off its token `k`
   // ("surah:ayah") -- null when the index is out of range or the token has
@@ -456,7 +726,13 @@
     var newlyRevealed = revealed.size - before;
     updateCounter();
     updatePageChip(); // cheap -- catches the pointer crossing a surah boundary mid-page
-    draw();
+    // updateFocusMode() redraws either way -- sliding the focus-line crop to
+    // the pointer's new line when idea #3 is active, or a plain draw() when
+    // it isn't, in which case idea #4's auto-follow-scroll takes over
+    // (skipped while focus-line mode is active -- it already keeps the
+    // pointer centered in its own crop).
+    updateFocusMode(true);
+    maybeAutoFollow();
 
     persistPageProgress();
     // newlyRevealed comes from `revealed` only (never contextRevealed), so
@@ -515,17 +791,35 @@
     level = +elm.dataset.l;
     state.settings.level = level;
     Storage.save(state);
-    document.querySelectorAll('.level-seg').forEach(function (x) { x.classList.toggle('active', x === elm); });
+    el.levels.querySelectorAll('.level-seg').forEach(function (x) { x.classList.toggle('active', x === elm); });
     syncReciterDefault();
   });
   function activateLevelUI() {
-    document.querySelectorAll('.level-seg').forEach(function (x) { x.classList.toggle('active', +x.dataset.l === level); });
+    el.levels.querySelectorAll('.level-seg').forEach(function (x) { x.classList.toggle('active', +x.dataset.l === level); });
   }
   // The visible digit inside each segment must follow the current
   // language's numeral system (Arabic-Indic vs. Latin), same as every other
   // on-screen count -- re-run whenever the language changes.
   function populateLevelSegDigits() {
-    document.querySelectorAll('.level-seg-num').forEach(function (x) { x.textContent = digits(x.parentElement.dataset.l); });
+    el.levels.querySelectorAll('.level-seg-num').forEach(function (x) { x.textContent = digits(x.parentElement.dataset.l); });
+  }
+
+  // Focus-line auto/on/off toggle (founder idea #3) -- reuses .level-seg's
+  // look but is a fully separate control scoped to el.focusLineToggle, so
+  // clicking here never touches the (unrelated) difficulty-level segments
+  // above and vice versa.
+  el.focusLineToggle.addEventListener('click', function (e) {
+    var elm = e.target.closest('.level-seg');
+    if (!elm) return;
+    state.settings.focusLineMode = elm.dataset.mode;
+    Storage.save(state);
+    activateFocusLineUI();
+    updateFocusMode(false);
+  });
+  function activateFocusLineUI() {
+    el.focusLineToggle.querySelectorAll('.level-seg').forEach(function (x) {
+      x.classList.toggle('active', x.dataset.mode === (state.settings.focusLineMode || 'auto'));
+    });
   }
 
   // --------------------------------------------------- server ASR (tap/tap)
@@ -930,10 +1224,12 @@
     el.drawer.classList.add('open');
     el.drawerBackdrop.style.display = 'block';
     if (tab) setDrawerTab(tab);
+    showChrome(false); // stays visible for as long as the drawer is open
   }
   function closeDrawer() {
     el.drawer.classList.remove('open');
     el.drawerBackdrop.style.display = 'none';
+    showChrome(true); // resume the normal auto-hide countdown
   }
   el.menuBtn.onclick = function () { openDrawer('surah'); };
   el.drawerClose.onclick = closeDrawer;
@@ -948,10 +1244,12 @@
     closeDrawer();
     el.setupSheet.classList.add('open');
     el.setupBackdrop.style.display = 'block';
+    showChrome(false); // stays visible for as long as the sheet is open
   }
   function closeSetupSheet() {
     el.setupSheet.classList.remove('open');
     el.setupBackdrop.style.display = 'none';
+    showChrome(true); // resume the normal auto-hide countdown
   }
   el.setupBtn.onclick = function () { openSetupSheet(); };
   el.setupClose.onclick = closeSetupSheet;
@@ -1026,6 +1324,56 @@
     Promise.resolve(p).catch(function () { showToast(t('common.retry')); });
   };
 
+  // --------------------------------------------- PWA install promotion (idea #2)
+  // One-time, dismissible-forever, and never shown before the user's SECOND
+  // session (state.installPromo.sessionCount, incremented once per fresh
+  // page load -- see init below) or while already running standalone.
+  function isStandaloneDisplay() {
+    return !!((window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||
+      window.navigator.standalone === true);
+  }
+  function isIOSDevice() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); // iPadOS reports as Mac
+  }
+  function isIOSSafari() {
+    var ua = navigator.userAgent;
+    return isIOSDevice() && /Safari/.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua);
+  }
+  var deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    maybeShowInstallPromo();
+  });
+  function dismissInstallPromo() {
+    el.installPromo.hidden = true;
+    state.installPromo.dismissed = true;
+    Storage.save(state);
+  }
+  function maybeShowInstallPromo() {
+    if (isStandaloneDisplay()) return;
+    if (state.installPromo.dismissed) return;
+    if (state.installPromo.sessionCount < 2) return;
+    if (!el.installPromo.hidden) return; // already showing
+    var showIOS = isIOSSafari();
+    var showAndroid = !!deferredInstallPrompt;
+    if (!showIOS && !showAndroid) return; // no actionable install path on this browser
+    el.installPromoIos.hidden = !showIOS;
+    el.installPromoBtn.hidden = !showAndroid;
+    el.installPromo.hidden = false;
+  }
+  el.installPromoClose.onclick = dismissInstallPromo;
+  el.installPromoDismiss.onclick = dismissInstallPromo;
+  el.installPromoBtn.onclick = function () {
+    if (!deferredInstallPrompt) return;
+    deferredInstallPrompt.prompt();
+    deferredInstallPrompt.userChoice.finally(function () {
+      deferredInstallPrompt = null;
+      dismissInstallPromo();
+    });
+  };
+
   // hard-block zoom gestures (iOS keeps zoom state otherwise and breaks fixed bars)
   ['gesturestart', 'gesturechange', 'gestureend'].forEach(function (ev) {
     document.addEventListener(ev, function (e) { e.preventDefault(); }, { passive: false });
@@ -1072,11 +1420,19 @@
     window.Tasme3I18n.applyTranslations(document);
     activateLevelUI();
     populateLevelSegDigits();
+    activateFocusLineUI();
     syncReciterDefault();
     renderAccountPanel();
     renderProgressPanel();
     renderGreeting();
     renderCertList();
+
+    // Idea #2: every fresh page load is one "session" -- the install-promo
+    // card is eligible only from the SECOND one onward, never the first.
+    state.installPromo.sessionCount += 1;
+    Storage.save(state);
+    maybeShowInstallPromo(); // covers iOS Safari immediately; the Android/Chrome
+                              // path additionally re-checks on beforeinstallprompt
 
     // Fresh user (or a stored lastPage that predates this restriction) lands
     // on NAV_MIN (3), never page 1 -- pages 1-2 are ornamental and excluded

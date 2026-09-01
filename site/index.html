@@ -15,7 +15,8 @@
 </head>
 <body>
 <div class="frame">
-  <div class="topbar goldbar">
+  <div class="progressstrip"><div id="pbarTop"></div></div>
+  <div class="topbar goldbar" id="topBar">
     <div class="topbar-left">
       <button id="menuBtn" class="iconbtn" data-i18n-aria-label="nav.menu">☰</button>
     </div>
@@ -26,7 +27,6 @@
       <button id="fsBtn" class="iconbtn" aria-label="fullscreen">⛶</button>
     </div>
   </div>
-  <div class="progressstrip"><div id="pbarTop"></div></div>
 
   <div class="zoomwarn" id="zoomWarn">⚠️ الصفحة مكبّرة من جلسة سابقة — أغلق هذا التبويب تمامًا وافتح الرابط في تبويب جديد</div>
 
@@ -86,6 +86,15 @@
   </div>
   <div class="sheet-body">
     <div class="greeting" id="greetingLine" hidden></div>
+
+    <section class="sheet-section">
+      <h3 data-i18n="focusLine.label">وضع السطر الكبير</h3>
+      <div class="levels focusline-toggle" id="focusLineToggle">
+        <button type="button" class="level-seg" data-mode="auto" data-i18n="focusLine.auto">تلقائي</button>
+        <button type="button" class="level-seg" data-mode="on" data-i18n="focusLine.on">مفعّل</button>
+        <button type="button" class="level-seg" data-mode="off" data-i18n="focusLine.off">متوقف</button>
+      </div>
+    </section>
 
     <section class="sheet-section">
       <h3 data-i18n="level.label">مستوى الصعوبة</h3>
@@ -190,6 +199,23 @@
     <button id="drawerGoBtn" data-i18n="drawer.go">اذهب</button>
   </div>
   <div class="drawer-list" id="drawerList"></div>
+</div>
+
+<div class="install-promo" id="installPromo" hidden>
+  <button class="iconbtn install-promo-close" id="installPromoClose" data-i18n-aria-label="drawer.close">✕</button>
+  <div class="install-promo-title" data-i18n="install.title">للشاشة الكاملة بدون أشرطة المتصفح: أضف تسميع إلى الشاشة الرئيسية</div>
+  <div class="install-promo-ios" id="installPromoIos" hidden>
+    <div class="install-step">
+      <svg class="install-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l-4 4h2.5v7h3V6H16z" fill="currentColor"/><path d="M5 10v10a2 2 0 002 2h10a2 2 0 002-2V10h-2v10H7V10z" fill="currentColor"/></svg>
+      <span data-i18n="install.iosStep1">اضغط زر المشاركة</span>
+    </div>
+    <div class="install-step">
+      <svg class="install-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v10M7 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span data-i18n="install.iosStep2">ثم اختر «إضافة إلى الشاشة الرئيسية»</span>
+    </div>
+  </div>
+  <button class="bigbtn" id="installPromoBtn" data-i18n="install.button" hidden>تثبيت التطبيق</button>
+  <button class="ghostbtn" id="installPromoDismiss" data-i18n="install.dismiss">ليس الآن</button>
 </div>
 
 <div class="toast" id="toast"></div>
