@@ -100,6 +100,49 @@ L4 إجازة exact only (later phase; reserved in the API now).
 - Dockerfile + docker-compose; deploy runbook for the founder's VPS; load
   test target: 10 concurrent clips on 2 vCPU.
 - Fallback path when server unreachable: typed input + clear offline message.
+- **Accounts + progress sync API** (spec below): `POST /account` → {code},
+  `GET/PUT /progress` authenticated by the save-code as bearer token.
+  Same tiny service, same DB-less start (SQLite file), same rate limiting.
+
+### Feature — WhatsApp sharing (founder decision 2026-08-31)
+Sharing results on WhatsApp is the encouragement engine. Rules:
+- Share moments: page completed, surah completed, streak milestones, weekly
+  summary. Always user-initiated (a big share button) — never automatic.
+- **Primary mechanism: `https://wa.me/?text=<urlencoded message>`** — opens
+  WhatsApp with the message prefilled. Works on every phone with WhatsApp
+  (Android/iOS/desktop), needs no API, no keys, no SDK, nothing to download.
+- Message templates localized via i18n; Arabic default, e.g.:
+  «الحمد لله — أتممتُ اليوم صفحة ٥٩٦ من حفظ القرآن الكريم 📖✨
+  تطبيق تسميع المجاني: <app link>» (the link makes every share an invitation —
+  the growth engine from PLAN.md).
+- Where the browser supports Web Share API with files, offer a beautiful
+  **achievement card image** (client-side canvas render: gold/green theme,
+  stats only — never altered Quran text) shared as a picture; text-link
+  fallback everywhere else. Old phones always get the text path.
+- Groups tie-in later (Phase 2 of PLAN.md): weekly group summary share.
+
+### Feature — Frictionless accounts (founder decision 2026-08-31)
+Founder's constraints: minimum security by design, zero hardness, extremely
+easy login, "this is not a bank", friendly. Progress data only — no PII.
+- **Level 0 (default): no account at all.** App works fully as guest;
+  progress in localStorage. Nobody is ever forced to sign up.
+- **Level 1 (optional, one tap): «احفظ تقدمك» (save your progress).**
+  Server creates the account instantly and returns a **save code (رمز الحفظ)**
+  — short, dictation-friendly (digits only, e.g. 10 digits grouped 3-3-4;
+  accepts Arabic-Indic ٠-٩ or Western digits, ignores spaces/dashes).
+  Shown BIG with two buttons: **«أرسله لنفسك على واتساب»** (wa.me self-share —
+  the code lives safely in their own WhatsApp chat) and «نسخ» (copy).
+- **Login on any device = enter the code. That's it.** No password, no email,
+  no phone verification, no OTP, no captcha, nothing expires. Nickname is
+  optional and only for display/groups.
+- Sync: client PUTs progress deltas (counters, streak, level, per-page state)
+  with the code as bearer token; last-write-wins per field; tiny JSON.
+- Deliberate, documented security posture: rate-limit code attempts
+  (~10/min/IP), ≥10-digit random codes (~33 bits — fine for non-sensitive
+  data), no PII stored, worst case abuse = someone sees/overwrites progress
+  numbers. WhatsApp-number-based recovery: explicitly out of scope for now.
+- Losing the code = start fresh (or, later, group-leader recovery). The
+  WhatsApp self-send button exists precisely so this rarely happens.
 
 ### Phase 3 — Unified client — Sonnet agent WP-D (after 0/1 land)
 - hifz-test canvas base + merged 12-language i18n + Kimi's progress/review/streak
@@ -111,6 +154,9 @@ L4 إجازة exact only (later phase; reserved in the API now).
 - Service worker: versioned cache with activation cleanup (M7); caches visited
   page images for repeat review offline (recognition still needs network).
 - Privacy copy updated: "processed on our server, never stored."
+- WhatsApp share button (wa.me + achievement card) and the save-code UI
+  («احفظ تقدمك» / login by code / WhatsApp self-send) per the feature specs
+  above — all strings through the 12-language i18n catalog.
 
 ### Phase 4 — Verify & ship
 - Playwright E2E at 390×844 / 844×390 / 1280×800 against a local server stub.
