@@ -6,6 +6,36 @@
   var Storage = window.Tasme3Storage;
   var Matcher = window.QuranMatcher;
 
+  // Flaky-network guard (audit a3 #38): config.js/utils.js/storage.js/
+  // i18n.js/vendor/matcher.js load as plain <script> tags before this one --
+  // on a bad connection any one of them can fail its own network request and
+  // never execute, leaving its global undefined. Before this guard, the very
+  // next real statement below called Storage.load() unconditionally and
+  // threw an uncaught "Cannot read properties of undefined (reading 'load')"
+  // that crashed the whole app before anything else on the page could even
+  // try to recover (site/i18n.js's own Storage.load() calls are already
+  // wrapped in try/catch -- this file's top-level one was not). A same-
+  // origin reload almost always succeeds the second time (browser HTTP
+  // cache/service worker), so this is a plain, unmissable retry prompt
+  // rather than a silent retry loop -- and it can't route through the i18n
+  // catalog system, since i18n.js itself may be one of the scripts that
+  // failed to load.
+  if (!Utils || !Storage || !Matcher) {
+    var failDiv = document.createElement('div');
+    failDiv.className = 'pageerror';
+    failDiv.style.cssText = 'display:flex;position:fixed;inset:0;z-index:99;';
+    var failP = document.createElement('p');
+    failP.textContent = 'تعذر تحميل التطبيق بالكامل — تحقق من اتصالك وأعد المحاولة / Failed to fully load the app — check your connection and retry';
+    var failBtn = document.createElement('button');
+    failBtn.type = 'button';
+    failBtn.textContent = 'إعادة المحاولة / Retry';
+    failBtn.onclick = function () { location.reload(); };
+    failDiv.appendChild(failP);
+    failDiv.appendChild(failBtn);
+    document.body.appendChild(failDiv);
+    return;
+  }
+
   var SERVER_URL = ((window.TASME3_CONFIG || {}).SERVER_URL || '').replace(/\/+$/, '');
   var SERVER_MODE = !!SERVER_URL;
 
@@ -51,16 +81,16 @@
   }
 
   function pad3(n) { return String(n).padStart(3, '0'); }
-  function digits(n) {
-    var lang = window.Tasme3I18n.currentLang();
-    return lang === 'ar' ? Utils.toArabicDigits(n) : String(n);
-  }
+  // Exported via Tasme3Utils (wave-2 fix a4/G5) so share.js can reuse the
+  // exact same language-aware digit logic instead of hardcoding Arabic-Indic
+  // digits regardless of the current UI language.
+  var digits = Utils.digits;
 
   // ------------------------------------------------------------- elements
   var el = {};
   [
     'menuBtn', 'langSelect', 'fsBtn', 'pageChip', 'zoomWarn', 'pagebox',
-    'pagecanvas', 'pageError', 'pageErrorRetry', 'doneBanner', 'shareBar', 'shareBtn',
+    'pagecanvas', 'pageError', 'pageErrorRetry', 'pageSpinner', 'doneBanner', 'shareBar', 'shareBtn',
     'shareProgressBtn', 'status', 'recBtn', 'setupBtn', 'setupSheet', 'setupBackdrop', 'setupClose',
     'levels', 'count', 'total', 'listenBtn', 'repeatBtn',
     'reciterSelect', 'listenPanel', 'pbar', 'pbarTop', 'micHelpLink', 'fallback', 'typeInput', 'helpBox',
@@ -540,14 +570,35 @@
     el.pageChip.appendChild(document.createTextNode(full.slice(idx + isolatedName.length)));
   }
 
+  // Loading spinner (wave-2 fix #1): distinguishes "the page is still on its
+  // way" from "loaded but veiled, tap the mic to reveal words" -- shown a
+  // beat (150ms) into ANY page load/turn so a fast, cache-hit load never
+  // flickers it, hidden the instant the image actually decodes (onload) or
+  // the error state takes over instead. showPageSpinnerSoon() is called once
+  // per navigation, right as loadPage() starts (covers the page-JSON fetch
+  // *and* the image fetch as one visual "loading" span); hidePageSpinner()
+  // is called from both success (loadPageImage's onload) and failure
+  // (showPageError, which every failure path in this file already funnels
+  // through) so there is exactly one place each that needs to know about it.
+  var pageSpinnerTimer = null;
+  function showPageSpinnerSoon() {
+    clearTimeout(pageSpinnerTimer);
+    pageSpinnerTimer = setTimeout(function () { el.pageSpinner.classList.add('show'); }, 150);
+  }
+  function hidePageSpinner() {
+    clearTimeout(pageSpinnerTimer);
+    pageSpinnerTimer = null;
+    el.pageSpinner.classList.remove('show');
+  }
+
   function loadPageImage(src, onFail) {
     el.pageError.style.display = 'none';
     pageImage = new Image();
-    pageImage.onload = function () { el.pageError.style.display = 'none'; draw(); };
+    pageImage.onload = function () { hidePageSpinner(); el.pageError.style.display = 'none'; draw(); };
     pageImage.onerror = function () { if (onFail) onFail(); else showPageError(); };
     pageImage.src = src;
   }
-  function showPageError() { pageImage = null; el.pageError.style.display = 'flex'; }
+  function showPageError() { hidePageSpinner(); pageImage = null; el.pageError.style.display = 'flex'; }
 
   // opts.surahNumber: passed straight through to applyPageData()'s
   // surah-start jump -- ONLY the drawer's SURAH tab sets this (see
@@ -560,6 +611,7 @@
     // through this one clamp, so no path can ever land on page 1 or 2.
     p = Utils.clamp(p, NAV_MIN, NAV_MAX);
     pageNum = p;
+    showPageSpinnerSoon(); // covers this whole navigation's JSON+image fetch span
     recorder.abort();
     listener.stop();
     stopListening();
