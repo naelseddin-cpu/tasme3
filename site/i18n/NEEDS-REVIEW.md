@@ -39,12 +39,47 @@ in meaning but may read stiffly):
 - Bengali (`bn`)
 - Swahili (`sw`)
 
+## WP-E additions (2026-09-01) — 9 new keys per language ("build all four")
+
+Added for the founder's four-idea package: the PWA install-promotion card
+(`install.title`, `install.iosStep1`, `install.iosStep2`, `install.button`,
+`install.dismiss`) and the landscape focus-line auto/on/off toggle in the
+setup sheet (`focusLine.label`, `focusLine.auto`, `focusLine.on`,
+`focusLine.off`).
+
+**Arabic (`ar`) and English (`en`)**: written directly (the Arabic
+`install.title` wording is the founder's own spec text, verbatim); treat as
+final pending normal proofreading.
+
+**Manual translation, best-effort — please have a native speaker confirm
+register/idiom before shipping** (translated key-by-key against the English
+and Arabic source text, consistent with each catalog's existing terms for
+the app name/"page"/"settings" etc., but not verified against a live
+reviewer) — this batch covers every remaining catalog, so unlike WP-D's
+tiers, treat ALL of the following as equally best-effort and equally in need
+of a native check before shipping:
+- Turkish (`tr`), French (`fr`), Spanish (`es`)
+- Persian (`fa`), Urdu (`ur`), Pashto (`ps`)
+- Indonesian (`id`), Malay (`ms`)
+- Russian (`ru`), Bengali (`bn`)
+- Swahili (`sw`), Hausa (`ha`), Somali (`so`)
+- Uzbek (`uz`), Azerbaijani (`az`), Bosnian (`bs`), Albanian (`sq`)
+- German (`de`), Dutch (`nl`), Portuguese (`pt`)
+- Tamil (`ta`), Malayalam (`ml`)
+- Chinese (`zh`)
+
+The install card's iOS/Android copy is short and UI-label-like (2-4 words for
+most keys), so mistranslation risk is lower than WP-D's longer sentences, but
+the two illustrated iOS steps (`install.iosStep1`/`install.iosStep2`) in
+particular should read naturally as short imperative instructions.
+
 ## How to review
 
 1. Open `app/i18n/<lang>.json`, diff against `app/i18n/en.json` and
    `app/i18n/ar.json` for the same keys (see the key list in
    `/tmp/.../new_i18n_keys.py` used to generate this batch — or simply the
-   52 keys added after the original 78 in each file).
+   52 keys added after the original 78 in each file for WP-D, or the last 9
+   keys in each file for WP-E).
 2. Fix any wording directly in `app/i18n/<lang>.json` (the source of truth).
 3. Re-run `node site/build-assets.mjs` to propagate the fix into
    `site/i18n/<lang>.json`.

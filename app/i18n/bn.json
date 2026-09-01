@@ -150,5 +150,14 @@
   "cert.share": "শেয়ার করুন",
   "cert.download": "ডাউনলোড",
   "chip.surahPage": "সূরা {surah} · {page}",
-  "progress.pageProgress": "পৃষ্ঠার অগ্রগতি"
+  "progress.pageProgress": "পৃষ্ঠার অগ্রগতি",
+  "install.title": "ব্রাউজার বার ছাড়া পূর্ণ স্ক্রিনের জন্য: Tasmee' কে হোম স্ক্রিনে যোগ করুন",
+  "install.iosStep1": "শেয়ার বোতামে চাপুন",
+  "install.iosStep2": "তারপর “হোম স্ক্রিনে যোগ করুন” নির্বাচন করুন",
+  "install.button": "অ্যাপ ইনস্টল করুন",
+  "install.dismiss": "এখন নয়",
+  "focusLine.label": "বড় লাইন মোড",
+  "focusLine.auto": "স্বয়ংক্রিয়",
+  "focusLine.on": "চালু",
+  "focusLine.off": "বন্ধ"
 }

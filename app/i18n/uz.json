@@ -150,5 +150,14 @@
   "cert.share": "Ulashish",
   "cert.download": "Yuklab olish",
   "chip.surahPage": "{surah} surasi · {page}",
-  "progress.pageProgress": "Sahifa jarayoni"
+  "progress.pageProgress": "Sahifa jarayoni",
+  "install.title": "Brauzer panellarisiz toʻliq ekran uchun: Tasmee'ni Bosh ekraningizga qoʻshing",
+  "install.iosStep1": "Ulashish tugmasini bosing",
+  "install.iosStep2": "Soʻngra “Bosh ekranga qoʻshish”ni tanlang",
+  "install.button": "Ilovani oʻrnatish",
+  "install.dismiss": "Hozir emas",
+  "focusLine.label": "Katta qator rejimi",
+  "focusLine.auto": "Avtomatik",
+  "focusLine.on": "Yoniq",
+  "focusLine.off": "Oʻchiq"
 }

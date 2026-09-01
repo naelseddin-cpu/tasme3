@@ -150,5 +150,14 @@
   "nav.frontPagesInProgress": "Kurasa za Al-Fatiha na mwanzo wa Al-Baqarah bado zinaandaliwa",
   "listen.panelToggle": "Chaguo za kusikiliza",
   "chip.surahPage": "Surah {surah} · {page}",
-  "progress.pageProgress": "Maendeleo ya ukurasa"
+  "progress.pageProgress": "Maendeleo ya ukurasa",
+  "install.title": "Kwa skrini kamili bila upau wa kivinjari: ongeza Tasmee' kwenye Skrini Kuu yako",
+  "install.iosStep1": "Gusa kitufe cha Shiriki",
+  "install.iosStep2": "Kisha chagua “Ongeza kwenye Skrini Kuu”",
+  "install.button": "Sakinisha programu",
+  "install.dismiss": "Sivyo sasa",
+  "focusLine.label": "Hali ya mstari mkubwa",
+  "focusLine.auto": "Kiotomatiki",
+  "focusLine.on": "Washa",
+  "focusLine.off": "Zima"
 }

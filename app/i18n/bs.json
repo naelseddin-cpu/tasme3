@@ -150,5 +150,14 @@
   "cert.share": "Podijeli",
   "cert.download": "Preuzmi",
   "chip.surahPage": "Sura {surah} · {page}",
-  "progress.pageProgress": "Napredak stranice"
+  "progress.pageProgress": "Napredak stranice",
+  "install.title": "Za pun ekran bez traka preglednika: dodajte Tasmee' na Početni ekran",
+  "install.iosStep1": "Dodirnite dugme Podijeli",
+  "install.iosStep2": "Zatim odaberite “Dodaj na Početni ekran”",
+  "install.button": "Instaliraj aplikaciju",
+  "install.dismiss": "Ne sada",
+  "focusLine.label": "Način velikog reda",
+  "focusLine.auto": "Automatski",
+  "focusLine.on": "Uključeno",
+  "focusLine.off": "Isključeno"
 }

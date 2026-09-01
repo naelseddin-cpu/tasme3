@@ -150,5 +150,14 @@
   "cert.share": "La wadaag",
   "cert.download": "Soo deji",
   "chip.surahPage": "Suurat {surah} · {page}",
-  "progress.pageProgress": "Horumarka boggan"
+  "progress.pageProgress": "Horumarka boggan",
+  "install.title": "Si aad u hesho shaashad buuxda oo aan lahayn baararka biraawsarka: ku dar Tasmee' Shaashadaada Guriga",
+  "install.iosStep1": "Taabo badhanka Wadaag",
+  "install.iosStep2": "Kadibna dooro “Ku dar Shaashadda Guriga”",
+  "install.button": "Rakibi barnaamijka",
+  "install.dismiss": "Hadda ma aha",
+  "focusLine.label": "Habka safka weyn",
+  "focusLine.auto": "Otomaatig",
+  "focusLine.on": "Shiday",
+  "focusLine.off": "Damiye"
 }

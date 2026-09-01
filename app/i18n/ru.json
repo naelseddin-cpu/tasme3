@@ -150,5 +150,14 @@
   "cert.share": "Поделиться",
   "cert.download": "Скачать",
   "chip.surahPage": "Сура {surah} · {page}",
-  "progress.pageProgress": "Прогресс страницы"
+  "progress.pageProgress": "Прогресс страницы",
+  "install.title": "Для полноэкранного режима без панелей браузера: добавьте «Тасми» на главный экран",
+  "install.iosStep1": "Нажмите кнопку «Поделиться»",
+  "install.iosStep2": "Затем выберите «На экран «Домой»",
+  "install.button": "Установить приложение",
+  "install.dismiss": "Не сейчас",
+  "focusLine.label": "Режим крупной строки",
+  "focusLine.auto": "Авто",
+  "focusLine.on": "Вкл",
+  "focusLine.off": "Выкл"
 }

@@ -150,5 +150,14 @@
   "nav.frontPagesInProgress": "د الفاتحې او د بقرې د پیل مخونه لا تر اوسه چمتو کیږي",
   "listen.panelToggle": "د اورېدو غوراوي",
   "chip.surahPage": "سورة {surah} · {page}",
-  "progress.pageProgress": "د پاڼې پرمختګ"
+  "progress.pageProgress": "د پاڼې پرمختګ",
+  "install.title": "د براوزر پټیو پرته د بشپړ سکرین لپاره: تسميع د خپل کور سکرین ته اضافه کړئ",
+  "install.iosStep1": "د شریکولو تڼۍ کېکاږئ",
+  "install.iosStep2": "بیا “کور ته اضافه کول” غوره کړئ",
+  "install.button": "اپلیکیشن نصب کړئ",
+  "install.dismiss": "اوس نه",
+  "focusLine.label": "د لوی کرښې حالت",
+  "focusLine.auto": "اتومات",
+  "focusLine.on": "فعال",
+  "focusLine.off": "غیر فعال"
 }

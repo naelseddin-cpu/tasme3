@@ -150,5 +150,14 @@
   "cert.share": "Compartir",
   "cert.download": "Descargar",
   "chip.surahPage": "Sura {surah} · {page}",
-  "progress.pageProgress": "Progreso de la página"
+  "progress.pageProgress": "Progreso de la página",
+  "install.title": "Para pantalla completa sin barras del navegador: añade Tasmee' a tu pantalla de inicio",
+  "install.iosStep1": "Toca el botón Compartir",
+  "install.iosStep2": "Luego elige “Añadir a pantalla de inicio”",
+  "install.button": "Instalar la app",
+  "install.dismiss": "Ahora no",
+  "focusLine.label": "Modo de línea grande",
+  "focusLine.auto": "Automático",
+  "focusLine.on": "Activado",
+  "focusLine.off": "Desactivado"
 }

@@ -150,5 +150,14 @@
   "cert.share": "Teilen",
   "cert.download": "Herunterladen",
   "chip.surahPage": "Sure {surah} · {page}",
-  "progress.pageProgress": "Seitenfortschritt"
+  "progress.pageProgress": "Seitenfortschritt",
+  "install.title": "Für echten Vollbildmodus ohne Browserleisten: Tasmee' zum Startbildschirm hinzufügen",
+  "install.iosStep1": "Tippe auf die Teilen-Schaltfläche",
+  "install.iosStep2": "Wähle dann „Zum Home-Bildschirm“",
+  "install.button": "App installieren",
+  "install.dismiss": "Jetzt nicht",
+  "focusLine.label": "Großzeilen-Modus",
+  "focusLine.auto": "Automatisch",
+  "focusLine.on": "Ein",
+  "focusLine.off": "Aus"
 }

@@ -150,5 +150,14 @@
   "cert.share": "പങ്കിടുക",
   "cert.download": "ഡൗൺലോഡ് ചെയ്യുക",
   "chip.surahPage": "സൂറ {surah} · {page}",
-  "progress.pageProgress": "പേജ് പുരോഗതി"
+  "progress.pageProgress": "പേജ് പുരോഗതി",
+  "install.title": "ബ്രൗസർ ബാറുകളില്ലാതെ പൂർണ്ണ സ്ക്രീനിനായി: തസ്മീഅ് നിങ്ങളുടെ ഹോം സ്ക്രീനിലേക്ക് ചേർക്കുക",
+  "install.iosStep1": "ഷെയർ ബട്ടൺ അമർത്തുക",
+  "install.iosStep2": "പിന്നെ “ഹോം സ്ക്രീനിലേക്ക് ചേർക്കുക” തിരഞ്ഞെടുക്കുക",
+  "install.button": "ആപ്പ് ഇൻസ്റ്റാൾ ചെയ്യുക",
+  "install.dismiss": "ഇപ്പോൾ വേണ്ട",
+  "focusLine.label": "വലിയ വരി മോഡ്",
+  "focusLine.auto": "ഓട്ടോ",
+  "focusLine.on": "ഓൺ",
+  "focusLine.off": "ഓഫ്"
 }

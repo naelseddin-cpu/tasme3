@@ -150,5 +150,14 @@
   "cert.share": "Delen",
   "cert.download": "Downloaden",
   "chip.surahPage": "Soera {surah} · {page}",
-  "progress.pageProgress": "Paginavoortgang"
+  "progress.pageProgress": "Paginavoortgang",
+  "install.title": "Voor echt volledig scherm zonder browserbalken: voeg Tasmee' toe aan je beginscherm",
+  "install.iosStep1": "Tik op de deelknop",
+  "install.iosStep2": "Kies vervolgens “Zet op beginscherm”",
+  "install.button": "App installeren",
+  "install.dismiss": "Niet nu",
+  "focusLine.label": "Grote-regelmodus",
+  "focusLine.auto": "Automatisch",
+  "focusLine.on": "Aan",
+  "focusLine.off": "Uit"
 }

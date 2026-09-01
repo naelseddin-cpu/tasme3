@@ -150,5 +150,14 @@
   "cert.share": "مشاركة",
   "cert.download": "تحميل",
   "chip.surahPage": "سورة {surah} · {page}",
-  "progress.pageProgress": "تقدم الصفحة"
+  "progress.pageProgress": "تقدم الصفحة",
+  "install.title": "للشاشة الكاملة بدون أشرطة المتصفح: أضف تسميع إلى الشاشة الرئيسية",
+  "install.iosStep1": "اضغط زر المشاركة",
+  "install.iosStep2": "ثم اختر «إضافة إلى الشاشة الرئيسية»",
+  "install.button": "تثبيت التطبيق",
+  "install.dismiss": "ليس الآن",
+  "focusLine.label": "وضع السطر الكبير",
+  "focusLine.auto": "تلقائي",
+  "focusLine.on": "مفعّل",
+  "focusLine.off": "متوقف"
 }

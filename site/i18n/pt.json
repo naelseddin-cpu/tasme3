@@ -150,5 +150,14 @@
   "nav.frontPagesInProgress": "As páginas de Al-Fatiha e do início de Al-Baqarah ainda estão sendo preparadas",
   "listen.panelToggle": "Opções de audição",
   "chip.surahPage": "Surata {surah} · {page}",
-  "progress.pageProgress": "Progresso da página"
+  "progress.pageProgress": "Progresso da página",
+  "install.title": "Para tela cheia real, sem barras do navegador: adicione o Tasmee' à sua Tela de Início",
+  "install.iosStep1": "Toque no botão Compartilhar",
+  "install.iosStep2": "Depois escolha “Adicionar à Tela de Início”",
+  "install.button": "Instalar aplicativo",
+  "install.dismiss": "Agora não",
+  "focusLine.label": "Modo de linha grande",
+  "focusLine.auto": "Automático",
+  "focusLine.on": "Ativado",
+  "focusLine.off": "Desativado"
 }

@@ -150,5 +150,14 @@
   "nav.frontPagesInProgress": "Əl-Fatihə və Əl-Bəqərənin başlanğıc səhifələri hələ hazırlanır",
   "listen.panelToggle": "Dinləmə seçimləri",
   "chip.surahPage": "{surah} surəsi · {page}",
-  "progress.pageProgress": "Səhifə irəliləyişi"
+  "progress.pageProgress": "Səhifə irəliləyişi",
+  "install.title": "Brauzer panelləri olmadan tam ekran üçün: Tasmee'-i Ana Ekranınıza əlavə edin",
+  "install.iosStep1": "Paylaş düyməsinə toxunun",
+  "install.iosStep2": "Sonra “Ana ekrana əlavə et” seçin",
+  "install.button": "Tətbiqi quraşdır",
+  "install.dismiss": "İndi yox",
+  "focusLine.label": "Böyük sətir rejimi",
+  "focusLine.auto": "Avtomatik",
+  "focusLine.on": "Aktiv",
+  "focusLine.off": "Deaktiv"
 }

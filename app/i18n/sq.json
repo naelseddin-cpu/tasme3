@@ -150,5 +150,14 @@
   "cert.share": "Ndaj",
   "cert.download": "Shkarko",
   "chip.surahPage": "Sureja {surah} · {page}",
-  "progress.pageProgress": "Përparimi i faqes"
+  "progress.pageProgress": "Përparimi i faqes",
+  "install.title": "Për ekran të plotë pa shirita të shfletuesit: shtoni Tasmee' në Ekranin Bazë",
+  "install.iosStep1": "Prekni butonin Shpërndaj",
+  "install.iosStep2": "Pastaj zgjidhni “Shto në Ekranin Bazë”",
+  "install.button": "Instalo aplikacionin",
+  "install.dismiss": "Jo tani",
+  "focusLine.label": "Modaliteti i rreshtit të madh",
+  "focusLine.auto": "Automatik",
+  "focusLine.on": "Ndezur",
+  "focusLine.off": "Fikur"
 }

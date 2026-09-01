@@ -150,5 +150,14 @@
   "nav.frontPagesInProgress": "Halaman Al-Fatihah dan permulaan Al-Baqarah sedang disediakan",
   "listen.panelToggle": "Pilihan dengar",
   "chip.surahPage": "Surah {surah} · {page}",
-  "progress.pageProgress": "Kemajuan halaman"
+  "progress.pageProgress": "Kemajuan halaman",
+  "install.title": "Untuk skrin penuh tanpa bar pelayar: tambah Tasmee' ke Skrin Utama anda",
+  "install.iosStep1": "Ketik butang Kongsi",
+  "install.iosStep2": "Kemudian pilih “Tambah ke Skrin Utama”",
+  "install.button": "Pasang aplikasi",
+  "install.dismiss": "Lain kali",
+  "focusLine.label": "Mod baris besar",
+  "focusLine.auto": "Automatik",
+  "focusLine.on": "Hidup",
+  "focusLine.off": "Mati"
 }

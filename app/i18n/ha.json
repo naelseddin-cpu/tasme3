@@ -150,5 +150,14 @@
   "cert.share": "Raba",
   "cert.download": "Sauke",
   "chip.surahPage": "Suura {surah} · {page}",
-  "progress.pageProgress": "Ci gaban shafi"
+  "progress.pageProgress": "Ci gaban shafi",
+  "install.title": "Don cikakken allo ba tare da sanduna na burauza ba: ƙara Tasmee' zuwa Babban Allo",
+  "install.iosStep1": "Danna maɓallin Raba",
+  "install.iosStep2": "Sannan zaɓi “Ƙara zuwa Babban Allo”",
+  "install.button": "Shigar da manhaja",
+  "install.dismiss": "Ba yanzu ba",
+  "focusLine.label": "Yanayin babban layi",
+  "focusLine.auto": "Atomatik",
+  "focusLine.on": "A kunne",
+  "focusLine.off": "A kashe"
 }

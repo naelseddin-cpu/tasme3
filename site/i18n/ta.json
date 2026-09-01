@@ -150,5 +150,14 @@
   "nav.frontPagesInProgress": "அல்-ஃபாத்திஹா மற்றும் அல்-பகராவின் தொடக்கப் பக்கங்கள் தயாராகி வருகின்றன",
   "listen.panelToggle": "கேட்பதற்கான விருப்பங்கள்",
   "chip.surahPage": "சூரா {surah} · {page}",
-  "progress.pageProgress": "பக்க முன்னேற்றம்"
+  "progress.pageProgress": "பக்க முன்னேற்றம்",
+  "install.title": "உலாவி பட்டைகள் இல்லாத முழுத்திரைக்கு: தஸ்மீஃ-ஐ உங்கள் முகப்புத் திரையில் சேர்க்கவும்",
+  "install.iosStep1": "பகிர் பொத்தானை தட்டவும்",
+  "install.iosStep2": "பிறகு “முகப்புத் திரையில் சேர்” என்பதைத் தேர்ந்தெடுக்கவும்",
+  "install.button": "செயலியை நிறுவு",
+  "install.dismiss": "இப்போது வேண்டாம்",
+  "focusLine.label": "பெரிய வரி பயன்முறை",
+  "focusLine.auto": "தானியங்கி",
+  "focusLine.on": "ஆன்",
+  "focusLine.off": "ஆஃப்"
 }

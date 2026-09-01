@@ -150,5 +150,14 @@
   "cert.share": "Paylaş",
   "cert.download": "İndir",
   "chip.surahPage": "{surah} Suresi · {page}",
-  "progress.pageProgress": "Sayfa ilerlemesi"
+  "progress.pageProgress": "Sayfa ilerlemesi",
+  "install.title": "Tarayıcı çubukları olmadan tam ekran için: Tasmee'yi Ana Ekranınıza ekleyin",
+  "install.iosStep1": "Paylaş düğmesine dokunun",
+  "install.iosStep2": "Sonra “Ana Ekrana Ekle” seçeneğini seçin",
+  "install.button": "Uygulamayı yükle",
+  "install.dismiss": "Şimdi değil",
+  "focusLine.label": "Büyük satır modu",
+  "focusLine.auto": "Otomatik",
+  "focusLine.on": "Açık",
+  "focusLine.off": "Kapalı"
 }

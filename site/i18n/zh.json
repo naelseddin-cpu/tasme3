@@ -150,5 +150,14 @@
   "nav.frontPagesInProgress": "法蒂哈章和黄牛章开头的页面还在制作中",
   "listen.panelToggle": "收听选项",
   "chip.surahPage": "苏拉 {surah} · {page}",
-  "progress.pageProgress": "页面进度"
+  "progress.pageProgress": "页面进度",
+  "install.title": "如需真正的全屏（无浏览器工具栏）：将塔斯米添加到主屏幕",
+  "install.iosStep1": "点击分享按钮",
+  "install.iosStep2": "然后选择“添加到主屏幕”",
+  "install.button": "安装应用",
+  "install.dismiss": "暂不",
+  "focusLine.label": "大字行模式",
+  "focusLine.auto": "自动",
+  "focusLine.on": "开",
+  "focusLine.off": "关"
 }

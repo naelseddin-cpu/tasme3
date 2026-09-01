@@ -150,5 +150,14 @@
   "nav.frontPagesInProgress": "Al-Fatihah and the start of Al-Baqarah pages are being prepared",
   "listen.panelToggle": "Listen options",
   "chip.surahPage": "Surah {surah} · {page}",
-  "progress.pageProgress": "Page progress"
+  "progress.pageProgress": "Page progress",
+  "install.title": "For a true full screen with no browser bars: add Tasmee' to your Home Screen",
+  "install.iosStep1": "Tap the Share button",
+  "install.iosStep2": "Then choose “Add to Home Screen”",
+  "install.button": "Install app",
+  "install.dismiss": "Not now",
+  "focusLine.label": "Large-line mode",
+  "focusLine.auto": "Auto",
+  "focusLine.on": "On",
+  "focusLine.off": "Off"
 }

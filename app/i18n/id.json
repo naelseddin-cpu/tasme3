@@ -150,5 +150,14 @@
   "cert.share": "Bagikan",
   "cert.download": "Unduh",
   "chip.surahPage": "Surah {surah} · {page}",
-  "progress.pageProgress": "Kemajuan halaman"
+  "progress.pageProgress": "Kemajuan halaman",
+  "install.title": "Untuk layar penuh tanpa bilah browser: tambahkan Tasmee' ke Layar Utama Anda",
+  "install.iosStep1": "Ketuk tombol Bagikan",
+  "install.iosStep2": "Lalu pilih “Tambah ke Layar Utama”",
+  "install.button": "Pasang aplikasi",
+  "install.dismiss": "Nanti saja",
+  "focusLine.label": "Mode baris besar",
+  "focusLine.auto": "Otomatis",
+  "focusLine.on": "Aktif",
+  "focusLine.off": "Nonaktif"
 }
