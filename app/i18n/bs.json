@@ -159,5 +159,11 @@
   "focusLine.label": "Način velikog reda",
   "focusLine.auto": "Automatski",
   "focusLine.on": "Uključeno",
-  "focusLine.off": "Isključeno"
+  "focusLine.off": "Isključeno",
+  "nav.showBar": "Prikaži gornju traku",
+  "nav.fullscreenEnter": "Puni ekran",
+  "nav.fullscreenExit": "Izađi iz punog ekrana",
+  "nav.invalidPage": "Nevažeći broj stranice",
+  "hint.firstRun": "Pritisnite mikrofon i učite napamet — svaka tačna riječ se pojavljuje na svom mjestu",
+  "a11y.wordsRevealed": "{n} riječi otkriveno"
 }

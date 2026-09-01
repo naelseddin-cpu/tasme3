@@ -159,5 +159,11 @@
   "focusLine.label": "Habka safka weyn",
   "focusLine.auto": "Otomaatig",
   "focusLine.on": "Shiday",
-  "focusLine.off": "Damiye"
+  "focusLine.off": "Damiye",
+  "nav.showBar": "Muuji baarka sare",
+  "nav.fullscreenEnter": "Shaashad buuxda",
+  "nav.fullscreenExit": "Ka bax shaashadda buuxda",
+  "nav.invalidPage": "Lambarka boggu ma saxna",
+  "hint.firstRun": "Riix makarafoonka oo aqri xaal ahaan — eray kasta oo sax ah ayaa ka muuqan doona meeshiisa",
+  "a11y.wordsRevealed": "{n} eray ayaa soo baxay"
 }

@@ -159,5 +159,11 @@
   "focusLine.label": "د لوی کرښې حالت",
   "focusLine.auto": "اتومات",
   "focusLine.on": "فعال",
-  "focusLine.off": "غیر فعال"
+  "focusLine.off": "غیر فعال",
+  "nav.showBar": "پورتنۍ پټه ښکاره کړئ",
+  "nav.fullscreenEnter": "بشپړ سکرین",
+  "nav.fullscreenExit": "له بشپړ سکرین څخه وتل",
+  "nav.invalidPage": "د پاڼې ناسم شمېره",
+  "hint.firstRun": "مايکروفون فشار کړئ او له ياده تلاوت وکړئ — هره سمه کلمه په خپل ځای کې ښکاره کيږي",
+  "a11y.wordsRevealed": "{n} کلمې ښکاره شوې"
 }

@@ -159,5 +159,11 @@
   "focusLine.label": "بڑی سطر موڈ",
   "focusLine.auto": "خودکار",
   "focusLine.on": "آن",
-  "focusLine.off": "آف"
+  "focusLine.off": "آف",
+  "nav.showBar": "اوپری بار دکھائیں",
+  "nav.fullscreenEnter": "فل اسکرین",
+  "nav.fullscreenExit": "فل اسکرین سے باہر نکلیں",
+  "nav.invalidPage": "غلط صفحہ نمبر",
+  "hint.firstRun": "مائیکروفون دبائیں اور زبانی تلاوت کریں — ہر درست لفظ اپنی جگہ پر ظاہر ہوگا",
+  "a11y.wordsRevealed": "{n} الفاظ ظاہر ہوئے"
 }

@@ -159,5 +159,11 @@
   "focusLine.label": "Режим крупной строки",
   "focusLine.auto": "Авто",
   "focusLine.on": "Вкл",
-  "focusLine.off": "Выкл"
+  "focusLine.off": "Выкл",
+  "nav.showBar": "Показать верхнюю панель",
+  "nav.fullscreenEnter": "Полноэкранный режим",
+  "nav.fullscreenExit": "Выйти из полноэкранного режима",
+  "nav.invalidPage": "Неверный номер страницы",
+  "hint.firstRun": "Нажмите на микрофон и читайте наизусть — каждое верное слово появится на своём месте",
+  "a11y.wordsRevealed": "{n} слов открыто"
 }

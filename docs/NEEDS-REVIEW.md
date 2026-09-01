@@ -1,5 +1,30 @@
 # Translations needing native-speaker review
 
+**Date:** 2026-09-01 · **Context:** wave-1 critical/UX/accessibility fixes
+(10-auditor review -- edge-swipe back-navigation trap, modal/drawer a11y
+semantics, screen-reader announcements, elderly-usability affordances).
+Six new keys were added to all 25 `app/i18n/*.json` catalogs:
+
+- `nav.showBar` — aria-label for the new persistent chrome-affordance handle
+  shown whenever the top bar auto-hides.
+- `nav.fullscreenEnter` / `nav.fullscreenExit` — the ⛶ button's aria-label
+  now toggles between these instead of a single static "fullscreen" string.
+- `nav.invalidPage` — toast shown for a go-to-page value that is malformed,
+  out of range, zero, or negative (an accidental "-5" is now rejected rather
+  than silently treated as page 5); `nav.frontPagesInProgress` continues to
+  cover the in-range-but-not-yet-available pages 1-2.
+- `hint.firstRun` — the one-time onboarding hint pointing at the microphone
+  on first launch. Arabic is the founder's own literal wording (from the
+  task spec, adapted from the existing `recite.instruction` string); English
+  is a matching native-fluent translation.
+- `a11y.wordsRevealed` — spoken by the screen-reader-only `#status` live
+  region after each reveal batch, e.g. "{n} words revealed".
+
+Arabic and English are high-confidence (founder-specified / native-fluent).
+**All 23 other languages are machine/LLM-drafted for these six keys and
+should get a native-speaker pass before shipping**, same as every other
+non-Arabic/English catalog on this page.
+
 **Date:** 2026-09-01 · **Context:** minimal-UI redesign (founder decision --
 "it is not showing the Surah name; all info in the buttons can come out and
 be in a pop window for setup"). Two new keys were added to all 25

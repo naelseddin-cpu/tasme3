@@ -159,5 +159,11 @@
   "focusLine.label": "Büyük satır modu",
   "focusLine.auto": "Otomatik",
   "focusLine.on": "Açık",
-  "focusLine.off": "Kapalı"
+  "focusLine.off": "Kapalı",
+  "nav.showBar": "Üst çubuğu göster",
+  "nav.fullscreenEnter": "Tam ekran",
+  "nav.fullscreenExit": "Tam ekrandan çık",
+  "nav.invalidPage": "Geçersiz sayfa numarası",
+  "hint.firstRun": "Mikrofona basın ve ezbereden okuyun — her doğru kelime yerinde belirir",
+  "a11y.wordsRevealed": "{n} kelime ortaya çıktı"
 }

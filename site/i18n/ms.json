@@ -159,5 +159,11 @@
   "focusLine.label": "Mod baris besar",
   "focusLine.auto": "Automatik",
   "focusLine.on": "Hidup",
-  "focusLine.off": "Mati"
+  "focusLine.off": "Mati",
+  "nav.showBar": "Tunjukkan bar atas",
+  "nav.fullscreenEnter": "Skrin penuh",
+  "nav.fullscreenExit": "Keluar skrin penuh",
+  "nav.invalidPage": "Nombor muka surat tidak sah",
+  "hint.firstRun": "Tekan mikrofon dan baca dari hafalan — setiap perkataan yang betul akan muncul di tempatnya",
+  "a11y.wordsRevealed": "{n} perkataan didedahkan"
 }

@@ -159,5 +159,11 @@
   "focusLine.label": "Modaliteti i rreshtit të madh",
   "focusLine.auto": "Automatik",
   "focusLine.on": "Ndezur",
-  "focusLine.off": "Fikur"
+  "focusLine.off": "Fikur",
+  "nav.showBar": "Shfaq shiritin e sipërm",
+  "nav.fullscreenEnter": "Ekran i plotë",
+  "nav.fullscreenExit": "Dil nga ekrani i plotë",
+  "nav.invalidPage": "Numër faqeje i pavlefshëm",
+  "hint.firstRun": "Shtypni mikrofonin dhe recitoni përmendësh — çdo fjalë e saktë shfaqet në vendin e saj",
+  "a11y.wordsRevealed": "{n} fjalë u shfaqën"
 }

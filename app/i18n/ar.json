@@ -159,5 +159,11 @@
   "focusLine.label": "وضع السطر الكبير",
   "focusLine.auto": "تلقائي",
   "focusLine.on": "مفعّل",
-  "focusLine.off": "متوقف"
+  "focusLine.off": "متوقف",
+  "nav.showBar": "إظهار الشريط العلوي",
+  "nav.fullscreenEnter": "تكبير الشاشة",
+  "nav.fullscreenExit": "الخروج من ملء الشاشة",
+  "nav.invalidPage": "رقم صفحة غير صالح",
+  "hint.firstRun": "اضغط الميكروفون واقرأ غيبًا — كل كلمة صحيحة تظهر في مكانها",
+  "a11y.wordsRevealed": "{n} كلمة ظهرت"
 }

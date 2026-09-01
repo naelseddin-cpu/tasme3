@@ -159,5 +159,11 @@
   "focusLine.label": "Mode baris besar",
   "focusLine.auto": "Otomatis",
   "focusLine.on": "Aktif",
-  "focusLine.off": "Nonaktif"
+  "focusLine.off": "Nonaktif",
+  "nav.showBar": "Tampilkan bilah atas",
+  "nav.fullscreenEnter": "Layar penuh",
+  "nav.fullscreenExit": "Keluar layar penuh",
+  "nav.invalidPage": "Nomor halaman tidak valid",
+  "hint.firstRun": "Tekan mikrofon dan baca dari hafalan — setiap kata yang benar akan muncul di tempatnya",
+  "a11y.wordsRevealed": "{n} kata terungkap"
 }

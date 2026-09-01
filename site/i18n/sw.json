@@ -159,5 +159,11 @@
   "focusLine.label": "Hali ya mstari mkubwa",
   "focusLine.auto": "Kiotomatiki",
   "focusLine.on": "Washa",
-  "focusLine.off": "Zima"
+  "focusLine.off": "Zima",
+  "nav.showBar": "Onyesha upau wa juu",
+  "nav.fullscreenEnter": "Skrini nzima",
+  "nav.fullscreenExit": "Toka skrini nzima",
+  "nav.invalidPage": "Nambari ya ukurasa si sahihi",
+  "hint.firstRun": "Bonyeza kipaza sauti na usome kwa moyo — kila neno sahihi litaonekana mahali pake",
+  "a11y.wordsRevealed": "Maneno {n} yamefunuliwa"
 }

@@ -159,5 +159,11 @@
   "focusLine.label": "വലിയ വരി മോഡ്",
   "focusLine.auto": "ഓട്ടോ",
   "focusLine.on": "ഓൺ",
-  "focusLine.off": "ഓഫ്"
+  "focusLine.off": "ഓഫ്",
+  "nav.showBar": "മുകളിലെ ബാർ കാണിക്കുക",
+  "nav.fullscreenEnter": "ഫുൾസ്ക്രീൻ",
+  "nav.fullscreenExit": "ഫുൾസ്ക്രീനിൽ നിന്ന് പുറത്തുകടക്കുക",
+  "nav.invalidPage": "അസാധുവായ പേജ് നമ്പർ",
+  "hint.firstRun": "മൈക്രോഫോൺ അമർത്തി മനഃപാഠമായി ഓതുക — ഓരോ ശരിയായ വാക്കും അതിന്റെ സ്ഥാനത്ത് പ്രത്യക്ഷപ്പെടും",
+  "a11y.wordsRevealed": "{n} വാക്കുകൾ വെളിപ്പെട്ടു"
 }

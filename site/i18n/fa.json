@@ -159,5 +159,11 @@
   "focusLine.label": "حالت خط بزرگ",
   "focusLine.auto": "خودکار",
   "focusLine.on": "روشن",
-  "focusLine.off": "خاموش"
+  "focusLine.off": "خاموش",
+  "nav.showBar": "نمایش نوار بالا",
+  "nav.fullscreenEnter": "تمام صفحه",
+  "nav.fullscreenExit": "خروج از حالت تمام صفحه",
+  "nav.invalidPage": "شماره صفحه نامعتبر",
+  "hint.firstRun": "میکروفون را فشار دهید و از حفظ بخوانید — هر کلمه صحیح در جای خود ظاهر می‌شود",
+  "a11y.wordsRevealed": "{n} کلمه نمایان شد"
 }

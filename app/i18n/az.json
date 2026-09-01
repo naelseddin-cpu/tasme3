@@ -159,5 +159,11 @@
   "focusLine.label": "Böyük sətir rejimi",
   "focusLine.auto": "Avtomatik",
   "focusLine.on": "Aktiv",
-  "focusLine.off": "Deaktiv"
+  "focusLine.off": "Deaktiv",
+  "nav.showBar": "Yuxarı paneli göstər",
+  "nav.fullscreenEnter": "Tam ekran",
+  "nav.fullscreenExit": "Tam ekrandan çıx",
+  "nav.invalidPage": "Yanlış səhifə nömrəsi",
+  "hint.firstRun": "Mikrofona basın və əzbərdən oxuyun — hər düzgün söz öz yerində görünəcək",
+  "a11y.wordsRevealed": "{n} söz üzə çıxdı"
 }

@@ -159,5 +159,11 @@
   "focusLine.label": "Yanayin babban layi",
   "focusLine.auto": "Atomatik",
   "focusLine.on": "A kunne",
-  "focusLine.off": "A kashe"
+  "focusLine.off": "A kashe",
+  "nav.showBar": "Nuna sandar sama",
+  "nav.fullscreenEnter": "Cikakken allo",
+  "nav.fullscreenExit": "Fita daga cikakken allo",
+  "nav.invalidPage": "Lambar shafi mara inganci",
+  "hint.firstRun": "Danna makirifo kuma ka karanta daga hantawa — kowace kalma daidai za ta bayyana a wurinta",
+  "a11y.wordsRevealed": "Kalmomi {n} sun bayyana"
 }

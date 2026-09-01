@@ -159,5 +159,11 @@
   "focusLine.label": "Grote-regelmodus",
   "focusLine.auto": "Automatisch",
   "focusLine.on": "Aan",
-  "focusLine.off": "Uit"
+  "focusLine.off": "Uit",
+  "nav.showBar": "Bovenbalk tonen",
+  "nav.fullscreenEnter": "Volledig scherm",
+  "nav.fullscreenExit": "Volledig scherm sluiten",
+  "nav.invalidPage": "Ongeldig paginanummer",
+  "hint.firstRun": "Druk op de microfoon en reciteer uit het geheugen — elk juist woord verschijnt op zijn plaats",
+  "a11y.wordsRevealed": "{n} woorden onthuld"
 }

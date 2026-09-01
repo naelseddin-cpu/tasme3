@@ -159,5 +159,11 @@
   "focusLine.label": "பெரிய வரி பயன்முறை",
   "focusLine.auto": "தானியங்கி",
   "focusLine.on": "ஆன்",
-  "focusLine.off": "ஆஃப்"
+  "focusLine.off": "ஆஃப்",
+  "nav.showBar": "மேல் பட்டியைக் காட்டு",
+  "nav.fullscreenEnter": "முழுத்திரை",
+  "nav.fullscreenExit": "முழுத்திரையிலிருந்து வெளியேறு",
+  "nav.invalidPage": "தவறான பக்க எண்",
+  "hint.firstRun": "மைக்ரோஃபோனை அழுத்தி மனப்பாடமாக ஓதுங்கள் — ஒவ்வொரு சரியான வார்த்தையும் அதன் இடத்தில் தோன்றும்",
+  "a11y.wordsRevealed": "{n} சொற்கள் வெளிப்பட்டன"
 }

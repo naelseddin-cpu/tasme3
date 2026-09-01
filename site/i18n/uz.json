@@ -159,5 +159,11 @@
   "focusLine.label": "Katta qator rejimi",
   "focusLine.auto": "Avtomatik",
   "focusLine.on": "Yoniq",
-  "focusLine.off": "Oʻchiq"
+  "focusLine.off": "Oʻchiq",
+  "nav.showBar": "Yuqori panelni ko'rsatish",
+  "nav.fullscreenEnter": "To'liq ekran",
+  "nav.fullscreenExit": "To'liq ekrandan chiqish",
+  "nav.invalidPage": "Sahifa raqami noto'g'ri",
+  "hint.firstRun": "Mikrofonni bosing va yoddan o'qing — har bir to'g'ri so'z o'z joyida paydo bo'ladi",
+  "a11y.wordsRevealed": "{n} ta so'z ochildi"
 }

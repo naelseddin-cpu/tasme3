@@ -159,5 +159,11 @@
   "focusLine.label": "Large-line mode",
   "focusLine.auto": "Auto",
   "focusLine.on": "On",
-  "focusLine.off": "Off"
+  "focusLine.off": "Off",
+  "nav.showBar": "Show top bar",
+  "nav.fullscreenEnter": "Enter fullscreen",
+  "nav.fullscreenExit": "Exit fullscreen",
+  "nav.invalidPage": "Invalid page number",
+  "hint.firstRun": "Press the microphone and recite from memory — each correct word appears in its place",
+  "a11y.wordsRevealed": "{n} words revealed"
 }

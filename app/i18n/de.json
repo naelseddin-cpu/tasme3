@@ -159,5 +159,11 @@
   "focusLine.label": "Großzeilen-Modus",
   "focusLine.auto": "Automatisch",
   "focusLine.on": "Ein",
-  "focusLine.off": "Aus"
+  "focusLine.off": "Aus",
+  "nav.showBar": "Obere Leiste anzeigen",
+  "nav.fullscreenEnter": "Vollbild",
+  "nav.fullscreenExit": "Vollbild verlassen",
+  "nav.invalidPage": "Ungültige Seitenzahl",
+  "hint.firstRun": "Drücke das Mikrofon und rezitiere auswendig — jedes richtige Wort erscheint an seiner Stelle",
+  "a11y.wordsRevealed": "{n} Wörter aufgedeckt"
 }

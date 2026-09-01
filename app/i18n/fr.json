@@ -159,5 +159,11 @@
   "focusLine.label": "Mode grande ligne",
   "focusLine.auto": "Automatique",
   "focusLine.on": "Activé",
-  "focusLine.off": "Désactivé"
+  "focusLine.off": "Désactivé",
+  "nav.showBar": "Afficher la barre supérieure",
+  "nav.fullscreenEnter": "Plein écran",
+  "nav.fullscreenExit": "Quitter le plein écran",
+  "nav.invalidPage": "Numéro de page invalide",
+  "hint.firstRun": "Appuyez sur le microphone et récitez de mémoire — chaque mot correct apparaît à sa place",
+  "a11y.wordsRevealed": "{n} mots révélés"
 }
