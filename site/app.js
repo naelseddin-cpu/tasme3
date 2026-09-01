@@ -75,7 +75,8 @@
     'certModal', 'certCanvas', 'certCloseBtn', 'certShareBtn', 'certDownloadBtn',
     'certListPanel', 'certList', 'certListEmpty',
     'topBar', 'focusLineToggle',
-    'installPromo', 'installPromoClose', 'installPromoIos', 'installPromoBtn', 'installPromoDismiss'
+    'installPromo', 'installPromoClose', 'installPromoIos', 'installPromoBtn', 'installPromoDismiss',
+    'chromeHandle', 'firstRunHint'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
   window.Tasme3Account.attachGroupedInput(el.loginInput);
   var ctx = el.pagecanvas.getContext('2d');
@@ -87,14 +88,26 @@
     showToast._tm = setTimeout(function () { el.toast.classList.remove('show'); }, 2600);
   }
 
+  // #status is a visually-hidden ARIA live region (role="status",
+  // aria-live="polite" -- see index.html/style.css .visually-hidden) that
+  // announces recite feedback to screen readers; forcing a brief clear
+  // before writing the new text means back-to-back IDENTICAL announcements
+  // (e.g. "Well done" twice in a row) still get spoken, since aria-live only
+  // fires on an actual mutation.
+  function announceStatus(text) {
+    el.status.textContent = '';
+    void el.status.offsetWidth; // force a reflow between the two writes
+    el.status.textContent = text;
+  }
+
   // The old bottom bar carried a persistent status line ("listening…",
   // "well done", errors); the minimal main screen has no permanent chrome
   // for that, so this is now the ONE place that reports recite feedback --
-  // it still updates the (hidden, legacy) #status node too, so nothing that
-  // reads el.status.textContent elsewhere breaks.
+  // it still updates the (visually-hidden, screen-reader-only) #status node
+  // too, so nothing that reads el.status.textContent elsewhere breaks.
   function setStatus(text, cls) {
-    el.status.className = cls ? 'status ' + cls : 'status';
-    el.status.textContent = text;
+    el.status.className = cls ? 'visually-hidden status ' + cls : 'visually-hidden status';
+    announceStatus(text);
     showToast(text);
   }
 
@@ -510,9 +523,21 @@
     // contained so the surrounding words/number stay in their authored
     // order regardless of document direction.
     var isolatedName = s ? '⁧' + s.name + '⁩' : '';
-    el.pageChip.textContent = s
-      ? t('chip.surahPage', { surah: isolatedName, page: digits(pageNum) })
-      : pageLabel(pageNum);
+    if (!s) { el.pageChip.textContent = pageLabel(pageNum); return; }
+    var full = t('chip.surahPage', { surah: isolatedName, page: digits(pageNum) });
+    // a11y F8: wrap the (always-Arabic) surah-name run in lang="ar" so
+    // assistive tech pronounces it correctly even when the UI language
+    // isn't Arabic -- the isolate characters above are still needed for
+    // correct bidi *visual* order and stay untouched either way.
+    el.pageChip.innerHTML = '';
+    var idx = full.indexOf(isolatedName);
+    if (idx === -1) { el.pageChip.textContent = full; return; }
+    el.pageChip.appendChild(document.createTextNode(full.slice(0, idx)));
+    var nameSpan = document.createElement('span');
+    nameSpan.lang = 'ar';
+    nameSpan.textContent = isolatedName;
+    el.pageChip.appendChild(nameSpan);
+    el.pageChip.appendChild(document.createTextNode(full.slice(idx + isolatedName.length)));
   }
 
   function loadPageImage(src, onFail) {
@@ -578,8 +603,130 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.target && /^(input|textarea)$/i.test(e.target.tagName)) return;
+    if (overlayStack.length) return; // an open drawer/sheet/modal/install-card must swallow page-turn (power B1/B3)
     if (e.key === 'ArrowLeft') goPrev();
     else if (e.key === 'ArrowRight') goNext();
+  });
+
+  // ------------------------------------------------- overlay a11y utility
+  // Shared machinery for the four overlay surfaces (drawer, setup sheet,
+  // cert modal, install card -- audit a11y F2/F3/F4, power #2/2a-2d):
+  //   - inert (+ aria-hidden) everything BEHIND the topmost open overlay, so
+  //     Tab/AT navigation can never leak into hidden background controls
+  //     (power M1: focus landing on a hidden #langSelect);
+  //   - trap Tab within the topmost overlay;
+  //   - Escape closes the topmost overlay;
+  //   - closing restores focus to whatever opened it.
+  // A tiny stack (rather than a single slot) because the cert modal can
+  // legitimately open ON TOP of an already-open setup sheet (its "My
+  // Certificates" list lives inside the sheet) -- only the true top needs
+  // to be interactive at any moment.
+  var FOCUSABLE_SEL = 'a[href], button:not([disabled]), input:not([disabled]), ' +
+    'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+  var overlayStack = [];
+  function topOverlay() { return overlayStack.length ? overlayStack[overlayStack.length - 1] : null; }
+  // Walks from `target` up to (and including) document.body, toggling
+  // inert+aria-hidden on every SIBLING at each level (never on `target`
+  // itself, its own ancestors, or `backdropEl`, which must stay clickable
+  // to close the overlay). For a body-level overlay (drawer/sheet/install
+  // card) this is one pass over body's children; for the cert modal
+  // (nested inside .frame) it also reaches up through .frame's own
+  // siblings -- exactly the two levels that separate it from body.
+  function setInertSiblings(target, backdropEl, on) {
+    var node = target;
+    for (;;) {
+      var parent = node.parentElement;
+      if (!parent) break;
+      Array.prototype.forEach.call(parent.children, function (sib) {
+        if (sib === node || sib === backdropEl) return;
+        if (on) { sib.setAttribute('inert', ''); sib.setAttribute('aria-hidden', 'true'); }
+        else { sib.removeAttribute('inert'); sib.removeAttribute('aria-hidden'); }
+      });
+      if (parent === document.body) break;
+      node = parent;
+    }
+  }
+  // Un-inerts every entry CURRENTLY LISTED (before any push/splice the
+  // caller is about to do), then re-inerts only whichever overlay is on
+  // top afterwards -- simpler and safer than incremental add/remove when
+  // overlays can nest (cert modal opening on top of an already-open sheet)
+  // or close out of order. Callers must pass the full "before" list
+  // (including an entry about to be removed) so its inert is properly
+  // undone -- a plain `overlayStack.forEach` after the splice would already
+  // be missing the very entry that needs un-inerting.
+  function reconcileStackInert(entriesToClear) {
+    entriesToClear.forEach(function (entry) { setInertSiblings(entry.el, entry.backdrop, false); });
+    var top = topOverlay();
+    if (top) setInertSiblings(top.el, top.backdrop, true);
+  }
+  function registerOverlayOpen(elx, backdropEl, closeFn) {
+    var top = topOverlay();
+    if (top && top.el === elx) return; // already the topmost open overlay -- never double-push
+    var before = overlayStack.slice();
+    overlayStack.push({ el: elx, backdrop: backdropEl, opener: document.activeElement, close: closeFn });
+    reconcileStackInert(before);
+    setTimeout(function () {
+      var f = elx.querySelector(FOCUSABLE_SEL);
+      (f || elx).focus();
+    }, 0);
+  }
+  function registerOverlayClose(elx) {
+    var idx = -1;
+    for (var i = overlayStack.length - 1; i >= 0; i--) { if (overlayStack[i].el === elx) { idx = i; break; } }
+    if (idx === -1) return;
+    var entry = overlayStack[idx];
+    var before = overlayStack.slice();
+    overlayStack.splice(idx, 1);
+    reconcileStackInert(before);
+    if (entry.opener && document.contains(entry.opener) && typeof entry.opener.focus === 'function') {
+      entry.opener.focus();
+    }
+  }
+  // Tab trap: only the topmost overlay's own focusable elements are ever
+  // allowed to hold focus while any overlay is open.
+  document.addEventListener('keydown', function (e) {
+    var top = topOverlay();
+    if (!top || e.key !== 'Tab') return;
+    var focusables = Array.prototype.filter.call(top.el.querySelectorAll(FOCUSABLE_SEL), function (fe) {
+      return fe.offsetParent !== null || fe === document.activeElement;
+    });
+    if (!focusables.length) { e.preventDefault(); return; }
+    var first = focusables[0], last = focusables[focusables.length - 1];
+    var active = document.activeElement;
+    if (e.shiftKey) {
+      if (active === first || !top.el.contains(active)) { e.preventDefault(); last.focus(); }
+    } else if (active === last || !top.el.contains(active)) { e.preventDefault(); first.focus(); }
+  }, true);
+  // Escape closes whatever overlay is currently on top.
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape') return;
+    var top = topOverlay();
+    if (top) top.close();
+  });
+
+  // ------------------------------------------ back-button / edge-swipe trap
+  // Critical chaos-audit finding: a right-swipe starting within ~10px of the
+  // left screen edge triggers the BROWSER's own native back gesture (not
+  // this app's swipe-to-turn listener below) -- landing on about:blank with
+  // no in-app recovery inside an installed/standalone PWA (no address bar to
+  // navigate back from). Three independent layers:
+  //   (a) the page-turn swipe listener below ignores any touch starting
+  //       within 20px of either screen edge, so it never arms there;
+  //   (b) `overscroll-behavior-x:none` (style.css) suppresses Chrome's
+  //       edge-swipe back/forward navigation gesture where supported;
+  //   (c) this history.pushState buffer -- a same-URL dummy entry pushed on
+  //       boot, and re-pushed on every popstate -- so an accidental (or
+  //       deliberate) browser-back can never actually leave the app: it
+  //       just closes whatever overlay is open (if any) and lands right
+  //       back where it was.
+  function pushGuardState() {
+    try { history.pushState({ tasme3Guard: true }, '', location.href); } catch (_) {}
+  }
+  pushGuardState();
+  window.addEventListener('popstate', function () {
+    var top = topOverlay();
+    if (top) top.close();
+    pushGuardState();
   });
 
   // ---------------------------------------------------------- swipe to turn
@@ -595,9 +742,12 @@
     if (!target) return;
     var startX = null, startY = null, startT = 0;
     var MIN_DX = 40, MAX_DY = 60, MAX_MS = 700;
+    var EDGE_DEAD_ZONE = 20; // chaos audit: never arm the page-turn swipe this close to either edge
     target.addEventListener('touchstart', function (e) {
       if (e.touches.length !== 1) { startX = null; return; }
-      startX = e.touches[0].clientX; startY = e.touches[0].clientY; startT = Date.now();
+      var x = e.touches[0].clientX;
+      if (x < EDGE_DEAD_ZONE || x > window.innerWidth - EDGE_DEAD_ZONE) { startX = null; return; }
+      startX = x; startY = e.touches[0].clientY; startT = Date.now();
     }, { passive: true });
     target.addEventListener('touchend', function (e) {
       if (startX === null) return;
@@ -621,7 +771,7 @@
   var CHROME_AUTOHIDE_MS = 4000;
   var chromeVisible = false, chromeHideTimer = null;
   function isOverlayOpen() {
-    return el.drawer.classList.contains('open') || el.setupSheet.classList.contains('open');
+    return overlayStack.length > 0;
   }
   function showChrome(autoHide) {
     chromeVisible = true;
@@ -669,6 +819,11 @@
       toggleChrome();
     });
   })();
+
+  // Chrome-discoverability affordance (elderly audit #1): the slim gold tab
+  // at the top edge that stays visible whenever the bar itself is hidden --
+  // tapping it reveals the bar exactly like the immersive-tap gesture above.
+  if (el.chromeHandle) el.chromeHandle.onclick = function () { showChrome(true); };
 
   // ------------------------------------------------------------- matching
   // Surah number of a word index, read straight off its token `k`
@@ -747,7 +902,7 @@
       var streakBefore = state.streak.count;
       Storage.markPageCompleted(state, pageNum);
       el.doneBanner.style.display = 'block';
-      el.status.textContent = '';
+      announceStatus(t('recite.pageComplete'));
       stopListening();
       recorder.abort();
       showShareBar(streakBefore);
@@ -755,6 +910,14 @@
       celebrateNewlyCompletedSurahs(pageNum);
     } else if ((r.matched || []).length) {
       setStatus(t('recite.wellDone'), 'good');
+    }
+    // a11y: every reveal batch also gets an explicit spoken word count,
+    // appended after whatever status text was just announced above --
+    // screen-reader users otherwise have no way to know HOW MUCH just
+    // appeared on the page.
+    if (newlyRevealed > 0) {
+      var countMsg = t('a11y.wordsRevealed', { n: digits(newlyRevealed) });
+      el.status.textContent = (el.status.textContent ? el.status.textContent + ' ' : '') + countMsg;
     }
     Storage.save(state);
   }
@@ -791,11 +954,16 @@
     level = +elm.dataset.l;
     state.settings.level = level;
     Storage.save(state);
-    el.levels.querySelectorAll('.level-seg').forEach(function (x) { x.classList.toggle('active', x === elm); });
+    activateLevelUI();
     syncReciterDefault();
   });
+  // a11y F7: aria-pressed mirrors the visual .active state for AT users.
   function activateLevelUI() {
-    el.levels.querySelectorAll('.level-seg').forEach(function (x) { x.classList.toggle('active', +x.dataset.l === level); });
+    el.levels.querySelectorAll('.level-seg').forEach(function (x) {
+      var active = +x.dataset.l === level;
+      x.classList.toggle('active', active);
+      x.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
   }
   // The visible digit inside each segment must follow the current
   // language's numeral system (Arabic-Indic vs. Latin), same as every other
@@ -818,14 +986,25 @@
   });
   function activateFocusLineUI() {
     el.focusLineToggle.querySelectorAll('.level-seg').forEach(function (x) {
-      x.classList.toggle('active', x.dataset.mode === (state.settings.focusLineMode || 'auto'));
+      var active = x.dataset.mode === (state.settings.focusLineMode || 'auto');
+      x.classList.toggle('active', active);
+      x.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
   }
 
   // --------------------------------------------------- server ASR (tap/tap)
   function renderStatusIdle() {
-    el.status.className = 'status';
+    el.status.className = 'visually-hidden status';
     el.status.textContent = SERVER_MODE ? t('record.tapToStart') : t('recite.instruction');
+  }
+
+  // a11y F5: #recBtn's aria-label tracks its actual recording/listening
+  // state (data-i18n-aria-label alone only ever set it once, at load, to
+  // "tap to start" -- never updated back after the mic started/stopped).
+  function updateRecBtnLabel() {
+    if (!t) return;
+    var active = SERVER_MODE ? recorder.isRecording() : listening;
+    el.recBtn.setAttribute('aria-label', t(active ? 'record.tapToStop' : 'record.tapToStart'));
   }
 
   function onRecordDone(blob, mimeType, token) {
@@ -833,6 +1012,7 @@
     el.recBtn.classList.add('busy');
     el.recBtn.disabled = true;
     evalInFlight = true;
+    updateRecBtnLabel();
     setStatus(t('record.uploading'));
     var form = new FormData();
     var ext = mimeType.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
@@ -860,6 +1040,7 @@
   function onRecordError(reason) {
     el.recBtn.classList.remove('listening', 'busy');
     el.recBtn.disabled = false;
+    updateRecBtnLabel();
     if (reason === 'mic') { showMicHelp(); return; }
     setStatus(reason === 'format' || reason === 'unsupported'
       ? t('record.error.format') : t('record.error.generic'), 'err');
@@ -875,6 +1056,7 @@
         el.recBtn.classList.add('listening');
         setStatus(t('record.tapToStop'));
       }
+      updateRecBtnLabel();
     } else {
       listening ? (stopListening(), setStatus(t('recite.paused'))) : startListening();
     }
@@ -915,9 +1097,18 @@
   el.micHelpLink.onclick = function (e) { e.preventDefault(); showMicHelp(); };
   el.openTab.onclick = function () { window.open(location.href, '_blank'); };
 
+  // Elderly audit #7: guard set synchronously, BEFORE the getUserMedia
+  // promise settles -- a second tap while the permission prompt/resolution
+  // is still pending is a no-op instead of racing a second concurrent
+  // getUserMedia() call (which could otherwise leave two overlapping
+  // recognition sessions, or resolve out of order).
+  var micRequestPending = false;
   function startListening() {
     if (SERVER_MODE || !SR) return;
+    if (micRequestPending) return;
+    micRequestPending = true;
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
+      micRequestPending = false;
       s.getTracks().forEach(function (tr) { tr.stop(); });
       rec = new SR(); rec.lang = 'ar-SA'; rec.continuous = true; rec.interimResults = true;
       processed = 0; restartSuppressUntil = 0; // fresh, user-initiated session -- no echo risk yet
@@ -953,13 +1144,15 @@
       try {
         rec.start(); listening = true;
         el.recBtn.classList.add('listening'); el.recBtn.textContent = '⏹';
+        updateRecBtnLabel();
         setStatus(t('recite.listening'));
       } catch (_) { setStatus(t('record.error.generic'), 'err'); }
-    }).catch(function () { showMicHelp(); });
+    }).catch(function () { micRequestPending = false; showMicHelp(); });
   }
   function stopListening() {
     listening = false;
     el.recBtn.classList.remove('listening'); el.recBtn.textContent = '🎙️';
+    updateRecBtnLabel();
     clearRetryTimer(); retryCount = 0;
     if (rec) { try { rec.onend = null; rec.stop(); } catch (_) {} rec = null; }
   }
@@ -1149,12 +1342,19 @@
       ctx2d.drawImage(canvas, 0, 0);
       el.certModal.hidden = false;
       el.certModal.style.display = 'flex';
+      registerOverlayOpen(el.certModal, null, closeCertModal);
     }).catch(function () { showToast(t('error.generic')); });
   }
 
-  el.certCloseBtn.onclick = function () { el.certModal.hidden = true; el.certModal.style.display = 'none'; };
+  function closeCertModal() {
+    if (el.certModal.hidden) return;
+    registerOverlayClose(el.certModal);
+    el.certModal.hidden = true;
+    el.certModal.style.display = 'none';
+  }
+  el.certCloseBtn.onclick = closeCertModal;
   el.certModal.addEventListener('click', function (e) {
-    if (e.target === el.certModal) { el.certModal.hidden = true; el.certModal.style.display = 'none'; }
+    if (e.target === el.certModal) closeCertModal();
   });
   el.certShareBtn.onclick = function () {
     if (!currentCertCanvas) return;
@@ -1179,6 +1379,7 @@
         row.className = 'cert-item';
         var nameSpan = document.createElement('span');
         nameSpan.className = 'cert-name';
+        nameSpan.lang = 'ar'; // surah name is always Arabic script (a11y F8)
         nameSpan.textContent = item.name;
         var dateSpan = document.createElement('span');
         dateSpan.className = 'cert-date';
@@ -1209,6 +1410,7 @@
       renderCertList();
       var surah = newlyDone[0];
       el.surahCelebrate.style.display = 'block';
+      announceStatus(t('recite.surahComplete'));
       el.viewCertBtn.onclick = function () {
         el.surahCelebrate.style.display = 'none';
         openCertificateFor(surah);
@@ -1272,8 +1474,11 @@
     el.drawerBackdrop.style.display = 'block';
     if (tab) setDrawerTab(tab);
     showChrome(false); // stays visible for as long as the drawer is open
+    registerOverlayOpen(el.drawer, el.drawerBackdrop, closeDrawer);
   }
   function closeDrawer() {
+    if (!el.drawer.classList.contains('open')) return;
+    registerOverlayClose(el.drawer);
     el.drawer.classList.remove('open');
     el.drawerBackdrop.style.display = 'none';
     showChrome(true); // resume the normal auto-hide countdown
@@ -1292,8 +1497,11 @@
     el.setupSheet.classList.add('open');
     el.setupBackdrop.style.display = 'block';
     showChrome(false); // stays visible for as long as the sheet is open
+    registerOverlayOpen(el.setupSheet, el.setupBackdrop, closeSetupSheet);
   }
   function closeSetupSheet() {
+    if (!el.setupSheet.classList.contains('open')) return;
+    registerOverlayClose(el.setupSheet);
     el.setupSheet.classList.remove('open');
     el.setupBackdrop.style.display = 'none';
     showChrome(true); // resume the normal auto-hide countdown
@@ -1304,7 +1512,9 @@
 
   function setDrawerTab(tab) {
     document.querySelectorAll('.drawer-tabs button').forEach(function (b) {
-      b.classList.toggle('active', b.dataset.tab === tab);
+      var active = b.dataset.tab === tab;
+      b.classList.toggle('active', active);
+      if (active) b.setAttribute('aria-current', 'true'); else b.removeAttribute('aria-current');
     });
     el.drawerJump.hidden = tab !== 'page';
     if (tab === 'surah') renderDrawerList(surahIndex ? surahIndex.surahs : [], 'name', 'number', true);
@@ -1322,14 +1532,32 @@
   // req. 6) -- juz entries share the same `number` field but it means
   // something else entirely (a juz number, not a surah number), so this
   // flag is what keeps the two from ever being confused.
+  //
+  // Rows are real <button> elements (a11y F1 / power O1-O2): keyboard-
+  // focusable and Enter/Space-activatable, mirroring .cert-item. The surah
+  // name (always Arabic script) is wrapped in lang="ar" (a11y F8) so
+  // assistive tech pronounces it correctly regardless of the UI language.
   function renderDrawerList(items, nameKey, numKey, isSurahTab) {
     el.drawerList.innerHTML = '';
     items.forEach(function (it) {
-      var row = document.createElement('div');
+      var row = document.createElement('button');
+      row.type = 'button';
       row.className = 'drawer-item';
-      var label = nameKey ? (digits(it[numKey]) + '. ' + it[nameKey]) :
-        (t('nav.juzs').replace(/s$/, '') + ' ' + digits(it[numKey]));
-      row.innerHTML = '<span>' + label + '</span><span class="pg">' + digits(it.firstPage) + '</span>';
+      var labelSpan = document.createElement('span');
+      if (nameKey) {
+        labelSpan.appendChild(document.createTextNode(digits(it[numKey]) + '. '));
+        var nameSpan = document.createElement('span');
+        nameSpan.lang = 'ar';
+        nameSpan.textContent = it[nameKey];
+        labelSpan.appendChild(nameSpan);
+      } else {
+        labelSpan.textContent = t('nav.juzs').replace(/s$/, '') + ' ' + digits(it[numKey]);
+      }
+      var pgSpan = document.createElement('span');
+      pgSpan.className = 'pg';
+      pgSpan.textContent = digits(it.firstPage);
+      row.appendChild(labelSpan);
+      row.appendChild(pgSpan);
       row.onclick = function () {
         // Surah 1 (al-Fatihah) and Juz 1 both start on page 1, which is
         // excluded from the standard flow (founder decision) -- land on the
@@ -1349,12 +1577,33 @@
       el.drawerList.appendChild(row);
     });
   }
-  el.drawerGoBtn.onclick = function () {
-    var n = parseInt(window.Tasme3Account.normalizeCode(el.drawerPageInput.value), 10);
-    if (!Number.isFinite(n)) return;
+  // Elderly audit #5 / chaos #2: invalid go-to-page input used to fail
+  // completely silently (0, out-of-range, or garbage input just did
+  // nothing). Every rejected case now gets the app's existing toast
+  // pattern -- 1/2 reuse the existing "front pages in progress" message
+  // (they ARE valid page numbers, just not open yet); everything else
+  // (0, negative, out-of-range, non-numeric) gets the new invalid-page
+  // toast. A leading '-' is deliberately NOT stripped before validation --
+  // normalizeCode() only extracts digits, so "-5" would otherwise silently
+  // become the valid page 5.
+  function submitGoToPage() {
+    var raw = el.drawerPageInput.value || '';
+    if (raw.indexOf('-') !== -1) { showToast(t('nav.invalidPage')); return; }
+    var digitsOnly = window.Tasme3Account.normalizeCode(raw);
+    if (!digitsOnly) { showToast(t('nav.invalidPage')); return; }
+    var n = parseInt(digitsOnly, 10);
+    if (!Number.isFinite(n)) { showToast(t('nav.invalidPage')); return; }
     if (n >= MIN_PAGE && n < NAV_MIN) { showToast(t('nav.frontPagesInProgress')); return; }
-    if (n >= NAV_MIN && n <= NAV_MAX) { loadPage(n); closeDrawer(); }
-  };
+    if (n < MIN_PAGE || n > NAV_MAX) { showToast(t('nav.invalidPage')); return; }
+    loadPage(n);
+    closeDrawer();
+  }
+  el.drawerGoBtn.onclick = submitGoToPage;
+  // Power-user finding #3: Enter in the page-number field should submit,
+  // same as clicking the Go button.
+  el.drawerPageInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); submitGoToPage(); }
+  });
 
   fetch('surah-index.json').then(function (r) { return r.json(); }).then(function (data) {
     surahIndex = data;
@@ -1364,12 +1613,19 @@
   }).catch(function () { surahIndex = { surahs: [], juz: [] }; });
 
   // --------------------------------------------------------------- header
+  // a11y F6: aria-label reflects the actual toggle direction (enter/exit)
+  // instead of the old static, English-only "fullscreen" label.
+  function updateFsBtnLabel() {
+    if (!t) return;
+    el.fsBtn.setAttribute('aria-label', t(document.fullscreenElement ? 'nav.fullscreenExit' : 'nav.fullscreenEnter'));
+  }
   el.fsBtn.onclick = function () {
     var elm = document.documentElement;
     var p = document.fullscreenElement ? document.exitFullscreen() :
       (elm.requestFullscreen ? elm.requestFullscreen() : (elm.webkitRequestFullscreen ? Promise.resolve(elm.webkitRequestFullscreen()) : Promise.reject()));
     Promise.resolve(p).catch(function () { showToast(t('common.retry')); });
   };
+  document.addEventListener('fullscreenchange', updateFsBtnLabel);
 
   // --------------------------------------------- PWA install promotion (idea #2)
   // One-time, dismissible-forever, and never shown before the user's SECOND
@@ -1394,6 +1650,8 @@
     maybeShowInstallPromo();
   });
   function dismissInstallPromo() {
+    if (el.installPromo.hidden) return;
+    registerOverlayClose(el.installPromo);
     el.installPromo.hidden = true;
     state.installPromo.dismissed = true;
     Storage.save(state);
@@ -1409,6 +1667,7 @@
     el.installPromoIos.hidden = !showIOS;
     el.installPromoBtn.hidden = !showAndroid;
     el.installPromo.hidden = false;
+    registerOverlayOpen(el.installPromo, null, dismissInstallPromo);
   }
   el.installPromoClose.onclick = dismissInstallPromo;
   el.installPromoDismiss.onclick = dismissInstallPromo;
@@ -1450,6 +1709,8 @@
     renderStatusIdle();
     renderProgressPanel();
     renderGreeting();
+    updateRecBtnLabel();
+    updateFsBtnLabel();
     el.privacyLine.setAttribute('data-i18n', SERVER_MODE ? 'server.privacyServer' : 'server.privacyInterim');
     window.Tasme3I18n.applyTranslations(document);
     populateLevelSegDigits();
@@ -1458,6 +1719,28 @@
       if (activeTab) setDrawerTab(activeTab.dataset.tab);
     }
   });
+
+  // Elderly audit: a one-time, non-blocking 3-second hint pointing at the
+  // mic on a genuinely fresh install -- dismissed by a tap on it, or after
+  // the timeout, and never shown again once the flag is set. Plain
+  // localStorage (not Tasme3Storage's versioned schema) since this is a
+  // purely per-device UI nicety, not app data worth migrating/merging.
+  var FIRST_RUN_HINT_KEY = 'tasme3FirstRunHintShown';
+  function maybeShowFirstRunHint() {
+    if (!el.firstRunHint) return;
+    var shown;
+    try { shown = localStorage.getItem(FIRST_RUN_HINT_KEY); } catch (_) { shown = '1'; }
+    if (shown) return;
+    el.firstRunHint.hidden = false;
+    var tm = setTimeout(dismiss, 3000);
+    function dismiss() {
+      clearTimeout(tm);
+      el.firstRunHint.hidden = true;
+      el.firstRunHint.removeEventListener('click', dismiss);
+      try { localStorage.setItem(FIRST_RUN_HINT_KEY, '1'); } catch (_) {}
+    }
+    el.firstRunHint.addEventListener('click', dismiss);
+  }
 
   // ----------------------------------------------------------------- init
   populateLangSelect();
@@ -1473,6 +1756,9 @@
     renderProgressPanel();
     renderGreeting();
     renderCertList();
+    updateRecBtnLabel();
+    updateFsBtnLabel();
+    maybeShowFirstRunHint();
 
     // Idea #2: every fresh page load is one "session" -- the install-promo
     // card is eligible only from the SECOND one onward, never the first.
