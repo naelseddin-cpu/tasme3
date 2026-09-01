@@ -34,8 +34,18 @@
     zh: { dir: 'ltr', label: '中文' }
   };
   var DEFAULT_LANG = 'ar';
+  // Wave-2 fix (a4): a browser locale with NO catalog at all (e.g. ja) used
+  // to fall back to DEFAULT_LANG (Arabic) -- surprising for a reader who
+  // never chose Arabic and can't read it. Every genuinely SUPPORTED locale
+  // (Arabic included) keeps going through the loop below exactly as before;
+  // only the "nothing in LANGS matched" branch changes, to English instead.
+  var UNSUPPORTED_LOCALE_LANG = 'en';
   var cache = {};
   var current = { lang: null, dict: {} };
+  // Best-effort English catalog, kept around purely for the per-key and
+  // whole-catalog fallback chain in fetchCatalog()/t() below -- populated by
+  // setLanguage() regardless of which language is actually active.
+  var enDict = null;
 
   function detectBrowserLang() {
     var langs = (global.navigator && (global.navigator.languages || [global.navigator.language])) || [];
@@ -43,14 +53,27 @@
       var base = String(langs[i] || '').slice(0, 2).toLowerCase();
       if (LANGS[base]) return base;
     }
-    return DEFAULT_LANG;
+    return UNSUPPORTED_LOCALE_LANG;
   }
 
+  // Wave-2 fix (a3 F2): a failed catalog fetch (flaky connection, cold
+  // cache, a blocked request) used to resolve to an empty {} dict, so t()
+  // had nothing to fall back to but the raw key string -- a French user
+  // whose i18n/fr.json request failed could end up staring at literal
+  // "nav.settings"/"listen.button" text throughout the UI. The fallback
+  // chain is now: the requested language -> the English catalog (fetched
+  // fresh if needed) -> only then raw keys (in t(), once neither catalog has
+  // the key at all). Recursing into fetchCatalog('en') here also means
+  // `cache['en']` ends up populated exactly once even if both this call and
+  // setLanguage()'s own English pre-fetch (below) ask for it concurrently.
   function fetchCatalog(lang) {
     if (cache[lang]) return cache[lang];
     cache[lang] = fetch('i18n/' + lang + '.json')
       .then(function (r) { if (!r.ok) throw new Error('i18n fetch failed: ' + lang); return r.json(); })
-      .catch(function () { return {}; });
+      .catch(function () {
+        if (lang === 'en') return {}; // English itself unreachable -- nothing left to fall back to here
+        return fetchCatalog('en');
+      });
     return cache[lang];
   }
 
@@ -61,9 +84,18 @@
     });
   }
 
+  // Per-key fallback chain (wave-2 fix a3 F2, finer-grained than the
+  // whole-catalog fallback in fetchCatalog() above): the CURRENT language's
+  // catalog might have loaded fine but simply not have this particular key
+  // yet (e.g. a key added after that catalog's last translation pass) --
+  // fall back to the English dict for that one key before ever surfacing the
+  // raw key string.
   function t(key, params) {
     var dict = current.dict;
-    var val = (dict && Object.prototype.hasOwnProperty.call(dict, key)) ? dict[key] : key;
+    var val;
+    if (dict && Object.prototype.hasOwnProperty.call(dict, key)) val = dict[key];
+    else if (enDict && Object.prototype.hasOwnProperty.call(enDict, key)) val = enDict[key];
+    else val = key;
     return interpolate(val, params);
   }
 
@@ -91,6 +123,10 @@
 
   function setLanguage(lang) {
     if (!LANGS[lang]) lang = DEFAULT_LANG;
+    // Keep the English fallback catalog warm regardless of the active
+    // language -- best-effort and never blocks setLanguage()'s own promise
+    // on anything beyond the requested language's own catalog.
+    fetchCatalog('en').then(function (d) { enDict = d; }).catch(function () {});
     return fetchCatalog(lang).then(function (dict) {
       current.lang = lang;
       current.dict = dict;

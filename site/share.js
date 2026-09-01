@@ -13,16 +13,22 @@
     return 'https://wa.me/?text=' + encodeURIComponent(text);
   }
 
+  // Wave-2 fix (a4/G5): these used to hardcode Arabic-Indic digits via
+  // toArabicDigits() regardless of the current UI language -- a zh/en/fr
+  // user sharing their progress got Arabic-Indic numerals inside otherwise
+  // fully-translated share text. Tasme3Utils.digits() is app.js's own
+  // digits() logic (Arabic-Indic for ar, Latin otherwise), exported for
+  // reuse here so both places can never drift apart.
   function pageCompleteText(pageNum) {
     var t = global.Tasme3I18n.t;
-    var ar = global.Tasme3Utils.toArabicDigits;
-    return t('share.pageDone', { page: ar(pageNum), link: APP_LINK });
+    var d = global.Tasme3Utils.digits;
+    return t('share.pageDone', { page: d(pageNum), link: APP_LINK });
   }
 
   function streakMilestoneText(days) {
     var t = global.Tasme3I18n.t;
-    var ar = global.Tasme3Utils.toArabicDigits;
-    return t('share.streakMilestone', { days: ar(days), link: APP_LINK });
+    var d = global.Tasme3Utils.digits;
+    return t('share.streakMilestone', { days: d(days), link: APP_LINK });
   }
 
   // Opens WhatsApp with the prefilled message. A real navigation (window.open)
