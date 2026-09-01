@@ -1,4 +1,4 @@
-// Runtime i18n: loads one of the 12 catalogs from site/i18n/*.json (a build
+// Runtime i18n: loads one of the 25 catalogs from site/i18n/*.json (a build
 // -time copy of app/i18n/*.json — see site/build-assets.mjs; app/i18n stays
 // the source of truth), applies translations to [data-i18n] elements, and
 // flips document direction per language. Browser-language autodetect with a
@@ -11,6 +11,7 @@
     en: { dir: 'ltr', label: 'English' },
     ur: { dir: 'rtl', label: 'اردو' },
     fa: { dir: 'rtl', label: 'فارسی' },
+    ps: { dir: 'rtl', label: 'پښتو' },
     tr: { dir: 'ltr', label: 'Türkçe' },
     fr: { dir: 'ltr', label: 'Français' },
     es: { dir: 'ltr', label: 'Español' },
@@ -18,7 +19,19 @@
     ms: { dir: 'ltr', label: 'Bahasa Melayu' },
     ru: { dir: 'ltr', label: 'Русский' },
     bn: { dir: 'ltr', label: 'বাংলা' },
-    sw: { dir: 'ltr', label: 'Kiswahili' }
+    sw: { dir: 'ltr', label: 'Kiswahili' },
+    ha: { dir: 'ltr', label: 'Hausa' },
+    so: { dir: 'ltr', label: 'Soomaali' },
+    uz: { dir: 'ltr', label: 'Oʻzbekcha' },
+    az: { dir: 'ltr', label: 'Azərbaycanca' },
+    bs: { dir: 'ltr', label: 'Bosanski' },
+    sq: { dir: 'ltr', label: 'Shqip' },
+    de: { dir: 'ltr', label: 'Deutsch' },
+    nl: { dir: 'ltr', label: 'Nederlands' },
+    pt: { dir: 'ltr', label: 'Português' },
+    ta: { dir: 'ltr', label: 'தமிழ்' },
+    ml: { dir: 'ltr', label: 'മലയാളം' },
+    zh: { dir: 'ltr', label: '中文' }
   };
   var DEFAULT_LANG = 'ar';
   var cache = {};

@@ -3,7 +3,7 @@
 // must be purged, not accumulate forever).
 //
 // Bump CACHE_VERSION on every deploy that changes any precached file.
-var CACHE_VERSION = 'tasme3-v5';
+var CACHE_VERSION = 'tasme3-v6';
 var SHELL_CACHE = CACHE_VERSION + '-shell';
 var RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 var RUNTIME_CAP = 50; // ~50-entry LRU-ish cap on runtime-cached page images/i18n/fonts
@@ -29,7 +29,11 @@ var SHELL_URLS = [
   'vendor/matcher.js',
   'i18n/ar.json', 'i18n/en.json', 'i18n/ur.json', 'i18n/fa.json',
   'i18n/tr.json', 'i18n/fr.json', 'i18n/es.json', 'i18n/id.json',
-  'i18n/ms.json', 'i18n/ru.json', 'i18n/bn.json', 'i18n/sw.json'
+  'i18n/ms.json', 'i18n/ru.json', 'i18n/bn.json', 'i18n/sw.json',
+  'i18n/ha.json', 'i18n/ps.json', 'i18n/so.json', 'i18n/uz.json',
+  'i18n/az.json', 'i18n/bs.json', 'i18n/sq.json', 'i18n/de.json',
+  'i18n/nl.json', 'i18n/pt.json', 'i18n/ta.json', 'i18n/ml.json',
+  'i18n/zh.json'
 ];
 
 self.addEventListener('install', function (event) {

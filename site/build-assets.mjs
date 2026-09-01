@@ -4,7 +4,7 @@
 // self-contained) without hand-forking either one:
 //   ../app/matcher.js       -> site/vendor/matcher.js   (canonical matcher,
 //                              byte-identical copy, never edited here)
-//   ../app/i18n/*.json      -> site/i18n/*.json          (12-language catalog;
+//   ../app/i18n/*.json      -> site/i18n/*.json          (25-language catalog;
 //                              app/i18n/ remains the source of truth — see
 //                              the note this script prepends to each file)
 //

@@ -12,13 +12,13 @@ The user recites from memory; the app listens and reveals each word **exactly as
 - **The real printed page** — the screen shows an image of the actual mushaf print (rendered from the official per-page KFGQPC fonts), never re-flowed text.
 - **Built for weak internet and old phones** — the client is a tiny static PWA; each page costs one small image (~100–200 KB) + ~5 KB of data. Speech recognition (Whisper) runs on the server, so the phone never downloads a model.
 - **Free forever** — charity project (sadaqah jariyah). No ads, no fees, no monetization, ever.
-- **Multilingual UI** — 12-language catalog (the Quran itself is always Arabic, untouched).
+- **Multilingual UI** — 25-language catalog (the Quran itself is always Arabic, untouched).
 
 ## Repository layout
 
 | Path | Contents |
 |---|---|
-| `app/` | The web app: matcher, mushaf page data (`mushaf/pages/*.json`), official KFGQPC fonts (`mushaf/fonts/`), 12-language i18n catalog |
+| `app/` | The web app: matcher, mushaf page data (`mushaf/pages/*.json`), official KFGQPC fonts (`mushaf/fonts/`), 25-language i18n catalog |
 | `docs/` | Product plan, build plan, system audit, design notes |
 | `tools/` | Page-data generator, page-image renderer, scan QA tools |
 

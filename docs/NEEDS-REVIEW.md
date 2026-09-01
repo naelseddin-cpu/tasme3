@@ -1,9 +1,10 @@
 # Translations needing native-speaker review
 
 **Date:** 2026-09-01 · **Context:** certificate-of-completion feature
-(founder decision — see the git log for the "certificate" commit).
+(founder decision — see the git log for the "certificate" commit); updated
+the same day for the 12 → 25 language expansion (also a founder decision).
 
-The new `cert.*` and name/greeting i18n keys added to all 12
+The new `cert.*` and name/greeting i18n keys added to all 12 original
 `app/i18n/*.json` catalogs were drafted by the AI agent implementing the
 feature, not sourced from a professional translator. Arabic and English are
 high-confidence (Arabic is the founder's own literal wording where specced;
@@ -14,7 +15,38 @@ before this ships to real users**, especially the longer, more idiomatic
 `cert.congrats` line (a "warm words of congratulations" sentence, the kind
 of text that reads most awkwardly when machine-translated).
 
-## Keys to review, per language
+## New languages added in the 12 → 25 expansion
+
+Thirteen entirely new catalogs were added: Hausa (`ha`), Pashto (`ps`),
+Somali (`so`), Uzbek (`uz`), Azerbaijani (`az`), Bosnian (`bs`), Albanian
+(`sq`), German (`de`), Dutch (`nl`), Portuguese (`pt`), Tamil (`ta`),
+Malayalam (`ml`), and Chinese Simplified (`zh`). **Every key in all 13 of
+these catalogs is machine/LLM-drafted end-to-end (not only the certificate
+keys) and should get a native-speaker pass before shipping to real users** —
+this is a full-catalog review, broader in scope than the certificate-keys-only
+review documented below for the original 10 languages.
+
+**Highest priority for native review** — the languages the agent has least
+confidence in, and whose communities are most likely to notice awkward
+phrasing quickly: **Hausa (`ha`), Somali (`so`), Pashto (`ps`), Uzbek (`uz`),
+and Azerbaijani (`az`)**. Within these, `app.tagline`, `cert.congrats`,
+`share.pageDone`, and `share.streakMilestone` are the longest and most
+idiomatic lines and the likeliest to read stiffly.
+
+Lower (but still unverified) priority: Bosnian (`bs`) and Albanian (`sq`) —
+less-resourced languages than mainstream European ones; German (`de`), Dutch
+(`nl`), Portuguese (`pt`) — well-resourced languages with comparatively
+higher machine-translation confidence, but still never reviewed by a native
+speaker; Tamil (`ta`), Malayalam (`ml`), and Chinese Simplified (`zh`) — a
+native reader should confirm register and any transliteration choices
+(reciter names and Islamic terms rendered phonetically in-script).
+
+Note on `ps` (Pashto) `app.name`: per the founder's brand spec for this
+language it is the Arabic form in guillemets, `«تسميع»`, rather than the
+Latin+Arabic pairing used for Latin/Cyrillic-script languages — please
+confirm this presentation reads naturally to a Pashto speaker.
+
+## Keys to review, per language (certificate/greeting feature, original 10)
 
 For each of `bn, es, fa, fr, id, ms, ru, sw, tr, ur`:
 
