@@ -79,10 +79,11 @@
   // substitute one vowel-class letter for another) costs 1 — the same slip
   // ASR/typing routinely makes on alef/ya/ha/hamza. Any edit that touches a
   // true consonant costs 3. 3 (not the naively "matching" 2) is deliberate:
-  // it must exceed L1's length<=6 tolerance of 2, otherwise a single
-  // consonant swap on a mid-length word (e.g. والاصر vs والعصر, both len 6)
-  // would still slip through at L1. See docs note in matching.py for the
-  // parity requirement.
+  // it must exceed the LARGEST tolerance in the table at ANY level/length
+  // (2, since the Iron Rule tightening capped L1 at 2 for every length —
+  // see toleranceFor below), so a single consonant swap (e.g. والاصر vs
+  // والعصر, both len 6) is rejected at every level, not merely at L2+. See
+  // docs note in matching.py for the parity requirement.
   var CONSONANT_EDIT_COST = 3;
   var VOWEL_EDIT_COST = 1;
 
@@ -133,11 +134,27 @@
   // including L1: 2-3 letter Arabic particles (ان/من/لم/لا/هل/...) are
   // semantically load-bearing -- a same-length edit is a different word, not
   // an accent slip. This is enforced up front, before the per-level table,
-  // which now only ever sees len > 3.
+  // which now only ever sees len > 3. NOTE: this len<=3 clamp keys off
+  // whichever single form is being compared right now (tok vs one of n/a) --
+  // it is NOT sufficient on its own when an expected word's short `n` has a
+  // longer alternate `a` (e.g. {n:'ملك',a:'مالك'}): comparing against `a`
+  // sees len 4 and falls through to the ordinary table. The real fix for
+  // that (keying exactness off the expected word's OWN identity, checked
+  // before any form-by-form fuzzy comparison happens) lives in matchesWord /
+  // matchesMerged / matchesMerged3 below -- see their shared exactOnly()
+  // helper. This clamp stays as defense in depth for direct fuzzyEqual()
+  // callers that never go through wordForms().
+  //
+  // Iron Rule tightening: L1 is capped at 2 for every length > 3 (not 3 for
+  // len > 6 as before) so that CONSONANT_EDIT_COST (3) always exceeds every
+  // level's tolerance -- a single interior consonant substitution is never
+  // accepted at ANY level, ANY length. L1 remains more forgiving than L2
+  // only for len 4-5 (L1 allows 2 vowel-class edits there, L2 allows 1); at
+  // len 6+ L1 and L2 coincide at 2.
   function toleranceFor(level, len) {
     if (len <= 3) return 0;
     switch (level) {
-      case 1: return len <= 6 ? 2 : 3;
+      case 1: return 2;
       case 3: return len <= 4 ? 0 : len <= 7 ? 1 : 2;
       case 4: return 0;
       case 2:
@@ -166,12 +183,43 @@
     return forms;
   }
 
-  function matchesWord(tok, item, level) {
-    var forms = wordForms(item);
-    for (var i = 0; i < forms.length; i++) {
+  // Exact-only rule keyed on the expected WORD's identity, not on whichever
+  // form happens to be compared. A word is short (and therefore semantically
+  // load-bearing per toleranceFor's len<=3 rule) if its SHORTEST known form
+  // is <=3 -- normally that's `n`, since `a` only ever adds letters (dagger
+  // alif -> alif, e.g. n:'ملك'(3) a:'مالك'(4)). Using the shortest of all
+  // forms (rather than just n.length) keeps this correct even if a future
+  // data entry ever has `a` shorter than `n`.
+  function isShortForms(forms) {
+    var minLen = forms[0].length;
+    for (var i = 1; i < forms.length; i++) {
+      if (forms[i].length < minLen) minLen = forms[i].length;
+    }
+    return minLen <= 3;
+  }
+
+  // Does `tok` match this expected word's form set under `level`? Short
+  // words (see isShortForms) bypass fuzzyEqual entirely and require an exact
+  // match against n or a -- this is the fix for the false-reveal where a
+  // short `n` with a longer `a` (e.g. {n:'عبد',a:'عباد'}) let wrong words
+  // like 'عبادي'/'عبادا' slip through by fuzzy-matching the longer `a` form
+  // under the ordinary (non-exact) length-4+ tolerance table.
+  function formMatches(tok, forms, level) {
+    var i;
+    if (isShortForms(forms)) {
+      for (i = 0; i < forms.length; i++) {
+        if (tok === forms[i]) return true;
+      }
+      return false;
+    }
+    for (i = 0; i < forms.length; i++) {
       if (fuzzyEqual(tok, forms[i], level)) return true;
     }
     return false;
+  }
+
+  function matchesWord(tok, item, level) {
+    return formMatches(tok, wordForms(item), level);
   }
 
   // Merged token covering two consecutive expected words. A merged match
@@ -186,12 +234,8 @@
     var forms1 = wordForms(item1), forms2 = wordForms(item2);
     for (var k = 1; k < tok.length; k++) {
       var part1 = tok.slice(0, k), part2 = tok.slice(k);
-      for (var i = 0; i < forms1.length; i++) {
-        if (!fuzzyEqual(part1, forms1[i], level)) continue;
-        for (var j = 0; j < forms2.length; j++) {
-          if (fuzzyEqual(part2, forms2[j], level)) return true;
-        }
-      }
+      if (!formMatches(part1, forms1, level)) continue;
+      if (formMatches(part2, forms2, level)) return true;
     }
     return false;
   }
@@ -204,21 +248,11 @@
     var forms1 = wordForms(item1), forms2 = wordForms(item2), forms3 = wordForms(item3);
     for (var k1 = 1; k1 < tok.length - 1; k1++) {
       var part1 = tok.slice(0, k1);
-      var i, matched1 = false;
-      for (i = 0; i < forms1.length; i++) {
-        if (fuzzyEqual(part1, forms1[i], level)) { matched1 = true; break; }
-      }
-      if (!matched1) continue;
+      if (!formMatches(part1, forms1, level)) continue;
       for (var k2 = k1 + 1; k2 < tok.length; k2++) {
         var part2 = tok.slice(k1, k2), part3 = tok.slice(k2);
-        var j, matched2 = false;
-        for (j = 0; j < forms2.length; j++) {
-          if (fuzzyEqual(part2, forms2[j], level)) { matched2 = true; break; }
-        }
-        if (!matched2) continue;
-        for (var l = 0; l < forms3.length; l++) {
-          if (fuzzyEqual(part3, forms3[l], level)) return true;
-        }
+        if (!formMatches(part2, forms2, level)) continue;
+        if (formMatches(part3, forms3, level)) return true;
       }
     }
     return false;
@@ -274,6 +308,8 @@
     weightedEditDistance: weightedEditDistance,
     toleranceFor: toleranceFor,
     fuzzyEqual: fuzzyEqual,
+    wordForms: wordForms,
+    matchesWord: matchesWord,
     matchesMerged: matchesMerged,
     matchesMerged3: matchesMerged3,
     matchTranscript: matchTranscript

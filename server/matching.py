@@ -110,10 +110,12 @@ def _is_vowel_letter(c: str) -> bool:
 # substitute one vowel-class letter for another) costs 1 -- the same slip
 # ASR/typing routinely makes on alef/ya/ha/hamza. Any edit that touches a
 # true consonant costs CONSONANT_EDIT_COST. 3 (not the naively "matching" 2)
-# is deliberate: it must exceed L1's length<=6 tolerance of 2, otherwise a
-# single consonant swap on a mid-length word (e.g. والاصر vs والعصر, both
-# len 6) would still slip through at L1. Must stay in lockstep with
-# app/matcher.js's CONSONANT_EDIT_COST / VOWEL_EDIT_COST.
+# is deliberate: it must exceed the LARGEST tolerance in the table at ANY
+# level/length (2, since the Iron Rule tightening capped L1 at 2 for every
+# length -- see tolerance_for below), so a single consonant swap (e.g.
+# والاصر vs والعصر, both len 6) is rejected at every level, not merely at
+# L2+. Must stay in lockstep with app/matcher.js's CONSONANT_EDIT_COST /
+# VOWEL_EDIT_COST.
 CONSONANT_EDIT_COST = 3
 VOWEL_EDIT_COST = 1
 
@@ -159,12 +161,28 @@ def tolerance_for(level: Optional[int], length: int) -> int:
     including L1: 2-3 letter Arabic particles (ان/من/لم/لا/هل/...) are
     semantically load-bearing -- a same-length edit is a different word, not
     an accent slip. This is enforced up front, before the per-level table,
-    which now only ever sees length > 3.
+    which now only ever sees length > 3. NOTE: this length<=3 clamp keys off
+    whichever single form is being compared right now (tok vs one of n/a) --
+    it is NOT sufficient on its own when an expected word's short `n` has a
+    longer alternate `a` (e.g. {n:'ملك',a:'مالك'}): comparing against `a`
+    sees length 4 and falls through to the ordinary table. The real fix for
+    that (keying exactness off the expected word's OWN identity, checked
+    before any form-by-form fuzzy comparison happens) lives in matches_word /
+    matches_merged / matches_merged3 below -- see their shared
+    _form_matches() helper. This clamp stays as defense in depth for direct
+    fuzzy_equal() callers that never go through word_forms().
+
+    Iron Rule tightening: L1 is capped at 2 for every length > 3 (not 3 for
+    length > 6 as before) so that CONSONANT_EDIT_COST (3) always exceeds
+    every level's tolerance -- a single interior consonant substitution is
+    never accepted at ANY level, ANY length. L1 remains more forgiving than
+    L2 only for length 4-5 (L1 allows 2 vowel-class edits there, L2 allows
+    1); at length 6+ L1 and L2 coincide at 2.
     """
     if length <= 3:
         return 0
     if level == 1:
-        return 2 if length <= 6 else 3
+        return 2
     if level == 3:
         return 0 if length <= 4 else 1 if length <= 7 else 2
     if level == 4:
@@ -206,8 +224,33 @@ def word_forms(item: ExpectedItem) -> List[str]:
     return forms
 
 
+def _is_short_forms(forms: Sequence[str]) -> bool:
+    """Exact-only rule keyed on the expected WORD's identity, not on
+    whichever form happens to be compared. A word is short (and therefore
+    semantically load-bearing per tolerance_for's length<=3 rule) if its
+    SHORTEST known form is <=3 -- normally that's `n`, since `a` only ever
+    adds letters (dagger alif -> alif, e.g. n:'ملك'(3) a:'مالك'(4)). Using
+    the shortest of all forms (rather than just len(n)) keeps this correct
+    even if a future data entry ever has `a` shorter than `n`. Mirrors
+    app/matcher.js's isShortForms() exactly."""
+    return min(len(f) for f in forms) <= 3
+
+
+def _form_matches(tok: str, forms: Sequence[str], level: Optional[int]) -> bool:
+    """Does `tok` match this expected word's form set under `level`? Short
+    words (see _is_short_forms) bypass fuzzy_equal entirely and require an
+    exact match against n or a -- this is the fix for the false-reveal where
+    a short `n` with a longer `a` (e.g. {n:'عبد',a:'عباد'}) let wrong words
+    like 'عبادي'/'عبادا' slip through by fuzzy-matching the longer `a` form
+    under the ordinary (non-exact) length-4+ tolerance table. Mirrors
+    app/matcher.js's formMatches() exactly."""
+    if _is_short_forms(forms):
+        return tok in forms
+    return any(fuzzy_equal(tok, form, level) for form in forms)
+
+
 def matches_word(tok: str, item: ExpectedItem, level: Optional[int] = None) -> bool:
-    return any(fuzzy_equal(tok, form, level) for form in word_forms(item))
+    return _form_matches(tok, word_forms(item), level)
 
 
 def matches_merged(
@@ -224,12 +267,10 @@ def matches_merged(
     forms1, forms2 = word_forms(item1), word_forms(item2)
     for k in range(1, len(tok)):
         part1, part2 = tok[:k], tok[k:]
-        for f1 in forms1:
-            if not fuzzy_equal(part1, f1, level):
-                continue
-            for f2 in forms2:
-                if fuzzy_equal(part2, f2, level):
-                    return True
+        if not _form_matches(part1, forms1, level):
+            continue
+        if _form_matches(part2, forms2, level):
+            return True
     return False
 
 
@@ -247,13 +288,13 @@ def matches_merged3(
     forms1, forms2, forms3 = word_forms(item1), word_forms(item2), word_forms(item3)
     for k1 in range(1, len(tok) - 1):
         part1 = tok[:k1]
-        if not any(fuzzy_equal(part1, f1, level) for f1 in forms1):
+        if not _form_matches(part1, forms1, level):
             continue
         for k2 in range(k1 + 1, len(tok)):
             part2, part3 = tok[k1:k2], tok[k2:]
-            if not any(fuzzy_equal(part2, f2, level) for f2 in forms2):
+            if not _form_matches(part2, forms2, level):
                 continue
-            if any(fuzzy_equal(part3, f3, level) for f3 in forms3):
+            if _form_matches(part3, forms3, level):
                 return True
     return False
 

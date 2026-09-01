@@ -15,6 +15,7 @@ from server.matching import (
     fuzzy_equal,
     levenshtein,
     match_transcript,
+    matches_word,
     normalize_arabic,
     normalize_arabic_alt,
     tolerance_for,
@@ -346,6 +347,98 @@ def test_malik_vs_maalik_still_accepted_at_default_level():
 
 def test_malik_vs_maalik_rejected_at_l4():
     assert not fuzzy_equal("ملك", "مالك", 4)
+
+
+# ===================== Re-audit #10 fixes (2026-09-01) =====================
+
+# --- Bug 1: short-n/long-a {n,a} pairs must be exact-only against EITHER
+# form, keyed on the word's own identity -- not on whichever form is being
+# compared. Before the fix, comparing against the longer `a` form fell
+# through to the ordinary length-4+ tolerance table. See
+# site/tests/test-altform-bypass.js for the full 88-pair x full-corpus
+# cross-check (0 false-accept opportunities at every level).
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+@pytest.mark.parametrize("wrong_word", ["عبادي", "عبادا", "عباده", "وعباد"])
+def test_short_n_long_a_wrong_word_rejected_for_abd_ibaad(level, wrong_word):
+    # عبادي/عبادا/عباده/وعباد used to fuzzy-match the longer alt form 'عباد'
+    # (dist 1-2) under the old per-form clamp; now rejected outright since
+    # min(len('عبد'), len('عباد')) = 3 <= 3 forces exact-only.
+    assert not matches_word(wrong_word, {"n": "عبد", "a": "عباد"}, level)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_short_n_long_a_bal_rejected_for_bali_baliya(level):
+    # بل used to fuzzy-match the longer alt form 'بليا' at L1.
+    assert not matches_word("بل", {"n": "بلي", "a": "بليا"}, level)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_short_n_long_a_exact_forms_still_accepted(level):
+    # Exact matches on EITHER form must still be accepted at every level --
+    # this is the documented, intentional behavior: an expected word with
+    # len(n)<=3 requires the token to equal n or a exactly, and 'مالك' IS the
+    # exact 'a' form of {n:'ملك',a:'مالك'}, so ASR saying مالك is still
+    # correctly recognized (it is not a fuzzy match -- it is an exact one).
+    assert matches_word("ملك", {"n": "ملك", "a": "مالك"}, level)
+    assert matches_word("مالك", {"n": "ملك", "a": "مالك"}, level)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_short_n_long_a_near_miss_rejected(level):
+    # A near-miss of the longer `a` form (e.g. ملكا, a single-vowel edit away
+    # from مالك) is now correctly rejected -- exactly the class of
+    # false-reveal the fix closes.
+    assert not matches_word("ملكا", {"n": "ملك", "a": "مالك"}, level)
+
+
+# --- Bug 2: L1 tolerance is now 2 for every length > 3 (was 3 for len>6) --
+# a single interior consonant substitution must be rejected at every level,
+# even on long (10-11 letter) real Quran words, since CONSONANT_EDIT_COST (3)
+# now exceeds the largest tolerance anywhere in the table (2).
+
+
+def test_tolerance_for_l1_is_2_at_length_7():
+    assert tolerance_for(1, 7) == 2  # was 3 before the Iron Rule tightening
+
+
+def test_tolerance_for_l1_is_2_at_length_11():
+    assert tolerance_for(1, 11) == 2  # was 3 before the Iron Rule tightening
+
+
+LONG_WORD_SWAPS = [
+    ("فليستجيبوا", "فبيستجيبوا"),
+    ("والمستغفرين", "وابمستغفرين"),
+    ("والمستضعفين", "وابمستضعفين"),
+    ("المستضعفين", "ابمستضعفين"),
+    ("ويستغفرونه", "ويبتغفرونه"),
+    ("واسترهبوهم", "وابترهبوهم"),
+    ("فسينفقونها", "فبينفقونها"),
+    ("وبالمؤمنين", "وتالمؤمنين"),
+]
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+@pytest.mark.parametrize("original,mutated", LONG_WORD_SWAPS)
+def test_long_word_single_consonant_swap_rejected_at_every_level(level, original, mutated):
+    assert not fuzzy_equal(original, mutated, level)
+
+
+def test_l1_more_forgiving_than_l2_at_length_4():
+    assert tolerance_for(1, 4) > tolerance_for(2, 4)
+
+
+def test_l1_more_forgiving_than_l2_at_length_5():
+    assert tolerance_for(1, 5) > tolerance_for(2, 5)
+
+
+def test_l1_l2_coincide_at_length_6():
+    assert tolerance_for(1, 6) == tolerance_for(2, 6)
+
+
+def test_l1_l2_coincide_at_length_9():
+    assert tolerance_for(1, 9) == tolerance_for(2, 9)
 
 
 @pytest.mark.parametrize("level", [1, 2, 3, 4, None])

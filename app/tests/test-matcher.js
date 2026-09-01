@@ -238,6 +238,70 @@ check('plain levenshtein(والاصر, والعصر) is 1 (unweighted, for contr
 check('ملك vs مالك still accepted at default level (unchanged)', M.fuzzyEqual('ملك', 'مالك'));
 check('ملك vs مالك rejected at L4 (exact-only, unchanged)', !M.fuzzyEqual('ملك', 'مالك', 4));
 
+// ===================== Re-audit #10 fixes (2026-09-01) =====================
+
+// --- Bug 1: short-n/long-a {n,a} pairs must be exact-only against EITHER
+// form, keyed on the word's own identity -- not on whichever form is being
+// compared. Before the fix, comparing against the longer `a` form fell
+// through to the ordinary length-4+ tolerance table. See
+// site/tests/test-altform-bypass.js for the full 88-pair x full-corpus
+// cross-check (0 false-accept opportunities at every level).
+[1, 2, 3, 4, undefined].forEach(function (level) {
+  // عبادي/عبادا/عباده/وعباد used to fuzzy-match the longer alt form 'عباد'
+  // (dist 1-2) under the old per-form clamp; now rejected outright since
+  // min('عبد'.length, 'عباد'.length) = 3 <= 3 forces exact-only.
+  ['عبادي', 'عبادا', 'عباده', 'وعباد'].forEach(function (wrongWord) {
+    check('short-n/long-a: ' + wrongWord + ' rejected for {n:عبد,a:عباد} at level ' + level,
+      !M.matchesWord(wrongWord, { n: 'عبد', a: 'عباد' }, level));
+  });
+  // بل used to fuzzy-match the longer alt form 'بليا' at L1.
+  check('short-n/long-a: بل rejected for {n:بلي,a:بليا} at level ' + level,
+    !M.matchesWord('بل', { n: 'بلي', a: 'بليا' }, level));
+  // Exact matches on EITHER form must still be accepted at every level --
+  // this is the documented, intentional behavior: an expected word with
+  // n.length<=3 requires the token to equal n or a exactly, and 'مالك' IS
+  // the exact 'a' form of {n:'ملك',a:'مالك'}, so ASR saying مالك is still
+  // correctly recognized (it is not a fuzzy match -- it is an exact one).
+  check('short-n/long-a: exact n ملك accepted for {n:ملك,a:مالك} at level ' + level,
+    M.matchesWord('ملك', { n: 'ملك', a: 'مالك' }, level));
+  check('short-n/long-a: exact a مالك accepted for {n:ملك,a:مالك} at level ' + level,
+    M.matchesWord('مالك', { n: 'ملك', a: 'مالك' }, level));
+  // But a near-miss of the longer `a` form (e.g. ملكا, a single-vowel edit
+  // away from مالك) is now correctly rejected -- this is exactly the class
+  // of false-reveal the fix closes.
+  check('short-n/long-a: near-miss ملكا rejected for {n:ملك,a:مالك} at level ' + level,
+    !M.matchesWord('ملكا', { n: 'ملك', a: 'مالك' }, level));
+});
+
+// --- Bug 2: L1 tolerance is now 2 for every length > 3 (was 3 for len>6) --
+// a single interior consonant substitution must be rejected at every level,
+// even on long (10-11 letter) real Quran words, since CONSONANT_EDIT_COST
+// (3) now exceeds the largest tolerance anywhere in the table (2).
+check('toleranceFor(1, 7) is 2 (was 3 before the Iron Rule tightening)', M.toleranceFor(1, 7) === 2);
+check('toleranceFor(1, 11) is 2 (was 3 before the Iron Rule tightening)', M.toleranceFor(1, 11) === 2);
+var longWordSwaps = [
+  ['فليستجيبوا', 'فبيستجيبوا'],
+  ['والمستغفرين', 'وابمستغفرين'],
+  ['والمستضعفين', 'وابمستضعفين'],
+  ['المستضعفين', 'ابمستضعفين'],
+  ['ويستغفرونه', 'ويبتغفرونه'],
+  ['واسترهبوهم', 'وابترهبوهم'],
+  ['فسينفقونها', 'فبينفقونها'],
+  ['وبالمؤمنين', 'وتالمؤمنين']
+];
+longWordSwaps.forEach(function (pair) {
+  [1, 2, 3, 4, undefined].forEach(function (level) {
+    check('long-word (len' + pair[0].length + ') single consonant swap ' + pair[0] + '->' + pair[1] +
+      ' rejected at level ' + level, !M.fuzzyEqual(pair[0], pair[1], level));
+  });
+});
+// L1 stays strictly more forgiving than L2 only at length 4-5 (2 vowel-class
+// edits vs 1); at length 6+ they now coincide at 2.
+check('toleranceFor(1,4) > toleranceFor(2,4) (L1 more forgiving at len 4)', M.toleranceFor(1, 4) > M.toleranceFor(2, 4));
+check('toleranceFor(1,5) > toleranceFor(2,5) (L1 more forgiving at len 5)', M.toleranceFor(1, 5) > M.toleranceFor(2, 5));
+check('toleranceFor(1,6) === toleranceFor(2,6) (L1/L2 coincide at len 6+)', M.toleranceFor(1, 6) === M.toleranceFor(2, 6));
+check('toleranceFor(1,9) === toleranceFor(2,9) (L1/L2 coincide at len 6+)', M.toleranceFor(1, 9) === M.toleranceFor(2, 9));
+
 // --- Wrong-word storm at a short word: 0 reveals at all levels --------------
 [1, 2, 3, 4, undefined].forEach(function (level) {
   r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0,
