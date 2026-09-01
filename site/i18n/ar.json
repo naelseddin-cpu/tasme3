@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "الخروج من ملء الشاشة",
   "nav.invalidPage": "رقم صفحة غير صالح",
   "hint.firstRun": "اضغط الميكروفون واقرأ غيبًا — كل كلمة صحيحة تظهر في مكانها",
-  "a11y.wordsRevealed": "{n} كلمة ظهرت"
+  "a11y.wordsRevealed": "{n} كلمة ظهرت",
+  "listen.loading": "جارٍ التحميل…",
+  "drawer.indexLoadError": "تعذر تحميل الفهرس"
 }

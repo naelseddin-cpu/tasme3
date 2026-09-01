@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "Tam ekrandan çık",
   "nav.invalidPage": "Geçersiz sayfa numarası",
   "hint.firstRun": "Mikrofona basın ve ezbereden okuyun — her doğru kelime yerinde belirir",
-  "a11y.wordsRevealed": "{n} kelime ortaya çıktı"
+  "a11y.wordsRevealed": "{n} kelime ortaya çıktı",
+  "listen.loading": "Yükleniyor…",
+  "drawer.indexLoadError": "Dizin yüklenemedi"
 }

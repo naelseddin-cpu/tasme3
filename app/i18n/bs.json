@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "Izađi iz punog ekrana",
   "nav.invalidPage": "Nevažeći broj stranice",
   "hint.firstRun": "Pritisnite mikrofon i učite napamet — svaka tačna riječ se pojavljuje na svom mjestu",
-  "a11y.wordsRevealed": "{n} riječi otkriveno"
+  "a11y.wordsRevealed": "{n} riječi otkriveno",
+  "listen.loading": "Učitavanje…",
+  "drawer.indexLoadError": "Nije moguće učitati indeks"
 }

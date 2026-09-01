@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "Dil nga ekrani i plotë",
   "nav.invalidPage": "Numër faqeje i pavlefshëm",
   "hint.firstRun": "Shtypni mikrofonin dhe recitoni përmendësh — çdo fjalë e saktë shfaqet në vendin e saj",
-  "a11y.wordsRevealed": "{n} fjalë u shfaqën"
+  "a11y.wordsRevealed": "{n} fjalë u shfaqën",
+  "listen.loading": "Duke u ngarkuar…",
+  "drawer.indexLoadError": "Nuk u ngarkua dot indeksi"
 }

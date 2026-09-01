@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "خروج از حالت تمام صفحه",
   "nav.invalidPage": "شماره صفحه نامعتبر",
   "hint.firstRun": "میکروفون را فشار دهید و از حفظ بخوانید — هر کلمه صحیح در جای خود ظاهر می‌شود",
-  "a11y.wordsRevealed": "{n} کلمه نمایان شد"
+  "a11y.wordsRevealed": "{n} کلمه نمایان شد",
+  "listen.loading": "در حال بارگذاری…",
+  "drawer.indexLoadError": "بارگذاری فهرست ممکن نشد"
 }

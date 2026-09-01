@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "Vollbild verlassen",
   "nav.invalidPage": "Ungültige Seitenzahl",
   "hint.firstRun": "Drücke das Mikrofon und rezitiere auswendig — jedes richtige Wort erscheint an seiner Stelle",
-  "a11y.wordsRevealed": "{n} Wörter aufgedeckt"
+  "a11y.wordsRevealed": "{n} Wörter aufgedeckt",
+  "listen.loading": "Wird geladen…",
+  "drawer.indexLoadError": "Index konnte nicht geladen werden"
 }

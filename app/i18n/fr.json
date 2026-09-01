@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "Quitter le plein écran",
   "nav.invalidPage": "Numéro de page invalide",
   "hint.firstRun": "Appuyez sur le microphone et récitez de mémoire — chaque mot correct apparaît à sa place",
-  "a11y.wordsRevealed": "{n} mots révélés"
+  "a11y.wordsRevealed": "{n} mots révélés",
+  "listen.loading": "Chargement…",
+  "drawer.indexLoadError": "Impossible de charger l'index"
 }

@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "To'liq ekrandan chiqish",
   "nav.invalidPage": "Sahifa raqami noto'g'ri",
   "hint.firstRun": "Mikrofonni bosing va yoddan o'qing — har bir to'g'ri so'z o'z joyida paydo bo'ladi",
-  "a11y.wordsRevealed": "{n} ta so'z ochildi"
+  "a11y.wordsRevealed": "{n} ta so'z ochildi",
+  "listen.loading": "Yuklanmoqda…",
+  "drawer.indexLoadError": "Ko'rsatkichni yuklab bo'lmadi"
 }

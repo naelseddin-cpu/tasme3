@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "فل اسکرین سے باہر نکلیں",
   "nav.invalidPage": "غلط صفحہ نمبر",
   "hint.firstRun": "مائیکروفون دبائیں اور زبانی تلاوت کریں — ہر درست لفظ اپنی جگہ پر ظاہر ہوگا",
-  "a11y.wordsRevealed": "{n} الفاظ ظاہر ہوئے"
+  "a11y.wordsRevealed": "{n} الفاظ ظاہر ہوئے",
+  "listen.loading": "لوڈ ہو رہا ہے…",
+  "drawer.indexLoadError": "فہرست لوڈ نہیں ہو سکی"
 }

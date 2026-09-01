@@ -1,5 +1,23 @@
 # Translations needing native-speaker review
 
+**Date:** 2026-09-01 · **Context:** wave-2 resilience fixes (10-auditor
+review -- weak-internet and edge-case behavior: page-load spinner, a
+surah-index retry row, i18n/listen-button/rotation robustness). Two new keys
+were added to all 25 `app/i18n/*.json` catalogs:
+
+- `listen.loading` — the Listen button's text/aria-label while its audio
+  request is in flight (a new intermediate state between idle and
+  "Playing…" — see `site/listen.js`'s `Listener.play()`/`onStateChange`).
+- `drawer.indexLoadError` — shown in the surah/juz drawer tabs in place of
+  the list when `surah-index.json` fails to load, alongside a `common.retry`
+  button (existing key, reused rather than duplicated) that re-fetches it.
+
+Arabic and English are high-confidence (short, literal, matching the
+existing tone of `listen.playing`/`error.pageLoad`). **All 23 other
+languages are machine/LLM-drafted for these two keys and should get a
+native-speaker pass before shipping**, same as every other non-Arabic/
+English catalog on this page.
+
 **Date:** 2026-09-01 · **Context:** wave-1 critical/UX/accessibility fixes
 (10-auditor review -- edge-swipe back-navigation trap, modal/drawer a11y
 semantics, screen-reader announcements, elderly-usability affordances).

@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "Tam ekrandan çıx",
   "nav.invalidPage": "Yanlış səhifə nömrəsi",
   "hint.firstRun": "Mikrofona basın və əzbərdən oxuyun — hər düzgün söz öz yerində görünəcək",
-  "a11y.wordsRevealed": "{n} söz üzə çıxdı"
+  "a11y.wordsRevealed": "{n} söz üzə çıxdı",
+  "listen.loading": "Yüklənir…",
+  "drawer.indexLoadError": "Siyahı yüklənmədi"
 }

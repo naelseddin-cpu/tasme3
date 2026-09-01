@@ -165,5 +165,7 @@
   "nav.fullscreenExit": "Ka bax shaashadda buuxda",
   "nav.invalidPage": "Lambarka boggu ma saxna",
   "hint.firstRun": "Riix makarafoonka oo aqri xaal ahaan — eray kasta oo sax ah ayaa ka muuqan doona meeshiisa",
-  "a11y.wordsRevealed": "{n} eray ayaa soo baxay"
+  "a11y.wordsRevealed": "{n} eray ayaa soo baxay",
+  "listen.loading": "Waa la soo rarayaa…",
+  "drawer.indexLoadError": "Fahraska lama soo rarin karin"
 }
