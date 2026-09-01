@@ -127,7 +127,15 @@ async function typeRecite(page, text) {
     await page.selectOption('#langSelect', 'ar');
     await page.waitForTimeout(200);
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
+    // Wait on the actual post-close state (drawer closed, background no
+    // longer inert) rather than a fixed delay -- the close transition plus
+    // the a11y inert/visibility reconciliation should be done well within
+    // one second, but a bare timeout close to that margin is exactly the
+    // kind of thing that flakes under load.
+    await page.waitForFunction(function () {
+      return !document.getElementById('drawer').classList.contains('open') &&
+        !document.querySelector('.frame').hasAttribute('inert');
+    }, { timeout: 5000 });
     await pickSurahFromDrawer(page, 'النصر', 603);
 
     let st = await readState(page);
@@ -270,7 +278,15 @@ async function typeRecite(page, text) {
     await page.selectOption('#langSelect', 'en');
     await page.waitForTimeout(200);
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
+    // Wait on the actual post-close state (drawer closed, background no
+    // longer inert) rather than a fixed delay -- the close transition plus
+    // the a11y inert/visibility reconciliation should be done well within
+    // one second, but a bare timeout close to that margin is exactly the
+    // kind of thing that flakes under load.
+    await page.waitForFunction(function () {
+      return !document.getElementById('drawer').classList.contains('open') &&
+        !document.querySelector('.frame').hasAttribute('inert');
+    }, { timeout: 5000 });
     await pickSurahFromDrawer(page, 'النصر', 603);
     const st = await readState(page);
     const entry = st.progressByPage['603'];
