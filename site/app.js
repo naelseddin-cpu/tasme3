@@ -226,8 +226,24 @@
     var mode = state.settings.focusLineMode || 'auto';
     if (mode === 'off') return false;
     if (mode === 'on') return true;
-    // auto: the founder's height heuristic -- landscape AND short (<~500px)
-    return window.innerHeight < 500 && window.innerWidth > window.innerHeight;
+    // auto (wave-2 fix a9, aspect-aware): the original heuristic only ever
+    // checked `height<500 && landscape`, which missed shorter-but-not-THAT-
+    // short landscape windows entirely -- a 1024x600 tablet/laptop landscape
+    // window (height 600, well above 500) never engaged focus-line mode even
+    // though its aspect ratio is just as cramped for a full-page portrait
+    // view as a phone's. Both branches below require landscape (w>h) first:
+    //   - height<500, any landscape width at all (matches a phone in
+    //     landscape, e.g. 844x390 -- the original check, unchanged);
+    //   - a genuinely wide aspect ratio (>=1.3) with height<700 (catches
+    //     1024x600 and similar small-laptop/tablet-landscape windows the
+    //     old check missed).
+    // A portrait/near-square window like 390x400 (width<=height) never
+    // satisfies `w>h` and so never engages either branch, regardless of how
+    // short it is -- this mode is landscape-only by design.
+    var w = window.innerWidth, h = window.innerHeight;
+    if (w <= h) return false;
+    if (h < 500) return true;
+    return h < 700 && (w / h) >= 1.3;
   }
 
   function targetCropForLine(li) {
@@ -374,9 +390,32 @@
   // padding-bottom is a static safe-area-only value set in CSS. Resize/
   // rotate/fullscreen all re-run the focus-line heuristic (idea #3's
   // auto mode keys off innerWidth/innerHeight) before redrawing.
-  function handleViewportChange() { updateFocusMode(false); }
+  //
+  // Wave-2 fix a9: also re-runs idea #4's auto-follow-scroll afterwards --
+  // maybeAutoFollow() already guards against firing while focus-line mode is
+  // active (focusCropY0 != null) or in landscape, so this is a no-op in
+  // every case except the one it's meant for: a rotation INTO portrait that
+  // leaves the previously-active line off-center once updateFocusMode()
+  // above has finished handing crop control back to the plain full-page
+  // view, re-centering it in the same gesture instead of waiting for the
+  // next reveal to notice.
+  function handleViewportChange() { updateFocusMode(false); maybeAutoFollow(); }
   window.addEventListener('resize', handleViewportChange);
-  window.addEventListener('orientationchange', function () { setTimeout(handleViewportChange, 250); });
+  // Debounced (wave-2 fix a9): some devices/browsers fire orientationchange
+  // more than once per physical rotation (occasionally alongside a burst of
+  // resize events mid-rotation) -- without the clearTimeout guard, a rapid
+  // second firing could queue a redundant/overlapping handleViewportChange
+  // on top of one already pending, doubling the (admittedly cheap, but not
+  // free) crop/redraw work for no benefit. Only the LAST firing within the
+  // 250ms settle window actually runs.
+  var orientationChangeTimer = null;
+  window.addEventListener('orientationchange', function () {
+    clearTimeout(orientationChangeTimer);
+    orientationChangeTimer = setTimeout(function () {
+      orientationChangeTimer = null;
+      handleViewportChange();
+    }, 250);
+  });
   document.addEventListener('fullscreenchange', function () { setTimeout(handleViewportChange, 50); });
 
   // Word-progress counter: mirrored in two places -- the always-visible 3px
