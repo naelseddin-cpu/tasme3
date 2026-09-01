@@ -527,14 +527,46 @@
     }
     return null;
   }
+  // Wave-2 fix (a6 #4): a deep link / go-to-page / lastPage-restore landing
+  // on a boundary page (a surah's OWN firstPage, where that surah actually
+  // starts mid-page -- e.g. page 293: الإسراء's tail runs through word 91,
+  // الكهف begins at word 92) used to show the PREVIOUS surah in the chip,
+  // because pointer sits at 0 (nothing recited/jumped yet) and word[0]'s `k`
+  // is still الإسراء's leftover printed CONTEXT from an EARLIER page.
+  //
+  // Fix: at pointer===0 specifically (truly nothing recited/jumped into yet
+  // on this page), if the word-level surah started on an earlier page (its
+  // firstPage < this page) AND a DIFFERENT surah's firstPage IS this exact
+  // page, prefer that one -- the surah the reader actually landed here for.
+  // This must NOT simply prefer surahForPage(pageNum) unconditionally at
+  // pointer 0, though: a page like 604 has THREE surahs all starting on it
+  // (الإخلاص/الفلق/الناس, firstPage 604 each) -- surahForPage() alone
+  // returns the LAST of the three (الناس), which would wrongly override
+  // word[0]'s already-correct الإخلاص. The `pageSurah.firstPage === pageNum`
+  // guard below only ever fires for a GENUINE page-604-is-this-surah's-own-
+  // start situation, i.e. exactly the deep-link boundary case (293/523/583),
+  // never a same-page multi-surah page where word[0] already IS the first of
+  // several surahs beginning on this very page.
+  //
+  // The word-level lookup itself is otherwise unchanged and still handles
+  // every other pointer value exactly as before -- both genuine mid-page
+  // progress into a later surah (the drawer's surah-start jump, or reading
+  // straight past the boundary) and multi-surah pages like 604, tracking
+  // whichever surah is actually being recited right now rather than just
+  // the page's first (or, per the bug above, sometimes wrongly its last).
   function currentSurah() {
     var idx = Utils.clamp(pointer, 0, words.length - 1);
     var w = words[idx];
+    var bySurah = null;
     if (w && w.k) {
       var sNum = parseInt(w.k.split(':')[0], 10);
-      var bySurah = Number.isFinite(sNum) ? surahByNumber(sNum) : null;
-      if (bySurah) return bySurah;
+      bySurah = Number.isFinite(sNum) ? surahByNumber(sNum) : null;
     }
+    if (pointer === 0 && bySurah && bySurah.firstPage < pageNum) {
+      var pageSurah = surahForPage(pageNum);
+      if (pageSurah && pageSurah.firstPage === pageNum) return pageSurah;
+    }
+    if (bySurah) return bySurah;
     return surahForPage(pageNum);
   }
   function updatePageChip() {
