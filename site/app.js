@@ -7,20 +7,24 @@
   var Matcher = window.QuranMatcher;
 
   // Flaky-network guard (audit a3 #38): config.js/utils.js/storage.js/
-  // i18n.js/vendor/matcher.js load as plain <script> tags before this one --
-  // on a bad connection any one of them can fail its own network request and
-  // never execute, leaving its global undefined. Before this guard, the very
-  // next real statement below called Storage.load() unconditionally and
-  // threw an uncaught "Cannot read properties of undefined (reading 'load')"
-  // that crashed the whole app before anything else on the page could even
-  // try to recover (site/i18n.js's own Storage.load() calls are already
-  // wrapped in try/catch -- this file's top-level one was not). A same-
-  // origin reload almost always succeeds the second time (browser HTTP
-  // cache/service worker), so this is a plain, unmissable retry prompt
-  // rather than a silent retry loop -- and it can't route through the i18n
-  // catalog system, since i18n.js itself may be one of the scripts that
-  // failed to load.
-  if (!Utils || !Storage || !Matcher) {
+  // i18n.js/vendor/matcher.js/account.js load as plain <script> tags before
+  // this one -- on a bad connection any one of them can fail its own network
+  // request and never execute, leaving its global undefined. Before this
+  // guard, the very next real statements below called Storage.load() and
+  // window.Tasme3Account.attachGroupedInput() unconditionally and threw an
+  // uncaught "Cannot read properties of undefined" that crashed the whole
+  // app before anything else on the page could even try to recover
+  // (site/i18n.js's own Storage.load() calls are already wrapped in
+  // try/catch -- this file's top-level one was not). A same-origin reload
+  // almost always succeeds the second time (browser HTTP cache/service
+  // worker), so this is a plain, unmissable retry prompt rather than a
+  // silent retry loop -- and it can't route through the i18n catalog
+  // system, since i18n.js itself may be one of the scripts that failed to
+  // load. Tasme3I18n/Tasme3Account are checked here too (residual audit
+  // B1) -- previously only Utils/Storage/Matcher were, so a failed
+  // account.js still reached the unconditional attachGroupedInput() call
+  // below and threw past this guard instead of showing the same retry UI.
+  if (!Utils || !Storage || !Matcher || !window.Tasme3I18n || !window.Tasme3Account) {
     var failDiv = document.createElement('div');
     failDiv.className = 'pageerror';
     failDiv.style.cssText = 'display:flex;position:fixed;inset:0;z-index:99;';
@@ -403,22 +407,30 @@
   // view, re-centering it in the same gesture instead of waiting for the
   // next reveal to notice.
   function handleViewportChange() { updateFocusMode(false); maybeAutoFollow(); }
-  window.addEventListener('resize', handleViewportChange);
-  // Debounced (wave-2 fix a9): some devices/browsers fire orientationchange
-  // more than once per physical rotation (occasionally alongside a burst of
-  // resize events mid-rotation) -- without the clearTimeout guard, a rapid
-  // second firing could queue a redundant/overlapping handleViewportChange
-  // on top of one already pending, doubling the (admittedly cheap, but not
-  // free) crop/redraw work for no benefit. Only the LAST firing within the
-  // 250ms settle window actually runs.
-  var orientationChangeTimer = null;
-  window.addEventListener('orientationchange', function () {
-    clearTimeout(orientationChangeTimer);
-    orientationChangeTimer = setTimeout(function () {
-      orientationChangeTimer = null;
+  // Debounced (wave-2 fix a9, extended to `resize` by residual audit B4):
+  // some devices/browsers fire orientationchange more than once per physical
+  // rotation (occasionally alongside a burst of resize events mid-rotation),
+  // and a resize storm (a desktop window being dragged, or a mobile
+  // keyboard/toolbar animating in and out) can fire dozens of `resize`
+  // events in a few hundred ms -- without the clearTimeout guard, each one
+  // used to queue its own handleViewportChange (cheap individually, but not
+  // free, and pointless work repeated dozens of times for what is really
+  // one logical viewport change). Both listeners now share the exact same
+  // debounce path/timer: only the LAST firing within the 250ms settle
+  // window actually runs handleViewportChange -- which still calls
+  // maybeAutoFollow() every time it finally runs, so the rotation-return
+  // auto-follow (idea #4) fires exactly as before, just once per settled
+  // change instead of once per raw event.
+  var viewportChangeTimer = null;
+  function debouncedViewportChange() {
+    clearTimeout(viewportChangeTimer);
+    viewportChangeTimer = setTimeout(function () {
+      viewportChangeTimer = null;
       handleViewportChange();
     }, 250);
-  });
+  }
+  window.addEventListener('resize', debouncedViewportChange);
+  window.addEventListener('orientationchange', debouncedViewportChange);
   document.addEventListener('fullscreenchange', function () { setTimeout(handleViewportChange, 50); });
 
   // Word-progress counter: mirrored in two places -- the always-visible 3px
@@ -1820,16 +1832,31 @@
   // pattern -- 1/2 reuse the existing "front pages in progress" message
   // (they ARE valid page numbers, just not open yet); everything else
   // (0, negative, out-of-range, non-numeric) gets the new invalid-page
-  // toast. A leading '-' is deliberately NOT stripped before validation --
-  // normalizeCode() only extracts digits, so "-5" would otherwise silently
-  // become the valid page 5.
+  // toast.
+  //
+  // Residual audit B8: this used to run the raw input through
+  // window.Tasme3Account.normalizeCode(), which (by design, for the
+  // account-code field it was built for) STRIPS every non-digit character
+  // rather than rejecting them -- so "3.7" silently became "37" and
+  // navigated to page 37, and "3 7" silently became page 37 too, neither of
+  // which the reader typed. Digit conversion here now only ever CONVERTS
+  // Arabic-Indic/Extended-Arabic-Indic digits to Western (matching what a
+  // reader typing "٢٩٣" expects) without dropping anything else; the result
+  // is then required to be ASCII-digits-only (a leading '-' included) before
+  // it's ever parsed as a page number, so any stray punctuation, space, or
+  // letter is now a rejection instead of a silent reinterpretation.
+  var ARABIC_INDIC_DIGIT_RE = /[٠-٩۰-۹]/g;
+  function convertDigitsToWestern(s) {
+    return String(s).replace(ARABIC_INDIC_DIGIT_RE, function (ch) {
+      var code = ch.charCodeAt(0);
+      return String(code - (code >= 0x06F0 ? 0x06F0 : 0x0660));
+    });
+  }
   function submitGoToPage() {
-    var raw = el.drawerPageInput.value || '';
-    if (raw.indexOf('-') !== -1) { showToast(t('nav.invalidPage')); return; }
-    var digitsOnly = window.Tasme3Account.normalizeCode(raw);
-    if (!digitsOnly) { showToast(t('nav.invalidPage')); return; }
-    var n = parseInt(digitsOnly, 10);
-    if (!Number.isFinite(n)) { showToast(t('nav.invalidPage')); return; }
+    var raw = (el.drawerPageInput.value || '').trim();
+    var converted = convertDigitsToWestern(raw);
+    if (!/^[0-9]+$/.test(converted)) { showToast(t('nav.invalidPage')); return; }
+    var n = parseInt(converted, 10);
     if (n >= MIN_PAGE && n < NAV_MIN) { showToast(t('nav.frontPagesInProgress')); return; }
     if (n < MIN_PAGE || n > NAV_MAX) { showToast(t('nav.invalidPage')); return; }
     loadPage(n);

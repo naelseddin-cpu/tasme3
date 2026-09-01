@@ -46,6 +46,13 @@
   // whole-catalog fallback chain in fetchCatalog()/t() below -- populated by
   // setLanguage() regardless of which language is actually active.
   var enDict = null;
+  // Residual audit B3: bumped on every setLanguage() call and captured as
+  // `seq` in its closure -- a resolution whose seq no longer matches the
+  // latest call is a STALE call (a newer one has since been issued) and is
+  // ignored outright, so document/storage/currentLang() always end up
+  // reflecting whichever call was issued LAST, regardless of which of two
+  // (or more) in-flight fetches happens to resolve first.
+  var langRequestSeq = 0;
 
   function detectBrowserLang() {
     var langs = (global.navigator && (global.navigator.languages || [global.navigator.language])) || [];
@@ -123,11 +130,27 @@
 
   function setLanguage(lang) {
     if (!LANGS[lang]) lang = DEFAULT_LANG;
-    // Keep the English fallback catalog warm regardless of the active
-    // language -- best-effort and never blocks setLanguage()'s own promise
-    // on anything beyond the requested language's own catalog.
-    fetchCatalog('en').then(function (d) { enDict = d; }).catch(function () {});
-    return fetchCatalog(lang).then(function (dict) {
+    var seq = ++langRequestSeq;
+    // Residual audit B2: the English pre-fetch used to run detached from
+    // setLanguage()'s own returned promise -- applyTranslations() below ran
+    // the instant the REQUESTED catalog resolved, with no guarantee `enDict`
+    // was populated yet. Any key missing from that catalog (a key added
+    // after that language's last translation pass) then fell through t()'s
+    // per-key fallback to a still-null `enDict`, rendered as the raw key
+    // string, and NEVER re-rendered afterwards even once the English fetch
+    // did land -- nothing was listening for that. Awaiting both fetches
+    // (Promise.all) before the first applyTranslations() call means enDict
+    // is always populated (or definitively unavailable) by the time
+    // anything actually renders, so a per-key fallback has a real dict to
+    // fall back to on this very first render. The requested language's own
+    // whole-catalog failure fallback (fetchCatalog() recursing to 'en'
+    // internally) is unaffected -- langPromise below already resolves to
+    // the English dict in that case, exactly as before.
+    var enPromise = fetchCatalog('en').then(function (d) { enDict = d; return d; }).catch(function () { return null; });
+    var langPromise = fetchCatalog(lang);
+    return Promise.all([langPromise, enPromise]).then(function (results) {
+      if (seq !== langRequestSeq) return current.lang; // a newer setLanguage() call has since won -- ignore this stale one
+      var dict = results[0];
       current.lang = lang;
       current.dict = dict;
       document.documentElement.lang = lang;

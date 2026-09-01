@@ -78,7 +78,16 @@ body.chrome-visible .chrome-handle { display:none; }
 .topbar-right, .topbar-left { display:flex; align-items:center; gap:6px; }
 
 .zoomwarn { display:none; background:#b03a24; color:#fff; text-align:center; padding:10px 14px; font-size:.95rem; font-weight:600; }
-.pagebox { width:100%; min-height:220px; background:var(--sheet); position:relative; }
+/* Residual audit B7: .chrome-handle is a fixed, 14px-tall gold tab pinned to
+   the very top of the viewport whenever the top bar auto-hides -- on an
+   ordinary page (progressstrip is only 3px tall, so the page image starts
+   almost immediately below it) that tab physically covers the first line's
+   diacritics. padding-top here (handle height 14px + 2px) pushes the
+   canvas -- and so the rendered page image, in BOTH portrait and landscape/
+   focus-line crop, since it's the same canvas element either way -- down
+   far enough that the handle never overlaps it, while the page still fills
+   the full width (padding-top adds no horizontal inset). */
+.pagebox { width:100%; min-height:220px; padding-top:16px; background:var(--sheet); position:relative; }
 #pagecanvas { display:block; width:100%; height:auto; }
 
 /* ---- minimal main screen: just the page + two floating buttons. Every
@@ -237,12 +246,21 @@ body.chrome-visible .chrome-handle { display:none; }
 /* Sits on the (cream) sheet background, not the old dark bottom bar it was
    originally styled for -- the pale translucent-cream color read at ~1.07:1
    contrast there (audit #46). var(--muted) clears 4.5:1 on --sheet. */
-.footer-privacy { text-align:center; font-size:13px; color:var(--muted); padding:4px 12px 10px; }
-.listen-attribution { text-align:center; font-size:13px; color:#5d5133; padding:0 12px 4px; }
+.footer-privacy { text-align:center; font-size:14px; color:var(--muted); padding:4px 12px 10px; }
+.listen-attribution { text-align:center; font-size:14px; color:#5d5133; padding:0 12px 4px; }
 
 /* ---- drawer (surah / juz / page navigation) ---- */
 .drawer-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:30; }
-.drawer { position:fixed; top:0; bottom:0; width:min(340px, 86vw); background:var(--sheet); z-index:31;
+/* Residual audit B5: at high browser zoom (or a very narrow viewport) the
+   drawer's fixed 340px/86vw width plus its content (surah/juz rows, the
+   language select) could overflow with no way to reach what fell outside --
+   max-width:100vw is a hard ceiling regardless of the min() above,
+   box-sizing:border-box keeps that ceiling honest with any border/padding
+   added later, and overflow:auto on the drawer itself (on top of
+   .drawer-list's own scroll region) means the whole panel scrolls rather
+   than clips if its children ever exceed the viewport height. */
+.drawer { position:fixed; top:0; bottom:0; width:min(340px, 86vw); max-width:100vw; box-sizing:border-box;
+  background:var(--sheet); z-index:31; overflow:auto;
   box-shadow:0 0 24px rgba(0,0,0,.4); display:flex; flex-direction:column; transform:translateX(100%);
   visibility:hidden; transition:transform .25s ease, visibility 0s linear .25s; }
 /* Same delayed-visibility trick as .sheet above -- a closed drawer must not
@@ -251,12 +269,26 @@ body.chrome-visible .chrome-handle { display:none; }
 html[dir="rtl"] .drawer { right:0; transform:translateX(100%); }
 html[dir="ltr"] .drawer { left:0; transform:translateX(-100%); }
 html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translateX(0); }
+/* Sticky (residual audit B5): once the drawer itself can scroll (see
+   .drawer's own overflow:auto above), the head -- and #drawerClose inside
+   it -- must stay reachable at the top rather than scrolling out of view
+   at high zoom. */
 .drawer-head { display:flex; align-items:center; justify-content:space-between; padding:12px 14px;
-  border-bottom:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#e4d9b8); }
+  border-bottom:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#e4d9b8);
+  position:sticky; top:0; z-index:2; }
 .drawer-head h2 { font-size:1rem; color:var(--green-deep); }
-.drawer-head .lang-select { max-width:120px; font-size:.78rem; padding:5px 6px; }
+/* min-width:0 on the select alone (B5) turned out not to be enough on its
+   own in Chromium's flex-shrink resolution here: .topbar-right is itself a
+   flex CONTAINER nested as one flex ITEM of .drawer-head, and its own
+   automatic minimum size (the min-content size of its child boxes when
+   overflow is visible, per the flexbox spec) still kept the select pinned
+   at its max-width and let it spill off-screen at a narrow drawer width
+   instead of shrinking. min-width:0 here too unblocks that outer level so
+   the shrink actually reaches the select. */
+.drawer-head .topbar-right { min-width:0; }
+.drawer-head .lang-select { max-width:120px; min-width:0; font-size:.78rem; padding:5px 6px; }
 .drawer-tabs { display:flex; border-bottom:1px solid var(--gold-line); }
-.drawer-tabs button { flex:1; padding:10px; font-size:.85rem; background:none; border:none; cursor:pointer;
+.drawer-tabs button { flex:1; min-height:44px; padding:10px; font-size:.85rem; background:none; border:none; cursor:pointer;
   color:var(--muted); border-bottom:2px solid transparent; }
 .drawer-tabs button.active { color:var(--green-deep); font-weight:700; border-bottom-color:var(--green-deep); }
 .drawer-jump { display:flex; gap:6px; padding:10px 14px; border-bottom:1px solid var(--gold-line); }
@@ -271,9 +303,9 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
   padding:11px 14px; border:none; border-bottom:1px solid #ece1c2; border-radius:0; background:none;
   width:100%; font:inherit; color:inherit; text-align:inherit; cursor:pointer; font-size:.92rem; }
 .drawer-item:hover, .drawer-item:active { background:#f6f1e4; }
-.drawer-item .pg { color:var(--muted); font-size:13px; font-variant-numeric:tabular-nums; }
+.drawer-item .pg { color:var(--muted); font-size:14px; font-variant-numeric:tabular-nums; }
 .lang-select { border:1px solid var(--gold-deep); border-radius:8px; padding:6px 8px; font-size:.85rem;
-  min-height:36px; background:var(--pearl); color:var(--green-deep); }
+  min-height:36px; min-width:0; background:var(--pearl); color:var(--green-deep); }
 
 .toast { position:fixed; left:50%; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 58px); transform:translateX(-50%);
   background:#2a2a20; color:#fff; padding:9px 16px; border-radius:999px; font-size:.85rem; z-index:40;
@@ -370,6 +402,26 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
      static ring (still clearly distinct from "loaded but veiled") instead
      of removing the animation with nothing replacing it. */
   .pagespinner.show { animation:none; opacity:.85; }
+}
+
+/* ---- forced-colors / Windows High Contrast (residual audit B6): the
+   "pressed"/"current" states below are conveyed only by a background-color
+   swap (.level-seg.active, .drawer-tabs button.active), which forced-colors
+   mode flattens away entirely -- these states need their own
+   non-color-dependent indicator (outline + underline) so they stay visible
+   there. Targets the actual state attributes app.js maintains
+   (aria-pressed for the level/focus-line segments, aria-current for the
+   active drawer tab) rather than the presentational classes, so this never
+   drifts out of sync with what's really selected. ---- */
+@media (forced-colors: active) {
+  .level-seg[aria-pressed="true"],
+  .drawer-tabs button[aria-current],
+  .drawer-tabs button[aria-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+    text-decoration: underline;
+    border-color: Highlight;
+  }
 }
 
 /* landscape: give every extra pixel to the Quran text */
