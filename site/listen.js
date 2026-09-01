@@ -48,7 +48,12 @@
     this._chain = [];
     this._surah = null;
     this._ayah = null;
-    this._onStateChange = null; // (state: 'playing'|'paused'|'error') => void
+    // Wave-2 fix #10 (a3 G2/G3): true from the moment play() is called until
+    // the audio actually starts (native 'playing') or every chain link has
+    // failed -- lets app.js show a distinct pending/loading button state and
+    // turn a retap during that window into a cancel rather than a restart.
+    this._pending = false;
+    this._onStateChange = null; // (state: 'playing'|'paused'|'loading'|'error') => void
     var self = this;
     this._audio.addEventListener('error', function () { self._tryNext(); });
     this._audio.addEventListener('ended', function () {
@@ -56,6 +61,7 @@
       if (self._onStateChange) self._onStateChange('paused');
     });
     this._audio.addEventListener('playing', function () {
+      self._pending = false;
       if (self._onStateChange) self._onStateChange('playing');
     });
   }
@@ -65,6 +71,7 @@
   Listener.prototype._tryNext = function () {
     this._chainIdx += 1;
     if (this._chainIdx >= this._chain.length) {
+      this._pending = false;
       if (this._onStateChange) this._onStateChange('error');
       return;
     }
@@ -82,6 +89,8 @@
     this._chainIdx = 0;
     this._audio.loop = !!this._repeat;
     this._audio.src = urlFor(this._chain[0], surah, ayah);
+    this._pending = true;
+    if (this._onStateChange) this._onStateChange('loading');
     var self = this;
     this._audio.play().catch(function () { self._tryNext(); });
   };
@@ -94,7 +103,21 @@
     try { this._audio.pause(); this._audio.currentTime = 0; } catch (_) {}
   };
 
+  // Cancels a still-pending (loading) tap instead of letting it resolve --
+  // pauses AND clears the src (then calls load() to actually abort the
+  // in-flight network request, not just stop referencing it) so a retap
+  // while the audio is stalled truly cancels rather than queuing behind it.
+  Listener.prototype.cancel = function () {
+    this._pending = false;
+    try {
+      this._audio.pause();
+      this._audio.removeAttribute('src');
+      this._audio.load();
+    } catch (_) {}
+  };
+
   Listener.prototype.isPlaying = function () { return !this._audio.paused; };
+  Listener.prototype.isPending = function () { return !!this._pending; };
 
   Listener.prototype.setRepeat = function (on) {
     this._repeat = !!on;
