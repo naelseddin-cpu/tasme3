@@ -165,8 +165,12 @@
   "nav.fullscreenExit": "Keluar skrin penuh",
   "nav.invalidPage": "Nombor muka surat tidak sah",
   "hint.firstRun": "Tekan mikrofon dan baca dari hafalan — setiap perkataan yang betul akan muncul di tempatnya",
-  "a11y.wordsRevealed": "{n} perkataan didedahkan",
+  "a11y.wordsRevealed": "{n} daripada {m} perkataan didedahkan",
   "listen.loading": "Sedang dimuatkan…",
   "drawer.indexLoadError": "Tidak dapat memuatkan indeks",
-  "nav.juz": "Juzuk"
+  "nav.juz": "Juzuk",
+  "hint.settings": "⚙️ untuk tetapan, tahap dan sijil",
+  "mic.retrying": "Mencuba semula…",
+  "help.title": "Bagaimana aplikasi ini berfungsi?",
+  "help.body": "Tekan mikrofon dan baca dari hafazan. Perkataan akan muncul apabila anda membacanya dengan betul. Guna ⚙️ untuk menukar tahap atau melihat sijil."
 }

@@ -166,7 +166,11 @@
   "nav.fullscreenExit": "To'liq ekrandan chiqish",
   "nav.invalidPage": "Sahifa raqami noto'g'ri",
   "hint.firstRun": "Mikrofonni bosing va yoddan o'qing — har bir to'g'ri so'z o'z joyida paydo bo'ladi",
-  "a11y.wordsRevealed": "{n} ta so'z ochildi",
+  "a11y.wordsRevealed": "{m} tadan {n} ta so'z ochildi",
   "listen.loading": "Yuklanmoqda…",
-  "drawer.indexLoadError": "Ko'rsatkichni yuklab bo'lmadi"
+  "drawer.indexLoadError": "Ko'rsatkichni yuklab bo'lmadi",
+  "hint.settings": "⚙️ sozlamalar, daraja va sertifikatlar uchun",
+  "mic.retrying": "Qayta urinilmoqda…",
+  "help.title": "Ilova qanday ishlaydi?",
+  "help.body": "Mikrofonni bosing va yoddan o'qing. To'g'ri o'qigan so'zlaringiz sahifada paydo bo'ladi. Darajangizni o'zgartirish yoki sertifikatlaringizni ko'rish uchun ⚙️ dan foydalaning."
 }

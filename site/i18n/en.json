@@ -165,8 +165,12 @@
   "nav.fullscreenExit": "Exit fullscreen",
   "nav.invalidPage": "Invalid page number",
   "hint.firstRun": "Press the microphone and recite from memory — each correct word appears in its place",
-  "a11y.wordsRevealed": "{n} words revealed",
+  "a11y.wordsRevealed": "{n} of {m} words revealed",
   "listen.loading": "Loading…",
   "drawer.indexLoadError": "Could not load the index",
-  "nav.juz": "Juz"
+  "nav.juz": "Juz",
+  "hint.settings": "⚙️ for settings, level and certificates",
+  "mic.retrying": "Retrying…",
+  "help.title": "How does the app work?",
+  "help.body": "Press the microphone and recite from memory. Words appear on the page as you recite them correctly. Use ⚙️ to change your level or view your certificates."
 }

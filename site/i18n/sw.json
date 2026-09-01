@@ -165,8 +165,12 @@
   "nav.fullscreenExit": "Toka skrini nzima",
   "nav.invalidPage": "Nambari ya ukurasa si sahihi",
   "hint.firstRun": "Bonyeza kipaza sauti na usome kwa moyo — kila neno sahihi litaonekana mahali pake",
-  "a11y.wordsRevealed": "Maneno {n} yamefunuliwa",
+  "a11y.wordsRevealed": "Maneno {n} kati ya {m} yamefunuliwa",
   "listen.loading": "Inapakia…",
   "drawer.indexLoadError": "Imeshindwa kupakia faharasa",
-  "nav.juz": "Juzuu"
+  "nav.juz": "Juzuu",
+  "hint.settings": "⚙️ kwa mipangilio, kiwango na vyeti",
+  "mic.retrying": "Inajaribu tena…",
+  "help.title": "Programu inafanya kazi vipi?",
+  "help.body": "Bonyeza kipaza sauti na usome kwa moyo. Maneno yanaonekana unaposoma kwa usahihi. Tumia ⚙️ kubadilisha kiwango au kuona vyeti vyako."
 }

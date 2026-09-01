@@ -166,7 +166,11 @@
   "nav.fullscreenExit": "Ka bax shaashadda buuxda",
   "nav.invalidPage": "Lambarka boggu ma saxna",
   "hint.firstRun": "Riix makarafoonka oo aqri xaal ahaan — eray kasta oo sax ah ayaa ka muuqan doona meeshiisa",
-  "a11y.wordsRevealed": "{n} eray ayaa soo baxay",
+  "a11y.wordsRevealed": "{n} ee {m} eray ayaa soo baxay",
   "listen.loading": "Waa la soo rarayaa…",
-  "drawer.indexLoadError": "Fahraska lama soo rarin karin"
+  "drawer.indexLoadError": "Fahraska lama soo rarin karin",
+  "hint.settings": "⚙️ dejinta, heerka iyo shahaadooyinka",
+  "mic.retrying": "Isku dayid kale ayaa socota…",
+  "help.title": "Sidee app-ku u shaqeeyaa?",
+  "help.body": "Riix makarafoonka oo aqri xaal ahaan. Ereyada way soo muuqdaan marka aad si sax ah u akhrido. Isticmaal ⚙️ si aad u bedasho heerkaaga ama u aragto shahaadooyinkaaga."
 }

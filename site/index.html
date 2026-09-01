@@ -59,7 +59,7 @@
   </div>
   <div class="fallback" id="fallback"><input id="typeInput" data-i18n-placeholder="mic.typeFallback" /></div>
 
-  <div class="pagebox" id="pagebox"><canvas id="pagecanvas"></canvas>
+  <div class="pagebox" id="pagebox"><canvas id="pagecanvas" role="img"></canvas>
     <div class="pagespinner" id="pageSpinner" aria-hidden="true"></div>
     <div class="pageerror" id="pageError"><p data-i18n="error.pageLoad">تعذر تحميل الصفحة</p><button id="pageErrorRetry" data-i18n="common.retry">إعادة المحاولة</button></div>
   </div>
@@ -89,6 +89,7 @@
   <div class="first-run-hint" id="firstRunHint" hidden>
     <div class="first-run-hint-arrow" aria-hidden="true">↓</div>
     <p data-i18n="hint.firstRun"></p>
+    <p data-i18n="hint.settings"></p>
   </div>
 
   <div class="floatbar">
@@ -106,6 +107,13 @@
   </div>
   <div class="sheet-body">
     <div class="greeting" id="greetingLine" hidden></div>
+
+    <div class="help-entry">
+      <details>
+        <summary data-i18n="help.title">كيف يعمل التطبيق؟</summary>
+        <p data-i18n="help.body"></p>
+      </details>
+    </div>
 
     <section class="sheet-section">
       <h3 data-i18n="focusLine.label">وضع السطر الكبير</h3>

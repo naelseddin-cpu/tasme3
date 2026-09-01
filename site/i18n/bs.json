@@ -165,8 +165,12 @@
   "nav.fullscreenExit": "Izađi iz punog ekrana",
   "nav.invalidPage": "Nevažeći broj stranice",
   "hint.firstRun": "Pritisnite mikrofon i učite napamet — svaka tačna riječ se pojavljuje na svom mjestu",
-  "a11y.wordsRevealed": "{n} riječi otkriveno",
+  "a11y.wordsRevealed": "{n} od {m} riječi otkriveno",
   "listen.loading": "Učitavanje…",
   "drawer.indexLoadError": "Nije moguće učitati indeks",
-  "nav.juz": "Džuz"
+  "nav.juz": "Džuz",
+  "hint.settings": "⚙️ za postavke, nivo i sertifikate",
+  "mic.retrying": "Ponovni pokušaj…",
+  "help.title": "Kako aplikacija radi?",
+  "help.body": "Pritisnite mikrofon i učite napamet. Riječi se pojavljuju čim ih tačno izgovorite. Koristite ⚙️ za promjenu nivoa ili pregled sertifikata."
 }

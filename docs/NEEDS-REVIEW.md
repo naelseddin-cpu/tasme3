@@ -1,5 +1,34 @@
 # Translations needing native-speaker review
 
+**Date:** 2026-09-01 · **Context:** residual-findings pass (10-auditor
+re-audit -- surah-completion celebration banner, typed-fallback focus,
+back-button hardening, an ASR-retry toast, and an elderly-usability help
+entry/hint line). Four new keys were added to all 25 `app/i18n/*.json`
+catalogs, and one existing key's placeholders changed:
+
+- `hint.settings` — the first-run hint's new second line introducing the ⚙️
+  button (`site/app.js`'s `maybeShowFirstRunHint()`).
+- `mic.retrying` — a brief interim toast shown on the first retryable
+  network error from the in-browser speech recognizer, before the ~7.5s
+  backoff finishes and the mic-help box appears (`rec.onerror` in
+  `site/app.js`).
+- `help.title` / `help.body` — a new collapsed "how does the app work?"
+  `<details>` row at the top of the setup sheet; `help.body` is three short
+  sentences (press the mic and recite from memory; words appear as you
+  recite them correctly; use ⚙️ to change level or view certificates).
+- `a11y.wordsRevealed` — its placeholder changed from a single `{n}` (the
+  size of the just-revealed batch, which repeated an unhelpful "1 words
+  revealed" after every single word for most typed/spoken input) to `{n}`
+  **and** `{m}` (the page's running recited/total count, e.g. "5 of 42 words
+  revealed") so the screen-reader announcement carries real progress
+  information. Every one of the 25 catalogs was updated to the "{n} of {m}"
+  (or that language's natural equivalent) form for this key.
+
+Arabic and English are high-confidence (founder-specified wording pattern /
+native-fluent). **All 23 other languages are machine/LLM-drafted for these
+five keys and should get a native-speaker pass before shipping**, same as
+every other non-Arabic/English catalog on this page.
+
 **Date:** 2026-09-01 · **Context:** wave-2 resilience fixes (10-auditor
 review -- weak-internet and edge-case behavior: page-load spinner, a
 surah-index retry row, i18n/listen-button/rotation robustness). Two new keys

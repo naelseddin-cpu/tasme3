@@ -144,12 +144,12 @@ body.chrome-visible .chrome-handle { display:none; }
 /* Focus-line auto/on/off toggle (founder idea #3) reuses the level-seg look
    but as a flat 3-up row rather than the level selector's 2x2 grid. */
 .focusline-toggle { grid-template-columns:1fr 1fr 1fr; }
-.focusline-toggle .level-seg { min-height:40px; font-size:.82rem; font-weight:600; }
+.focusline-toggle .level-seg { min-height:44px; font-size:.82rem; font-weight:600; }
 .level-seg { flex-direction:column; gap:2px; min-height:56px; border-radius:10px; border:1px solid var(--gold-deep);
   background:linear-gradient(180deg,var(--pearl),#e4d9b8); color:#5d5133; cursor:pointer;
   display:flex; align-items:center; justify-content:center; box-shadow:inset 0 1px 0 #fff; }
 .level-seg-num { font-size:1.05rem; font-weight:800; font-variant-numeric:tabular-nums; }
-.level-seg-name { font-size:13px; font-weight:600; }
+.level-seg-name { font-size:14px; font-weight:600; }
 /* Darkened from the original #47a874 top stop -- audit found insufficient
    contrast for the white label text on the gradient's lightest pixels
    (min ratio was under 3:1); #2f7d55 keeps the same green hue/feel while
@@ -178,12 +178,12 @@ body.chrome-visible .chrome-handle { display:none; }
    the sheet's cream background now instead of the (removed) gold bar. */
 .michelp-toggle { text-align:center; padding:8px 0 0; }
 .michelp-toggle a { display:inline-block; min-height:32px; padding:8px 6px; color:var(--green-deep);
-  font-size:.8rem; text-decoration:underline; cursor:pointer; }
+  font-size:14px; text-decoration:underline; cursor:pointer; }
 /* In-flow above the page (same pattern as .zoomwarn) so the typed fallback
    stays visible without scrolling the instant the mic path fails, with zero
    footprint the rest of the time. */
 .helpbox { display:none; margin:0 12px 10px; padding:10px 12px; background:var(--sheet);
-  border:1px solid var(--gold-deep); border-radius:10px; font-size:.82rem; line-height:1.9; }
+  border:1px solid var(--gold-deep); border-radius:10px; font-size:14px; line-height:1.9; }
 .helpbox button { display:block; width:100%; margin:8px 0; padding:9px;
   background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb;
   border:1px solid var(--gold-deep); border-radius:9px; font-size:.9rem; cursor:pointer; }
@@ -382,12 +382,29 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
 .cert-actions button { flex:1; }
 
 /* ---- one-time first-run hint (elderly audit): points at the mic, dismisses
-   on tap or after 3s, never shown again once localStorage records it ---- */
+   on tap or after 3s, never shown again once localStorage records it.
+   inset-inline-end here is only a layout fallback/starting point --
+   app.js's positionFirstRunHint() (residual audit C4) overrides it with an
+   inline `left` computed from #recBtn's real center the moment the hint is
+   shown, so the two stay centered on each other regardless of language/
+   text-wrap width. ---- */
 .first-run-hint { position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 66px);
   inset-inline-end:16px; max-width:220px; z-index:24; background:var(--sheet); border:1px solid var(--gold-deep);
   border-radius:12px; padding:10px 14px; box-shadow:0 6px 20px rgba(0,0,0,.35); text-align:center;
-  font-size:.85rem; color:var(--ink); cursor:pointer; }
+  font-size:14px; color:var(--ink); cursor:pointer; }
 .first-run-hint-arrow { font-size:1.3rem; line-height:1; color:var(--gold-deep); margin-bottom:2px; }
+/* Second line (residual audit C4: introduces the ⚙️ button) -- consecutive
+   <p>s otherwise have zero gap under this file's global margin/padding
+   reset. */
+.first-run-hint p + p { margin-top:6px; color:var(--muted); }
+
+/* ---- collapsed "how does the app work?" entry (residual audit C6) -- a
+   minimal <details>/<summary> row at the top of the setup sheet. Respects
+   the 14px text floor and the 44px touch-target floor on its summary. ---- */
+.help-entry { margin-bottom:10px; }
+.help-entry summary { display:flex; align-items:center; min-height:44px; padding:4px 2px;
+  font-size:14px; font-weight:600; color:var(--green-deep); cursor:pointer; }
+.help-entry p { font-size:14px; line-height:1.6; color:var(--ink); padding:2px 2px 6px; }
 
 /* ---- motion (a11y F9): every remaining CSS transition on a UI element that
    moves/fades is gated behind prefers-reduced-motion -- placed last so it

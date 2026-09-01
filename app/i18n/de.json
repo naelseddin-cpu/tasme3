@@ -166,7 +166,11 @@
   "nav.fullscreenExit": "Vollbild verlassen",
   "nav.invalidPage": "Ungültige Seitenzahl",
   "hint.firstRun": "Drücke das Mikrofon und rezitiere auswendig — jedes richtige Wort erscheint an seiner Stelle",
-  "a11y.wordsRevealed": "{n} Wörter aufgedeckt",
+  "a11y.wordsRevealed": "{n} von {m} Wörtern aufgedeckt",
   "listen.loading": "Wird geladen…",
-  "drawer.indexLoadError": "Index konnte nicht geladen werden"
+  "drawer.indexLoadError": "Index konnte nicht geladen werden",
+  "hint.settings": "⚙️ für Einstellungen, Stufe und Zertifikate",
+  "mic.retrying": "Erneuter Versuch…",
+  "help.title": "Wie funktioniert die App?",
+  "help.body": "Drücke das Mikrofon und rezitiere auswendig. Wörter erscheinen, sobald du sie richtig rezitierst. Nutze ⚙️, um deine Stufe zu ändern oder deine Zertifikate anzusehen."
 }

@@ -460,6 +460,10 @@
     var pct = (100 * recited / Math.max(1, total)) + '%';
     el.pbar.style.width = pct;
     el.pbarTop.style.width = pct;
+    // Returned so callers that need the just-computed numbers (the a11y
+    // reveal announcement in applyMatches() -- residual audit C7) don't have
+    // to duplicate this exact recited/total math themselves.
+    return { recited: recited, total: total };
   }
 
   // Writes the live pointer/revealed/contextRevealed for the current page
@@ -644,21 +648,36 @@
     // contained so the surrounding words/number stay in their authored
     // order regardless of document direction.
     var isolatedName = s ? '⁧' + s.name + '⁩' : '';
-    if (!s) { el.pageChip.textContent = pageLabel(pageNum); return; }
-    var full = t('chip.surahPage', { surah: isolatedName, page: digits(pageNum) });
-    // a11y F8: wrap the (always-Arabic) surah-name run in lang="ar" so
-    // assistive tech pronounces it correctly even when the UI language
-    // isn't Arabic -- the isolate characters above are still needed for
-    // correct bidi *visual* order and stay untouched either way.
-    el.pageChip.innerHTML = '';
-    var idx = full.indexOf(isolatedName);
-    if (idx === -1) { el.pageChip.textContent = full; return; }
-    el.pageChip.appendChild(document.createTextNode(full.slice(0, idx)));
-    var nameSpan = document.createElement('span');
-    nameSpan.lang = 'ar';
-    nameSpan.textContent = isolatedName;
-    el.pageChip.appendChild(nameSpan);
-    el.pageChip.appendChild(document.createTextNode(full.slice(idx + isolatedName.length)));
+    if (!s) {
+      el.pageChip.textContent = pageLabel(pageNum);
+    } else {
+      var full = t('chip.surahPage', { surah: isolatedName, page: digits(pageNum) });
+      // a11y F8: wrap the (always-Arabic) surah-name run in lang="ar" so
+      // assistive tech pronounces it correctly even when the UI language
+      // isn't Arabic -- the isolate characters above are still needed for
+      // correct bidi *visual* order and stay untouched either way.
+      el.pageChip.innerHTML = '';
+      var idx = full.indexOf(isolatedName);
+      if (idx === -1) {
+        el.pageChip.textContent = full;
+      } else {
+        el.pageChip.appendChild(document.createTextNode(full.slice(0, idx)));
+        var nameSpan = document.createElement('span');
+        nameSpan.lang = 'ar';
+        nameSpan.textContent = isolatedName;
+        el.pageChip.appendChild(nameSpan);
+        el.pageChip.appendChild(document.createTextNode(full.slice(idx + isolatedName.length)));
+      }
+    }
+    // a11y C7: #pagecanvas carries role="img" (index.html) since the veiled
+    // Mushaf page is genuinely an image to assistive tech -- its aria-label
+    // is read straight off the chip's own just-built rendered text (page
+    // number + surah name, the same thing a sighted reader sees in the top
+    // bar) so the two can never drift out of sync, and it NEVER carries any
+    // actual Quran text (a word is only ever revealed by genuine recitation
+    // -- see draw()/applyMatches() -- so exposing it here would bypass that
+    // entirely for a screen-reader user).
+    el.pagecanvas.setAttribute('aria-label', el.pageChip.textContent);
   }
 
   // Loading spinner (wave-2 fix #1): distinguishes "the page is still on its
@@ -1044,7 +1063,7 @@
     (r.matched || []).forEach(function (i) { revealed.add(i); });
     pointer = r.pointer;
     var newlyRevealed = revealed.size - before;
-    updateCounter();
+    var counts = updateCounter();
     updatePageChip(); // cheap -- catches the pointer crossing a surah boundary mid-page
     // updateFocusMode() redraws either way -- sliding the focus-line crop to
     // the pointer's new line when idea #3 is active, or a plain draw() when
@@ -1076,12 +1095,18 @@
     } else if ((r.matched || []).length) {
       setStatus(t('recite.wellDone'), 'good');
     }
-    // a11y: every reveal batch also gets an explicit spoken word count,
-    // appended after whatever status text was just announced above --
-    // screen-reader users otherwise have no way to know HOW MUCH just
-    // appeared on the page.
+    // a11y (residual audit C7): every reveal batch also gets an explicit
+    // spoken word count, appended after whatever status text was just
+    // announced above -- screen-reader users otherwise have no way to know
+    // HOW MUCH just appeared on the page. This used to announce only
+    // newlyRevealed (the size of THIS batch), which for the common
+    // one-word-at-a-time typed/spoken case repeated the unhelpful "1 words
+    // revealed" after every single word; announcing the page's running
+    // cumulative total (from updateCounter()'s just-computed counts, the
+    // same recited/total shown in the setup sheet's counter) instead gives
+    // real progress information every time.
     if (newlyRevealed > 0) {
-      var countMsg = t('a11y.wordsRevealed', { n: digits(newlyRevealed) });
+      var countMsg = t('a11y.wordsRevealed', { n: digits(counts.recited), m: digits(counts.total) });
       el.status.textContent = (el.status.textContent ? el.status.textContent + ' ' : '') + countMsg;
     }
     Storage.save(state);
@@ -1309,6 +1334,15 @@
         if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { stopListening(); showMicHelp(); return; }
         if (RETRYABLE_ERRORS[e.error]) {
           if (retryCount >= RETRY_BACKOFF_MS.length) { stopListening(); showMicHelp(); return; }
+          // Residual audit C5: RETRY_BACKOFF_MS sums to ~7.5s before the help
+          // box finally appears -- total silence for that whole stretch,
+          // easy to read as the app having simply frozen. A brief interim
+          // toast on the FIRST retryable error of this listening session
+          // (retryCount is still 0 here, before it's bumped below, and gets
+          // reset to 0 by noteRestart()/stopListening() on every fresh
+          // start) gives an immediate, honest "something's happening"
+          // signal without needing to persist for the whole backoff.
+          if (retryCount === 0) showToast(t('mic.retrying'));
           var delay = RETRY_BACKOFF_MS[retryCount]; retryCount++;
           clearRetryTimer();
           retryTimer = setTimeout(function () { retryTimer = null; if (listening) { noteRestart(); try { rec.start(); } catch (_) {} } }, delay);
@@ -1705,7 +1739,15 @@
     el.drawerBackdrop.style.display = 'none';
     showChrome(true); // resume the normal auto-hide countdown
   }
-  el.menuBtn.onclick = function () { openDrawer('surah'); };
+  // Residual audit C3: a second tap on ☰ while the drawer is already open
+  // used to unconditionally call openDrawer() again -- harmless (it's
+  // idempotent, see registerOverlayOpen's already-topmost guard) but not
+  // what a reader expects from a menu button: a second tap should close it,
+  // same as tapping it again on any standard hamburger menu.
+  el.menuBtn.onclick = function () {
+    if (el.drawer.classList.contains('open')) closeDrawer();
+    else openDrawer('surah');
+  };
   el.drawerClose.onclick = closeDrawer;
   el.drawerBackdrop.onclick = closeDrawer;
 
@@ -2021,12 +2063,35 @@
   // localStorage (not Tasme3Storage's versioned schema) since this is a
   // purely per-device UI nicety, not app data worth migrating/merging.
   var FIRST_RUN_HINT_KEY = 'tasme3FirstRunHintShown';
+  // Residual audit C4: the hint used to rely purely on CSS (inset-inline-end
+  // anchoring, same edge as .floatbar) to sit "near" the mic button, but its
+  // own box can be up to 220px wide (max-width) while #recBtn is only 56px --
+  // anchoring both to the same edge lines up their EDGES, not their centers,
+  // leaving the hint's arrow visibly off-center from the button it's meant
+  // to point at. This computes #recBtn's actual on-screen center and
+  // positions the hint (via a plain physical `left`, which as an inline
+  // style beats the CSS's logical inset-inline-end regardless of RTL/LTR)
+  // so the two centers always coincide, however wide the hint's text
+  // happens to wrap in the current language.
+  function positionFirstRunHint() {
+    if (!el.firstRunHint || !el.recBtn) return;
+    var micRect = el.recBtn.getBoundingClientRect();
+    var centerX = micRect.left + micRect.width / 2;
+    var hintRect = el.firstRunHint.getBoundingClientRect();
+    var margin = 8;
+    var left = centerX - hintRect.width / 2;
+    left = Math.max(margin, Math.min(left, window.innerWidth - hintRect.width - margin));
+    el.firstRunHint.style.insetInlineEnd = 'auto';
+    el.firstRunHint.style.right = 'auto';
+    el.firstRunHint.style.left = left + 'px';
+  }
   function maybeShowFirstRunHint() {
     if (!el.firstRunHint) return;
     var shown;
     try { shown = localStorage.getItem(FIRST_RUN_HINT_KEY); } catch (_) { shown = '1'; }
     if (shown) return;
     el.firstRunHint.hidden = false;
+    positionFirstRunHint();
     var tm = setTimeout(dismiss, 3000);
     function dismiss() {
       clearTimeout(tm);

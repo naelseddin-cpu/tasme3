@@ -165,8 +165,12 @@
   "nav.fullscreenExit": "Volledig scherm sluiten",
   "nav.invalidPage": "Ongeldig paginanummer",
   "hint.firstRun": "Druk op de microfoon en reciteer uit het geheugen — elk juist woord verschijnt op zijn plaats",
-  "a11y.wordsRevealed": "{n} woorden onthuld",
+  "a11y.wordsRevealed": "{n} van {m} woorden onthuld",
   "listen.loading": "Bezig met laden…",
   "drawer.indexLoadError": "Kon de index niet laden",
-  "nav.juz": "Juz"
+  "nav.juz": "Juz",
+  "hint.settings": "⚙️ voor instellingen, niveau en certificaten",
+  "mic.retrying": "Opnieuw proberen…",
+  "help.title": "Hoe werkt de app?",
+  "help.body": "Druk op de microfoon en reciteer uit je hoofd. Woorden verschijnen zodra je ze correct reciteert. Gebruik ⚙️ om je niveau te wijzigen of je certificaten te bekijken."
 }

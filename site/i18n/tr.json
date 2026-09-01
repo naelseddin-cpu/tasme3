@@ -165,8 +165,12 @@
   "nav.fullscreenExit": "Tam ekrandan çık",
   "nav.invalidPage": "Geçersiz sayfa numarası",
   "hint.firstRun": "Mikrofona basın ve ezbereden okuyun — her doğru kelime yerinde belirir",
-  "a11y.wordsRevealed": "{n} kelime ortaya çıktı",
+  "a11y.wordsRevealed": "{m} kelimeden {n} tanesi ortaya çıktı",
   "listen.loading": "Yükleniyor…",
   "drawer.indexLoadError": "Dizin yüklenemedi",
-  "nav.juz": "Cüz"
+  "nav.juz": "Cüz",
+  "hint.settings": "⚙️ ayarlar, seviye ve sertifikalar için",
+  "mic.retrying": "Yeniden deneniyor…",
+  "help.title": "Uygulama nasıl çalışır?",
+  "help.body": "Mikrofona basın ve ezberden okuyun. Doğru okuduğunuz her kelime yerinde belirir. Seviyenizi değiştirmek veya sertifikalarınızı görmek için ⚙️ kullanın."
 }

@@ -165,8 +165,12 @@
   "nav.fullscreenExit": "退出全屏",
   "nav.invalidPage": "页码无效",
   "hint.firstRun": "按下麦克风并凭记忆诵读——每个正确的字词都会出现在原位",
-  "a11y.wordsRevealed": "已显示 {n} 个字词",
+  "a11y.wordsRevealed": "已显示 {n}/{m} 个字词",
   "listen.loading": "正在加载……",
   "drawer.indexLoadError": "无法加载目录",
-  "nav.juz": "本（Juz）"
+  "nav.juz": "本（Juz）",
+  "hint.settings": "⚙️ 用于设置、等级和证书",
+  "mic.retrying": "正在重试…",
+  "help.title": "应用是如何运作的？",
+  "help.body": "按下麦克风并凭记忆诵读。每当你正确诵读一个词，它就会显现出来。使用 ⚙️ 更改难度级别或查看证书。"
 }

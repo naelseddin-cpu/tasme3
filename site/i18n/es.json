@@ -165,8 +165,12 @@
   "nav.fullscreenExit": "Salir de pantalla completa",
   "nav.invalidPage": "Número de página no válido",
   "hint.firstRun": "Presiona el micrófono y recita de memoria — cada palabra correcta aparece en su lugar",
-  "a11y.wordsRevealed": "{n} palabras reveladas",
+  "a11y.wordsRevealed": "{n} de {m} palabras reveladas",
   "listen.loading": "Cargando…",
   "drawer.indexLoadError": "No se pudo cargar el índice",
-  "nav.juz": "Yuz"
+  "nav.juz": "Yuz",
+  "hint.settings": "⚙️ para ajustes, nivel y certificados",
+  "mic.retrying": "Reintentando…",
+  "help.title": "¿Cómo funciona la aplicación?",
+  "help.body": "Pulsa el micrófono y recita de memoria. Las palabras aparecen a medida que las recitas correctamente. Usa ⚙️ para cambiar de nivel o ver tus certificados."
 }

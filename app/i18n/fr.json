@@ -166,7 +166,11 @@
   "nav.fullscreenExit": "Quitter le plein écran",
   "nav.invalidPage": "Numéro de page invalide",
   "hint.firstRun": "Appuyez sur le microphone et récitez de mémoire — chaque mot correct apparaît à sa place",
-  "a11y.wordsRevealed": "{n} mots révélés",
+  "a11y.wordsRevealed": "{n} sur {m} mots révélés",
   "listen.loading": "Chargement…",
-  "drawer.indexLoadError": "Impossible de charger l'index"
+  "drawer.indexLoadError": "Impossible de charger l'index",
+  "hint.settings": "⚙️ pour les paramètres, le niveau et les certificats",
+  "mic.retrying": "Nouvelle tentative…",
+  "help.title": "Comment fonctionne l'application ?",
+  "help.body": "Appuyez sur le microphone et récitez de mémoire. Les mots apparaissent au fur et à mesure que vous les récitez correctement. Utilisez ⚙️ pour changer de niveau ou consulter vos certificats."
 }

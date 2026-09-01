@@ -165,8 +165,12 @@
   "nav.fullscreenExit": "Fita daga cikakken allo",
   "nav.invalidPage": "Lambar shafi mara inganci",
   "hint.firstRun": "Danna makirifo kuma ka karanta daga hantawa — kowace kalma daidai za ta bayyana a wurinta",
-  "a11y.wordsRevealed": "Kalmomi {n} sun bayyana",
+  "a11y.wordsRevealed": "Kalmomi {n} daga cikin {m} sun bayyana",
   "listen.loading": "Ana lodawa…",
   "drawer.indexLoadError": "An kasa loda jerin sunayen",
-  "nav.juz": "Juzu'i"
+  "nav.juz": "Juzu'i",
+  "hint.settings": "⚙️ don saitunan, mataki da takardun shaida",
+  "mic.retrying": "Ana sake gwadawa…",
+  "help.title": "Ta yaya app ɗin ke aiki?",
+  "help.body": "Danna makirufo ka karanta daga hantawa. Kalmomi suna bayyana yayin da kake karanta su daidai. Yi amfani da ⚙️ don canza matakinka ko duba takardun shaidarka."
 }

@@ -166,7 +166,11 @@
   "nav.fullscreenExit": "Tam ekrandan çıx",
   "nav.invalidPage": "Yanlış səhifə nömrəsi",
   "hint.firstRun": "Mikrofona basın və əzbərdən oxuyun — hər düzgün söz öz yerində görünəcək",
-  "a11y.wordsRevealed": "{n} söz üzə çıxdı",
+  "a11y.wordsRevealed": "{m} sözdən {n}-i üzə çıxdı",
   "listen.loading": "Yüklənir…",
-  "drawer.indexLoadError": "Siyahı yüklənmədi"
+  "drawer.indexLoadError": "Siyahı yüklənmədi",
+  "hint.settings": "⚙️ ayarlar, səviyyə və sertifikatlar üçün",
+  "mic.retrying": "Yenidən cəhd edilir…",
+  "help.title": "Tətbiq necə işləyir?",
+  "help.body": "Mikrofona basın və əzbərdən oxuyun. Düzgün oxuduğunuz sözlər səhifədə görünür. Səviyyəni dəyişmək və ya sertifikatlarınıza baxmaq üçün ⚙️ istifadə edin."
 }
