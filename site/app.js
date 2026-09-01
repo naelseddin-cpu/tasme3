@@ -314,7 +314,55 @@
   })();
 
   // ------------------------------------------------------------- matching
+  // Surah number of a word index, read straight off its token `k`
+  // ("surah:ayah") -- null when the index is out of range or the token has
+  // no key (shouldn't happen for real page data, but this must never throw).
+  function surahOfIndex(idx) {
+    var w = words[idx];
+    if (!w || !w.k) return null;
+    var n = parseInt(w.k.split(':')[0], 10);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  // Founder-reported bug: a re-delivered/echoed final transcript (Web
+  // Speech restart quirk) can hand the matcher a token that happens to
+  // greedily match whatever word the pointer now sits on -- including the
+  // NEXT surah's opening word, right after the previous surah's last word
+  // was revealed. A word revealed that was not freshly recited is this
+  // project's worst failure class, so a single matcher result may only ever
+  // advance the pointer within the surah it started in. Whatever `r.matched`
+  // contains beyond the first index that belongs to a different surah than
+  // `oldPointer`'s is discarded outright -- not carried over, not queued --
+  // and the pointer parks exactly on that next surah's first word,
+  // unrevealed. Only a subsequent, independent result (a fresh recognition
+  // result, or a typed keystroke) may reveal into the new surah. Applied
+  // here -- the one place every path (Web Speech final results, the typed
+  // fallback, and the server /evaluate response) funnels through before
+  // touching `revealed` -- rather than in each caller.
+  function gateSurahBoundary(oldPointer, r) {
+    var matched = (r.matched || []).slice().sort(function (a, b) { return a - b; });
+    if (!matched.length) return r;
+    var baseSurah = surahOfIndex(oldPointer);
+    if (baseSurah == null) return r; // no k data to gate against -- pass through unchanged
+    var cut = -1;
+    for (var i = 0; i < matched.length; i++) {
+      var s = surahOfIndex(matched[i]);
+      if (s != null && s !== baseSurah) { cut = i; break; }
+    }
+    if (cut === -1) return r; // this result never left the surah it started in
+    var kept = matched.slice(0, cut);
+    var newPointer = kept.length ? (kept[kept.length - 1] + 1) : oldPointer;
+    var out = { pointer: newPointer, matched: kept };
+    // The finishing surah's last word (index newPointer-1) is necessarily
+    // still on this page (there's a discarded word after it in `matched`),
+    // so a page can never read as "done" out of a gated result -- only
+    // recompute `done` when the caller (the server path) supplied one.
+    if ('done' in r) out.done = (newPointer >= expected.length);
+    return out;
+  }
+
   function applyMatches(r) {
+    r = gateSurahBoundary(pointer, r);
     var before = revealed.size;
     (r.matched || []).forEach(function (i) { revealed.add(i); });
     pointer = r.pointer;
@@ -454,6 +502,19 @@
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   var rec = null, listening = false, processed = 0, typingWired = false;
   var retryCount = 0, retryTimer = null;
+  // Restart-echo guard: browsers occasionally re-deliver/overlap a final
+  // transcript's tail right after a recognition session restarts (our
+  // backoff restarts included) -- e.g. the founder-reported case where the
+  // end of سورة الإخلاص echoed into the session that started over الفلق.
+  // `processed` is a count into the CURRENT session's ev.results, so it
+  // must be zeroed every time rec.start() is called again (a fresh session
+  // always renumbers its own results from 0) -- and for a short window
+  // right after that restart, final results are dropped rather than
+  // matched, since that's exactly when an echoed tail can arrive. This is a
+  // second line of defense; gateSurahBoundary() above is the primary one.
+  var restartSuppressUntil = 0;
+  var RESTART_SUPPRESS_MS = 800;
+  function noteRestart() { processed = 0; restartSuppressUntil = Date.now() + RESTART_SUPPRESS_MS; }
   var RETRYABLE_ERRORS = { network: 1, 'no-speech': 1, 'audio-capture': 1 };
   var RETRY_BACKOFF_MS = [500, 1000, 2000, 2000, 2000];
   function clearRetryTimer() { if (retryTimer) { clearTimeout(retryTimer); retryTimer = null; } }
@@ -476,16 +537,21 @@
     if (SERVER_MODE || !SR) return;
     navigator.mediaDevices.getUserMedia({ audio: true }).then(function (s) {
       s.getTracks().forEach(function (tr) { tr.stop(); });
-      rec = new SR(); rec.lang = 'ar-SA'; rec.continuous = true; rec.interimResults = true; processed = 0;
+      rec = new SR(); rec.lang = 'ar-SA'; rec.continuous = true; rec.interimResults = true;
+      processed = 0; restartSuppressUntil = 0; // fresh, user-initiated session -- no echo risk yet
       rec.onresult = function (ev) {
         retryCount = 0;
-        var interim = '';
+        // Interim results must never reach the matcher -- only a `isFinal`
+        // result is a confirmed transcript; matching against words still in
+        // flux is exactly how an unconfirmed guess could reveal a word that
+        // was never actually (finally) recited.
         for (var i = processed; i < ev.results.length; i++) {
           var r = ev.results[i];
-          if (r.isFinal) { processed = i + 1; applyMatches(Matcher.matchTranscript(expected, pointer, r[0].transcript, level)); }
-          else interim += r[0].transcript;
+          if (!r.isFinal) continue;
+          processed = i + 1;
+          if (Date.now() < restartSuppressUntil) continue; // restart-echo suppression window
+          applyMatches(Matcher.matchTranscript(expected, pointer, r[0].transcript, level));
         }
-        if (interim) applyMatches(Matcher.matchTranscript(expected, pointer, interim, level));
       };
       rec.onerror = function (e) {
         if (e.error === 'not-allowed' || e.error === 'service-not-allowed') { stopListening(); showMicHelp(); return; }
@@ -493,12 +559,13 @@
           if (retryCount >= RETRY_BACKOFF_MS.length) { stopListening(); showMicHelp(); return; }
           var delay = RETRY_BACKOFF_MS[retryCount]; retryCount++;
           clearRetryTimer();
-          retryTimer = setTimeout(function () { retryTimer = null; if (listening) { try { rec.start(); } catch (_) {} } }, delay);
+          retryTimer = setTimeout(function () { retryTimer = null; if (listening) { noteRestart(); try { rec.start(); } catch (_) {} } }, delay);
         }
       };
       rec.onend = function () {
         if (!listening) return;
         if (retryTimer) return;
+        noteRestart();
         try { rec.start(); } catch (_) {}
       };
       try {
