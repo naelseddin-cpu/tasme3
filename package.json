@@ -1,0 +1,27 @@
+{
+  "name": "tasme3",
+  "version": "1.0.0",
+  "description": "**A free, open-source Quran memorization trainer. Sadaqah jariyah — free forever, for everyone.**",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/naelseddin-cpu/tasme3.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/naelseddin-cpu/tasme3/issues"
+  },
+  "homepage": "https://github.com/naelseddin-cpu/tasme3#readme",
+  "dependencies": {
+    "playwright-core": "^1.62.1",
+    "sharp": "^0.35.4"
+  }
+}
