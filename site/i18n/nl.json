@@ -167,5 +167,6 @@
   "hint.firstRun": "Druk op de microfoon en reciteer uit het geheugen — elk juist woord verschijnt op zijn plaats",
   "a11y.wordsRevealed": "{n} woorden onthuld",
   "listen.loading": "Bezig met laden…",
-  "drawer.indexLoadError": "Kon de index niet laden"
+  "drawer.indexLoadError": "Kon de index niet laden",
+  "nav.juz": "Juz"
 }

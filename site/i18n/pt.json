@@ -167,5 +167,6 @@
   "hint.firstRun": "Pressione o microfone e recite de memória — cada palavra correta aparece em seu lugar",
   "a11y.wordsRevealed": "{n} palavras reveladas",
   "listen.loading": "Carregando…",
-  "drawer.indexLoadError": "Não foi possível carregar o índice"
+  "drawer.indexLoadError": "Não foi possível carregar o índice",
+  "nav.juz": "Juz"
 }

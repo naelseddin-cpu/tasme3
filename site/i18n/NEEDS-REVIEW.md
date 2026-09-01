@@ -73,6 +73,51 @@ most keys), so mistranslation risk is lower than WP-D's longer sentences, but
 the two illustrated iOS steps (`install.iosStep1`/`install.iosStep2`) in
 particular should read naturally as short imperative instructions.
 
+## Wave 3 fix (2026-09-01) — `nav.juz` (1 new key per language)
+
+Wave-3 audit finding: the drawer's JUZ list rows built their "Juz N" label by
+taking the TAB's plural string (`nav.juzs`, e.g. Arabic `الأجزاء`, "the
+Juzes") and doing `.replace(/s$/, '')` on it to fake a singular. That regex
+only works by accident for English-shaped strings ending in a literal `s`
+(and even then guesses wrong for irregular plurals); for every other
+language it either did nothing (Arabic: `الأجزاء` has no trailing `s`, so
+every row read "The Juzes 1", "The Juzes 2", …) or mangled the string. Fixed
+by adding a real `nav.juz` (singular) key next to the existing `nav.juzs`
+(plural, still used for the tab label only) in every catalog, and
+`site/app.js`'s drawer row renderer now reads `nav.juz` directly instead of
+regex-mangling the plural.
+
+**Arabic (`ar`) and English (`en`)**: correct by construction — `الجزء` and
+`Juz` are the two languages' actual singular forms, not derived guesses.
+
+**Directly derived from the existing (already-shipped) `nav.juzs` plural,
+high confidence** — languages where singular is either grammatically
+invariant or a simple, well-known un-suffixing of the existing plural
+(German, French, Dutch, Portuguese, Indonesian, Tamil, Chinese, Somali,
+Uzbek all use the same loanword for singular and plural in this catalog's
+existing style; Turkish/Azerbaijani/Bosnian/Albanian/Russian/Persian/Urdu/
+Pashto/Malayalam singulars are the standard grammatical un-suffixing of the
+plural noun already in the catalog):
+- German (`de`), French (`fr`), Dutch (`nl`), Portuguese (`pt`)
+- Indonesian (`id`), Tamil (`ta`), Chinese (`zh`)
+- Somali (`so`), Uzbek (`uz`)
+- Turkish (`tr`), Azerbaijani (`az`), Bosnian (`bs`), Albanian (`sq`)
+- Russian (`ru`), Persian (`fa`), Urdu (`ur`), Pashto (`ps`), Malayalam (`ml`)
+
+**Best-effort, please have a native speaker confirm before shipping**
+(loanword singular/plural agreement rules are less certain to this
+non-native derivation):
+- Malay (`ms`) — kept `Juzuk` for both; Malay classifier nouns don't
+  inflect for number the way the existing plural entry's spelling implies
+- Hausa (`ha`) — kept `Juzu'i` for both; unconfirmed whether the existing
+  `nav.juzs` value was already meant as singular
+- Swahili (`sw`) — kept `Juzuu` for both, matching the catalog's existing
+  invariant-loanword pattern
+- Bengali (`bn`) — kept `পারা` for both; Bengali often doesn't overtly mark
+  plural on a counted noun, so this may already be correct as-is
+- Spanish (`es`) — kept `Yuz` for both, matching the catalog's existing
+  (already slightly unusual) choice to leave `nav.juzs` unpluralized
+
 ## How to review
 
 1. Open `app/i18n/<lang>.json`, diff against `app/i18n/en.json` and

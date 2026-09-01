@@ -40,7 +40,6 @@
   var SERVER_MODE = !!SERVER_URL;
 
   var MIN_PAGE = 1, MAX_PAGE = 604, NAV_MIN = 3, NAV_MAX = 604;
-  var LEGACY_PAGES = new Set([1, 2, 596, 597, 598, 599, 600, 601, 602, 603, 604]);
   var SHEET = '#fffdf5', GOLD = '#b8a24a';
   var STREAK_MILESTONES = [7, 30, 100];
 
@@ -66,7 +65,6 @@
   var surahIndex = null; // { surahs:[], juz:[], pageCount }
   var recorder = new window.Tasme3Recorder();
   var listener = new window.Tasme3Listen.Listener();
-  var pageBoxesPromise = null;
 
   // Lines derived from the current page's word tokens (founder idea #3,
   // landscape focus-line mode) -- see computeLines()/updateFocusMode() below.
@@ -462,18 +460,6 @@
   }
 
   // -------------------------------------------------------------- paging
-  function ensureBoxesLoaded() {
-    if (pageBoxesPromise) return pageBoxesPromise;
-    pageBoxesPromise = new Promise(function (resolve) {
-      var s = document.createElement('script');
-      s.src = 'boxes.js';
-      s.onload = function () { resolve(window.PAGE_BOXES || {}); };
-      s.onerror = function () { resolve({}); };
-      document.head.appendChild(s);
-    });
-    return pageBoxesPromise;
-  }
-
   // opts.surahNumber: set only when the drawer's SURAH tab was used to get
   // here (never juz / go-to-page / lastPage restore, per founder spec) --
   // see applySurahStartJump() below for what it does to pointer/contextRevealed.
@@ -691,26 +677,23 @@
     Storage.save(state);
     showChrome(true); // briefly reveal the bar (with the new surah·page chip) on every page change
 
+    // Wave-3 fix: every page 1-604 ships modern page-NNN.json + page-NNN.webp
+    // (verified against site/pages/ -- no gaps), so the old boxes.js/PNG
+    // fallback below this comment used to fall back to is permanently dead:
+    // it existed only to bridge pages not yet migrated to the modern format,
+    // and that migration is complete. On any real fetch/decode failure now,
+    // the normal error state (with its retry button) is the right and only
+    // UI, same as every other page -- not a silent switch to a lower-quality
+    // asset that only 11 specific pages happened to still carry around.
     var nnn = pad3(p);
     fetch('pages/page-' + nnn + '.json').then(function (r) {
       if (!r.ok) throw new Error('404');
       return r.json();
     }).then(function (data) {
       applyPageData(data, opts);
-      loadPageImage('pages/page-' + nnn + '.webp', function () { legacyFallback(p, nnn, opts); });
+      loadPageImage('pages/page-' + nnn + '.webp', showPageError);
       renderStatusIdle();
-    }).catch(function () { legacyFallback(p, nnn, opts); });
-  }
-
-  function legacyFallback(p, nnn, opts) {
-    if (!LEGACY_PAGES.has(p)) { showPageError(); return; }
-    ensureBoxesLoaded().then(function (boxes) {
-      var info = boxes[String(p)];
-      if (!info) { showPageError(); return; }
-      applyPageData(info, opts);
-      loadPageImage('img/page-' + nnn + '.png', showPageError);
-      renderStatusIdle();
-    });
+    }).catch(function () { showPageError(); });
   }
 
   el.pageErrorRetry.onclick = function () { loadPage(pageNum); };
@@ -1724,7 +1707,7 @@
         nameSpan.textContent = it[nameKey];
         labelSpan.appendChild(nameSpan);
       } else {
-        labelSpan.textContent = t('nav.juzs').replace(/s$/, '') + ' ' + digits(it[numKey]);
+        labelSpan.textContent = t('nav.juz') + ' ' + digits(it[numKey]);
       }
       var pgSpan = document.createElement('span');
       pgSpan.className = 'pg';

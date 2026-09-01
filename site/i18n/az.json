@@ -167,5 +167,6 @@
   "hint.firstRun": "Mikrofona basın və əzbərdən oxuyun — hər düzgün söz öz yerində görünəcək",
   "a11y.wordsRevealed": "{n} söz üzə çıxdı",
   "listen.loading": "Yüklənir…",
-  "drawer.indexLoadError": "Siyahı yüklənmədi"
+  "drawer.indexLoadError": "Siyahı yüklənmədi",
+  "nav.juz": "Cüz"
 }

@@ -167,5 +167,6 @@
   "hint.firstRun": "Press the microphone and recite from memory — each correct word appears in its place",
   "a11y.wordsRevealed": "{n} words revealed",
   "listen.loading": "Loading…",
-  "drawer.indexLoadError": "Could not load the index"
+  "drawer.indexLoadError": "Could not load the index",
+  "nav.juz": "Juz"
 }

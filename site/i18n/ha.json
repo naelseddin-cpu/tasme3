@@ -167,5 +167,6 @@
   "hint.firstRun": "Danna makirifo kuma ka karanta daga hantawa — kowace kalma daidai za ta bayyana a wurinta",
   "a11y.wordsRevealed": "Kalmomi {n} sun bayyana",
   "listen.loading": "Ana lodawa…",
-  "drawer.indexLoadError": "An kasa loda jerin sunayen"
+  "drawer.indexLoadError": "An kasa loda jerin sunayen",
+  "nav.juz": "Juzu'i"
 }

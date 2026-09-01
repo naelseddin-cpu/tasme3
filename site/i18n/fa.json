@@ -167,5 +167,6 @@
   "hint.firstRun": "میکروفون را فشار دهید و از حفظ بخوانید — هر کلمه صحیح در جای خود ظاهر می‌شود",
   "a11y.wordsRevealed": "{n} کلمه نمایان شد",
   "listen.loading": "در حال بارگذاری…",
-  "drawer.indexLoadError": "بارگذاری فهرست ممکن نشد"
+  "drawer.indexLoadError": "بارگذاری فهرست ممکن نشد",
+  "nav.juz": "جزء"
 }

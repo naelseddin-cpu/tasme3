@@ -167,5 +167,6 @@
   "hint.firstRun": "مايکروفون فشار کړئ او له ياده تلاوت وکړئ — هره سمه کلمه په خپل ځای کې ښکاره کيږي",
   "a11y.wordsRevealed": "{n} کلمې ښکاره شوې",
   "listen.loading": "بارول کیږي…",
-  "drawer.indexLoadError": "فهرست نه شوه بارېدلی"
+  "drawer.indexLoadError": "فهرست نه شوه بارېدلی",
+  "nav.juz": "پاره"
 }

@@ -167,5 +167,6 @@
   "hint.firstRun": "Bonyeza kipaza sauti na usome kwa moyo — kila neno sahihi litaonekana mahali pake",
   "a11y.wordsRevealed": "Maneno {n} yamefunuliwa",
   "listen.loading": "Inapakia…",
-  "drawer.indexLoadError": "Imeshindwa kupakia faharasa"
+  "drawer.indexLoadError": "Imeshindwa kupakia faharasa",
+  "nav.juz": "Juzuu"
 }

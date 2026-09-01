@@ -167,5 +167,6 @@
   "hint.firstRun": "Mikrofonni bosing va yoddan o'qing — har bir to'g'ri so'z o'z joyida paydo bo'ladi",
   "a11y.wordsRevealed": "{n} ta so'z ochildi",
   "listen.loading": "Yuklanmoqda…",
-  "drawer.indexLoadError": "Ko'rsatkichni yuklab bo'lmadi"
+  "drawer.indexLoadError": "Ko'rsatkichni yuklab bo'lmadi",
+  "nav.juz": "Juz"
 }

@@ -167,5 +167,6 @@
   "hint.firstRun": "اضغط الميكروفون واقرأ غيبًا — كل كلمة صحيحة تظهر في مكانها",
   "a11y.wordsRevealed": "{n} كلمة ظهرت",
   "listen.loading": "جارٍ التحميل…",
-  "drawer.indexLoadError": "تعذر تحميل الفهرس"
+  "drawer.indexLoadError": "تعذر تحميل الفهرس",
+  "nav.juz": "الجزء"
 }

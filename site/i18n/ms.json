@@ -167,5 +167,6 @@
   "hint.firstRun": "Tekan mikrofon dan baca dari hafalan — setiap perkataan yang betul akan muncul di tempatnya",
   "a11y.wordsRevealed": "{n} perkataan didedahkan",
   "listen.loading": "Sedang dimuatkan…",
-  "drawer.indexLoadError": "Tidak dapat memuatkan indeks"
+  "drawer.indexLoadError": "Tidak dapat memuatkan indeks",
+  "nav.juz": "Juzuk"
 }

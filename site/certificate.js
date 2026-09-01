@@ -324,17 +324,72 @@
     ctx.drawImage(img, (CANVAS_W - w) / 2, (CANVAS_H - h) / 2, w, h);
   }
 
-  // Same word-wrap-and-center helper pattern as share.js's achievement card.
+  // zh/CJK-wrap + long-word-language headroom audit (a10 findings 1 & 2):
+  // shared safety margin applied everywhere text is measured against a
+  // target width. 4% extra headroom so a compound-word-heavy language
+  // (German-class: long unbreakable single "words") never renders text
+  // that visually crowds the illuminated frame's inner border, and it also
+  // makes fitSingleLineFontPx step down one font size sooner (a stricter
+  // effective maxWidth means the loop's exit test is harder to satisfy at
+  // any given px, so it settles one notch smaller before accepting).
+  var TEXT_SAFETY = 0.96;
+
+  // Same word-wrap-and-center helper pattern as share.js's achievement
+  // card, extended to cope with scripts that don't wrap on spaces. Splitting
+  // on ' ' alone is fine for space-delimited languages, but CJK text is
+  // written with no spaces at all -- the whole sentence is a single "word",
+  // so the old code drew it as one unbroken (and badly overflowing) line for
+  // 10/10 zh certificates (a10 finding 1). Any language with a very long
+  // compound word (German-class) hits the same problem for that one word.
+  //
+  // Fix: any "word" (space-delimited token) that alone is wider than
+  // maxWidth is broken at the character level via measureText, same
+  // greedy-fit logic as the word-level pass, just operating on
+  // Array.from(word) instead of the words[] array. Mixed content (e.g. a
+  // Latin/Arabic word followed by an unbroken CJK run) falls out naturally:
+  // each space-delimited token is evaluated independently, so a short word
+  // still wraps normally while a too-wide one gets character-broken next to
+  // it, with no separate CJK-detection needed.
   function wrapCenteredText(ctx, text, cx, cy, maxWidth, lineHeight) {
+    var safeMax = maxWidth * TEXT_SAFETY;
     var words = text.split(' ');
     var lines = [];
     var line = '';
-    for (var i = 0; i < words.length; i++) {
-      var test = line ? line + ' ' + words[i] : words[i];
-      if (ctx.measureText(test).width > maxWidth && line) { lines.push(line); line = words[i]; }
-      else line = test;
+
+    function flushLine() {
+      if (line) { lines.push(line); line = ''; }
     }
-    if (line) lines.push(line);
+
+    for (var i = 0; i < words.length; i++) {
+      var word = words[i];
+      if (!word) continue; // collapse runs of repeated spaces
+
+      var attempt = line ? line + ' ' + word : word;
+      if (ctx.measureText(attempt).width <= safeMax) { line = attempt; continue; }
+
+      // Doesn't fit appended onto the current line -- flush it first.
+      flushLine();
+
+      if (ctx.measureText(word).width <= safeMax) { line = word; continue; }
+
+      // The word itself is wider than the whole line (an unbroken CJK run,
+      // or a very long compound word) -- fall back to per-character
+      // measurement-based breaking so it still wraps instead of overflowing.
+      var chars = Array.from(word);
+      var sub = '';
+      for (var c = 0; c < chars.length; c++) {
+        var testSub = sub + chars[c];
+        if (sub && ctx.measureText(testSub).width > safeMax) {
+          lines.push(sub);
+          sub = chars[c];
+        } else {
+          sub = testSub;
+        }
+      }
+      line = sub; // remainder starts the current line; later words may still append to it
+    }
+    flushLine();
+
     var startY = cy - ((lines.length - 1) * lineHeight) / 2;
     for (i = 0; i < lines.length; i++) ctx.fillText(lines[i], cx, startY + i * lineHeight);
     return lines.length;
@@ -345,11 +400,17 @@
   // Title/name length varies a lot by language ("شهادة إتمام" vs
   // "Certificate of Completion") and by what the user typed as their name,
   // so this is not optional polish, it's the fix for real overflow.
+  //
+  // a10 finding 2: fits against maxWidth * TEXT_SAFETY (4% headroom), so
+  // German-class languages (long, rarely-breaking compound words) settle on
+  // a font size with real breathing room instead of one that just barely
+  // clears the raw box width and then crowds the frame's inner border.
   function fitSingleLineFontPx(ctx, text, fontOf, maxWidth, startPx, minPx) {
+    var safeMax = maxWidth * TEXT_SAFETY;
     var px = startPx;
     while (px > minPx) {
       ctx.font = fontOf(px);
-      if (ctx.measureText(text).width <= maxWidth) break;
+      if (ctx.measureText(text).width <= safeMax) break;
       px -= 2;
     }
     return px;
