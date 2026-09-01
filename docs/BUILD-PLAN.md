@@ -92,8 +92,16 @@ L4 إجازة exact only (later phase; reserved in the API now).
    to the static-hosting repo (not the monorepo) to keep ArabiaERP lean.
 
 ### Phase 2 — ASR server — Sonnet agent WP-C
+- **Model (founder decision 2026-09-01): the QURAN-FINE-TUNED Whisper —
+  `tarteel-ai/whisper-base-ar-quran` — is the default engine.** Trained on real
+  recitation (tajweed elongations, melodic recitation, varied accents), so it
+  beats generic Whisper for this exact task at the same small/cheap size.
+  Deployed via faster-whisper after a one-time CTranslate2 int8 conversion
+  (documented in server/RUNBOOK.md). The model stays swappable by env var for
+  A/B comparison (generic base/small/large-v3) and for future fine-tunes on
+  consented user audio.
 - FastAPI service `server/`: `POST /evaluate` {audio blob, page, pointer, level}
-  → faster-whisper (int8, `base`; Arabic, constrained temperature) → normalize →
+  → faster-whisper (int8; Arabic, constrained temperature) → normalize →
   canonical matcher (Python port sharing golden vectors) → {matched, pointer,
   transcript?}. `GET /healthz`. CORS locked to the site origin. Rate limiting.
   Audio processed in memory only; explicit no-retention.
