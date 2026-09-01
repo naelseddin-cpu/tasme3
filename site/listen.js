@@ -1,22 +1,41 @@
-// "Listen" reference-audio feature — al-Husary, per docs/AUDIO-SOURCES.md.
-// One reused <audio> element; streams exactly the ONE ayah currently in
-// view, only when the user taps Listen — never prefetches. Fallback chain
-// per the doc's §2 recommendation (self-hosting isn't set up yet, so the
-// chain starts at everyayah.com): Husary_64kbps -> Husary_128kbps for the
-// default Murattal set; Husary_Muallim_128kbps -> Husary_64kbps for the
-// beginner-oriented Muallim ("teaching mushaf") set. quran.com/QuranCDN
-// (the doc's Fallback #2) is intentionally NOT wired in: the doc marks its
-// reciter ID as [UNVERIFIED] and explicitly says not to hardcode an
-// unconfirmed ID — everyayah's two bitrates already give one on-failure
-// retry, matching the "retries once against the next source" spec line.
+// "Listen" reference-audio feature — everyayah.com per-ayah files, per
+// docs/AUDIO-SOURCES.md. One reused <audio> element; streams exactly the ONE
+// ayah currently in view, only when the user taps Listen — never prefetches.
+// Fallback chain per the doc's §2 recommendation (self-hosting isn't set up
+// yet, so the chain starts at everyayah.com), low-bitrate primary with a
+// higher-bitrate fallback on error:
+//   murattal   -> Husary_64kbps -> Husary_128kbps (default Murattal set)
+//   muallim    -> Husary_Muallim_128kbps -> Husary_64kbps (beginner-oriented
+//                 "teaching mushaf" set — Husary only, unchanged)
+//   minshawi   -> Minshawy_Murattal_128kbps (al-Minshawi, Murattal — everyayah
+//                 lists no lower-bitrate variant for this reciter/style, so
+//                 there is only one link in the chain; standard folder name,
+//                 not live-verified — outbound network to everyayah.com is
+//                 blocked by this sandbox's egress policy, same as documented
+//                 in docs/AUDIO-SOURCES.md §0)
+//   abdulbasit -> Abdul_Basit_Murattal_64kbps -> Abdul_Basit_Murattal_192kbps
+//                 (Abdul Basit Abdul Samad, Murattal; standard folder names,
+//                 not live-verified for the same reason)
+//   alafasy    -> Alafasy_64kbps -> Alafasy_128kbps (Mishary Alafasy;
+//                 standard folder names, not live-verified for the same
+//                 reason)
+// quran.com/QuranCDN (the doc's Fallback #2) is intentionally NOT wired in:
+// the doc marks its reciter ID as [UNVERIFIED] and explicitly says not to
+// hardcode an unconfirmed ID — everyayah's per-reciter bitrates already give
+// one on-failure retry where a lower tier exists, matching the "retries once
+// against the next source" spec line.
 (function (global) {
   'use strict';
 
   var BASE = 'https://everyayah.com/data/';
   var CHAINS = {
     murattal: ['Husary_64kbps', 'Husary_128kbps'],
-    muallim: ['Husary_Muallim_128kbps', 'Husary_64kbps']
+    muallim: ['Husary_Muallim_128kbps', 'Husary_64kbps'],
+    minshawi: ['Minshawy_Murattal_128kbps'],
+    abdulbasit: ['Abdul_Basit_Murattal_64kbps', 'Abdul_Basit_Murattal_192kbps'],
+    alafasy: ['Alafasy_64kbps', 'Alafasy_128kbps']
   };
+  var RECITER_KEYS = Object.keys(CHAINS);
 
   function pad3(n) { return String(n).padStart(3, '0'); }
   function ayahFile(surah, ayah) { return pad3(surah) + pad3(ayah) + '.mp3'; }
@@ -93,6 +112,7 @@
     Listener: Listener,
     ayahFile: ayahFile,
     urlFor: urlFor,
-    CHAINS: CHAINS
+    CHAINS: CHAINS,
+    RECITER_KEYS: RECITER_KEYS
   };
 })(window);

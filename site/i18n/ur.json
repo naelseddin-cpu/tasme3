@@ -131,5 +131,8 @@
   "progress.totalWords": "مجموعی طور پر {count} الفاظ",
   "error.pageLoad": "صفحہ لوڈ نہیں ہو سکا",
   "mic.helpLink": "🎤 مائیکروفون کام نہیں کر رہا؟",
-  "listen.attribution": "تلاوت: شیخ محمود خلیل حصری — آواز everyayah.com سے"
+  "listen.attribution": "تلاوت: شیخ محمود خلیل حصری — آواز everyayah.com سے",
+  "listen.reciterMinshawi": "المنشاوي — مرتل",
+  "listen.reciterAbdulBasit": "عبد الباسط عبد الصمد — مرتل",
+  "listen.reciterAlafasy": "مشاري العفاسي"
 }

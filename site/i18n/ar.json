@@ -131,5 +131,8 @@
   "progress.totalWords": "{count} كلمة إجمالًا",
   "error.pageLoad": "تعذر تحميل الصفحة",
   "mic.helpLink": "🎤 الميكروفون لا يعمل؟",
-  "listen.attribution": "التلاوة: الشيخ محمود خليل الحصري — الصوت من everyayah.com"
+  "listen.attribution": "التلاوة: الشيخ محمود خليل الحصري — الصوت من everyayah.com",
+  "listen.reciterMinshawi": "المنشاوي — مرتل",
+  "listen.reciterAbdulBasit": "عبد الباسط عبد الصمد — مرتل",
+  "listen.reciterAlafasy": "مشاري العفاسي"
 }

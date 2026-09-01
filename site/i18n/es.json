@@ -131,5 +131,8 @@
   "progress.totalWords": "{count} palabras en total",
   "error.pageLoad": "No se pudo cargar la página",
   "mic.helpLink": "🎤 ¿El micrófono no funciona?",
-  "listen.attribution": "Recitación: Jeque Mahmoud Khalil al-Husary — audio cortesía de everyayah.com"
+  "listen.attribution": "Recitación: Jeque Mahmoud Khalil al-Husary — audio cortesía de everyayah.com",
+  "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
+  "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
+  "listen.reciterAlafasy": "Mishary Alafasy"
 }

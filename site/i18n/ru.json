@@ -131,5 +131,8 @@
   "progress.totalWords": "Всего {count} слов",
   "error.pageLoad": "Не удалось загрузить страницу",
   "mic.helpLink": "🎤 Микрофон не работает?",
-  "listen.attribution": "Чтение: шейх Махмуд Халиль аль-Хусари — аудио предоставлено everyayah.com"
+  "listen.attribution": "Чтение: шейх Махмуд Халиль аль-Хусари — аудио предоставлено everyayah.com",
+  "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
+  "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
+  "listen.reciterAlafasy": "Mishary Alafasy"
 }

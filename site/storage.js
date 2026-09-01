@@ -14,6 +14,11 @@
   var KEY = 'tasme3_v1';
   var SCHEMA_VERSION = 1;
 
+  // Kept in sync with site/listen.js's CHAINS keys (not read from there
+  // directly — this file loads before listen.js and must validate/repair
+  // independently of script load order).
+  var VALID_RECITER_SETS = ['murattal', 'muallim', 'minshawi', 'abdulbasit', 'alafasy'];
+
   function pad2(n) { return n < 10 ? '0' + n : '' + n; }
 
   // Local (not UTC) calendar-date key, e.g. "2026-09-01". The single shared
@@ -107,7 +112,7 @@
       lang: typeof v.lang === 'string' ? v.lang : d.lang,
       level: [1, 2, 3, 4].indexOf(v.level) !== -1 ? v.level : d.level,
       listenRepeat: typeof v.listenRepeat === 'boolean' ? v.listenRepeat : d.listenRepeat,
-      reciterSet: (v.reciterSet === 'murattal' || v.reciterSet === 'muallim') ? v.reciterSet : d.reciterSet,
+      reciterSet: (VALID_RECITER_SETS.indexOf(v.reciterSet) !== -1) ? v.reciterSet : d.reciterSet,
       lastSyncedAt: typeof v.lastSyncedAt === 'string' ? v.lastSyncedAt : null
     };
   }

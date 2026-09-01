@@ -131,5 +131,8 @@
   "progress.totalWords": "در مجموع {count} کلمه",
   "error.pageLoad": "بارگذاری صفحه ممکن نشد",
   "mic.helpLink": "🎤 میکروفون کار نمی‌کند؟",
-  "listen.attribution": "تلاوت: شیخ محمود خلیل حصری — صدا از everyayah.com"
+  "listen.attribution": "تلاوت: شیخ محمود خلیل حصری — صدا از everyayah.com",
+  "listen.reciterMinshawi": "المنشاوي — مرتل",
+  "listen.reciterAbdulBasit": "عبد الباسط عبد الصمد — مرتل",
+  "listen.reciterAlafasy": "مشاري العفاسي"
 }

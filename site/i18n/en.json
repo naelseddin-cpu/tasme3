@@ -131,5 +131,8 @@
   "progress.totalWords": "{count} words in total",
   "error.pageLoad": "Could not load the page",
   "mic.helpLink": "🎤 Microphone not working?",
-  "listen.attribution": "Recitation: Sheikh Mahmoud Khalil al-Husary — audio courtesy of everyayah.com"
+  "listen.attribution": "Recitation: Sheikh Mahmoud Khalil al-Husary — audio courtesy of everyayah.com",
+  "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
+  "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
+  "listen.reciterAlafasy": "Mishary Alafasy"
 }

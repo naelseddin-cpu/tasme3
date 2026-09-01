@@ -131,5 +131,8 @@
   "progress.totalWords": "{count} perkataan secara keseluruhan",
   "error.pageLoad": "Tidak dapat memuatkan halaman",
   "mic.helpLink": "🎤 Mikrofon tidak berfungsi?",
-  "listen.attribution": "Bacaan: Syeikh Mahmoud Khalil al-Husary — audio daripada everyayah.com"
+  "listen.attribution": "Bacaan: Syeikh Mahmoud Khalil al-Husary — audio daripada everyayah.com",
+  "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
+  "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
+  "listen.reciterAlafasy": "Mishary Alafasy"
 }

@@ -131,5 +131,8 @@
   "progress.totalWords": "Toplam {count} kelime",
   "error.pageLoad": "Sayfa yüklenemedi",
   "mic.helpLink": "🎤 Mikrofon çalışmıyor mu?",
-  "listen.attribution": "Kıraat: Şeyh Mahmud Halil el-Husarî — ses everyayah.com üzerinden"
+  "listen.attribution": "Kıraat: Şeyh Mahmud Halil el-Husarî — ses everyayah.com üzerinden",
+  "listen.reciterMinshawi": "Al-Minshawi (Murattal)",
+  "listen.reciterAbdulBasit": "Abdul Basit (Murattal)",
+  "listen.reciterAlafasy": "Mishary Alafasy"
 }
