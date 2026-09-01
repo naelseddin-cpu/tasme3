@@ -8,6 +8,17 @@
 //         must call Tasme3Storage.todayKey(), never build a date string
 //         itself), so streaks don't flip at UTC midnight (~3am Istanbul,
 //         ~5am Karachi, ~7am Jakarta).
+// Also fixes storage-corruption audit findings 1 and 3:
+//   Finding 1 — save() re-reads localStorage and MERGEs into it (union of
+//         revealed/contextRevealed, max pointer, latest completedAt/streak/
+//         today) rather than overwriting from a possibly-stale in-memory
+//         snapshot, so two tabs (or a tab + a background sync) never clobber
+//         each other's progress. See mergeProgress()/save() below, and
+//         app.js's `storage` event listener for the live cross-tab refresh.
+//   Finding 3 — repairProgressByPage (and every merge) dedupes revealed/
+//         contextRevealed via Set, drops non-integers, and caps each at
+//         MAX_INDICES_PER_PAGE so a corrupted or hostile blob can't grow
+//         either array without bound.
 (function (global) {
   'use strict';
 
@@ -85,6 +96,25 @@
 
   function isPlainObject(x) { return x !== null && typeof x === 'object' && !Array.isArray(x); }
 
+  // Audit finding 3 (unbounded arrays): a corrupted or maliciously-grown
+  // revealed/contextRevealed array must never be trusted verbatim -- dedupe
+  // via Set (repeated writes/merges can otherwise pile up duplicates
+  // forever), drop anything that isn't a non-negative integer (word
+  // indices only), and cap at MAX_INDICES_PER_PAGE entries. No real mushaf
+  // page holds anywhere near that many words, so the cap only ever bites
+  // corrupt/hostile data -- sorted ascending first so a cap always keeps
+  // the earliest (lowest-index, most meaningful) words rather than
+  // whatever happened to appear first in a scrambled array.
+  var MAX_INDICES_PER_PAGE = 400;
+  function dedupeCapped(arr, max) {
+    if (!Array.isArray(arr)) return [];
+    var set = new Set();
+    arr.forEach(function (n) { if (Number.isInteger(n) && n >= 0) set.add(n); });
+    var out = Array.from(set).sort(function (a, b) { return a - b; });
+    if (out.length > max) out = out.slice(0, max);
+    return out;
+  }
+
   // Validate/repair ONE top-level key. Never throws; always returns
   // something usable, falling back to the default for just that key.
   function repairProfile(v) {
@@ -104,9 +134,7 @@
       var entry = v[key];
       if (!isPlainObject(entry)) continue;
       var pointer = Number.isFinite(entry.pointer) && entry.pointer >= 0 ? entry.pointer : 0;
-      var revealed = Array.isArray(entry.revealed)
-        ? entry.revealed.filter(function (n) { return Number.isFinite(n) && n >= 0; })
-        : [];
+      var revealed = dedupeCapped(entry.revealed, MAX_INDICES_PER_PAGE);
       // contextRevealed: word indices shown unveiled as printed CONTEXT
       // (the tail of a preceding surah, unveiled so the reader can see it
       // sits before the chosen surah) after a surah-start jump from the
@@ -116,9 +144,7 @@
       // context words were never actually recited and must stay excluded
       // from every completion/counter/certificate/sync computation that
       // reads `revealed`. Missing on any pre-v2 entry -> defaults to [].
-      var contextRevealed = Array.isArray(entry.contextRevealed)
-        ? entry.contextRevealed.filter(function (n) { return Number.isFinite(n) && n >= 0; })
-        : [];
+      var contextRevealed = dedupeCapped(entry.contextRevealed, MAX_INDICES_PER_PAGE);
       var completedAt = typeof entry.completedAt === 'string' ? entry.completedAt : null;
       out[key] = { pointer: pointer, revealed: revealed, contextRevealed: contextRevealed, completedAt: completedAt };
     }
@@ -188,9 +214,122 @@
     return validate(raw);
   }
 
+  // -------------------------------------------------- multi-tab merge
+  // Audit finding 1 (multi-tab clobber): save() used to write the whole
+  // blob straight from this tab's in-memory snapshot, silently discarding
+  // anything a concurrent tab had written to localStorage since this tab's
+  // last load/save (two tabs open on different pages, or the same page,
+  // each reciting -- one tab's save wiped the other's words). Every merge
+  // below is symmetric/commutative (union, max, latest-date) so it gives
+  // the same result regardless of which side is "a" and which is "b" --
+  // only the non-progress fields (profile/settings/installPromo) need a
+  // tie-break, and callers decide that by which side they pass as `b`.
+
+  // completedAt/lastActiveDate/today.date are all todayKey() "YYYY-MM-DD"
+  // strings (or null) -- plain lexicographic comparison is correct and
+  // sidesteps any timezone/Date-parsing edge case entirely.
+  function laterDateStr(a, b) {
+    if (!a) return b || null;
+    if (!b) return a;
+    return a > b ? a : b;
+  }
+
+  function mergeProgressEntry(a, b) {
+    if (!a) return b;
+    if (!b) return a;
+    var revealed = dedupeCapped((a.revealed || []).concat(b.revealed || []), MAX_INDICES_PER_PAGE);
+    var revealedSet = {};
+    revealed.forEach(function (n) { revealedSet[n] = true; });
+    // contextRevealed must never include anything now genuinely revealed on
+    // either side (see repairProgressByPage's comment on the two sets never
+    // mixing) -- filtered out here, not just at repair time.
+    var contextRevealed = dedupeCapped((a.contextRevealed || []).concat(b.contextRevealed || []), MAX_INDICES_PER_PAGE)
+      .filter(function (n) { return !revealedSet[n]; });
+    return {
+      pointer: Math.max(a.pointer || 0, b.pointer || 0),
+      revealed: revealed,
+      contextRevealed: contextRevealed,
+      completedAt: laterDateStr(a.completedAt, b.completedAt)
+    };
+  }
+
+  function mergeProgressByPage(a, b) {
+    a = a || {}; b = b || {};
+    var out = {};
+    var key;
+    for (key in a) { if (Object.prototype.hasOwnProperty.call(a, key)) out[key] = a[key]; }
+    for (key in b) {
+      if (!Object.prototype.hasOwnProperty.call(b, key)) continue;
+      out[key] = mergeProgressEntry(out[key], b[key]);
+    }
+    return out;
+  }
+
+  function mergeStreak(a, b) {
+    if (!a) return b || defaultStreak();
+    if (!b) return a;
+    if (a.lastActiveDate === b.lastActiveDate) {
+      return { count: Math.max(a.count, b.count), lastActiveDate: a.lastActiveDate };
+    }
+    if (!a.lastActiveDate) return b;
+    if (!b.lastActiveDate) return a;
+    return a.lastActiveDate > b.lastActiveDate ? a : b;
+  }
+
+  function mergeToday(a, b) {
+    if (!a) return b || defaultToday();
+    if (!b) return a;
+    if (a.date === b.date) {
+      return {
+        date: a.date,
+        wordsRevealed: Math.max(a.wordsRevealed, b.wordsRevealed),
+        pagesCompleted: Math.max(a.pagesCompleted, b.pagesCompleted)
+      };
+    }
+    return a.date > b.date ? a : b;
+  }
+
+  // Merges just the three progress-shaped keys of two validated states --
+  // exported so app.js's cross-tab `storage` listener can fold an
+  // externally-written blob into this tab's live in-memory state with the
+  // exact same semantics save() uses on write, rather than ever adopting
+  // (or discarding) one side wholesale.
+  function mergeProgress(a, b) {
+    return {
+      progressByPage: mergeProgressByPage(a.progressByPage, b.progressByPage),
+      streak: mergeStreak(a.streak, b.streak),
+      today: mergeToday(a.today, b.today)
+    };
+  }
+
+  // Tracks the exact JSON string this tab itself last wrote, so a `storage`
+  // listener (which normally never even fires for the writing tab's own
+  // document per spec) has a cheap, explicit belt-and-suspenders guard
+  // against ever treating its own write as an external change.
+  var _lastWrittenRaw = null;
+  function lastWrittenRaw() { return _lastWrittenRaw; }
+
   function save(state) {
     try {
-      global.localStorage.setItem(KEY, JSON.stringify(state));
+      var raw = null;
+      try { raw = global.localStorage.getItem(KEY); } catch (_) { raw = null; }
+      if (raw) {
+        var stored = validate(raw);
+        var merged = mergeProgress(stored, state);
+        // Reflected back onto the caller's own state object -- so a page
+        // that only ever reads `state` (never re-`load()`s) still sees the
+        // union immediately, e.g. Storage.totalWordsRevealed(state) right
+        // after this call.
+        state.progressByPage = merged.progressByPage;
+        state.streak = merged.streak;
+        state.today = merged.today;
+      }
+      // v/profile/settings/installPromo are NOT merged -- this tab's
+      // current values win outright for those (per spec: they're
+      // per-device/session choices, not accumulating progress).
+      var out = JSON.stringify(state);
+      global.localStorage.setItem(KEY, out);
+      _lastWrittenRaw = out;
       return true;
     } catch (_) {
       return false; // storage full/blocked — caller keeps working in memory
@@ -260,6 +399,8 @@
     rollDay: rollDay,
     markPageCompleted: markPageCompleted,
     addWordsRevealedToday: addWordsRevealedToday,
-    totalWordsRevealed: totalWordsRevealed
+    totalWordsRevealed: totalWordsRevealed,
+    mergeProgress: mergeProgress,
+    lastWrittenRaw: lastWrittenRaw
   };
 })(window);

@@ -1217,6 +1217,53 @@
   }
   el.surahCelebrateClose.onclick = function () { el.surahCelebrate.style.display = 'none'; };
 
+  // ------------------------------------------------------ cross-tab sync
+  // Multi-tab clobber audit (finding 1): Storage.save() now merges into
+  // whatever is currently in localStorage instead of overwriting it (see
+  // site/storage.js), so no tab's write can ever erase another tab's
+  // progress -- but without this listener a SECOND open tab would still
+  // sit there showing stale counts/veil state until its own next save()
+  // happened to read the merged blob back in. The `storage` event is the
+  // browser's own cross-document signal for exactly this: per spec it
+  // fires in every OTHER same-origin document that has this page open,
+  // and NEVER in the document whose own script called setItem() -- so
+  // there is no risk of this tab reacting to its own write. The
+  // `lastWrittenRaw()` comparison below is an extra belt-and-suspenders
+  // guard against that same (should-be-impossible) case.
+  window.addEventListener('storage', function (e) {
+    if (e.key !== Storage.KEY || !e.newValue) return;
+    if (e.newValue === Storage.lastWrittenRaw()) return; // guard: never react to our own write
+    var fresh = Storage.validate(e.newValue);
+    // Fold the externally-written blob into THIS tab's live state with the
+    // same union/max/latest-wins merge save() uses -- protects any of this
+    // tab's own not-yet-saved progress from being replaced wholesale by
+    // the other tab's snapshot, while still picking up everything new the
+    // other tab genuinely added.
+    var merged = Storage.mergeProgress(state, fresh);
+    state.progressByPage = merged.progressByPage;
+    state.streak = merged.streak;
+    state.today = merged.today;
+
+    // If the page currently on screen has progress from the other tab,
+    // refresh its live reveal display + counters too -- not just the
+    // panels below.
+    var saved = state.progressByPage[String(pageNum)];
+    if (saved && expected.length) {
+      var mergedRevealed = new Set((saved.revealed || []).filter(function (i) { return i >= 0 && i < expected.length; }));
+      var mergedContext = new Set((saved.contextRevealed || []).filter(function (i) { return i >= 0 && i < expected.length; }));
+      if (mergedRevealed.size !== revealed.size || mergedContext.size !== contextRevealed.size) {
+        revealed = mergedRevealed;
+        contextRevealed = mergedContext;
+        pointer = Math.max(pointer, saved.pointer || 0);
+        updateCounter();
+        updateFocusMode(true);
+        el.doneBanner.style.display = (pointer >= expected.length && expected.length > 0) ? 'block' : 'none';
+      }
+    }
+    renderProgressPanel();
+    renderCertList();
+  });
+
   // --------------------------------------------------------------- drawer
   function pad3n(n) { return pad3(n); }
   function openDrawer(tab) {

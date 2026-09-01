@@ -46,25 +46,41 @@
     return pages;
   }
 
-  // ------------------------------------- context-word completion integrity
-  // site/app.js's drawer "select a surah" fix can land a reader mid-page,
-  // at the CHOSEN surah's first word, with every word before it (the tail
-  // of a PRECEDING surah still printed on that same page) unveiled as
-  // CONTEXT rather than genuinely recited (site/storage.js's
-  // progressByPage[page].contextRevealed). A page's `completedAt` only
-  // ever means "the pointer reached the end of the page" -- reciting the
-  // chosen surah through to the end of a shared page still sets it, even
-  // though the preceding surah's own words never entered `revealed`. So
-  // `completedAt` alone is no longer sufficient proof a given SURAH is
-  // complete: for any page that ever had a context jump on it
-  // (contextRevealed non-empty), completion is re-checked at the WORD
-  // level -- every one of that surah's own word indices on that page (read
-  // from the same page-NNN.json tokens app.js loads, via token key `k`)
-  // must actually be in `revealed`. Pages that never had a context jump
-  // skip this fetch entirely and keep the original, cheap completedAt-only
-  // check. On any failure to load a page's tokens this fails CLOSED
-  // (treated as incomplete) -- a missed celebration costs nothing, a false
-  // certificate would not be acceptable.
+  // ------------------------------------- word-level completion integrity
+  // Certificate-forgery audit (finding 2): `completedAt` is written by
+  // site/storage.js's markPageCompleted() purely because the reading
+  // POINTER reached the end of a page -- it is plain, attacker-writable
+  // localStorage state, trivially fabricated by hand-crafting a
+  // progressByPage entry ({completedAt: '...', revealed: []}) with zero
+  // words ever actually recited. An earlier version of this file trusted
+  // `completedAt` outright whenever a page's `contextRevealed` happened to
+  // be empty (only re-verifying pages a surah-start jump had touched) --
+  // that fast path is exactly what a forged entry satisfies, so it let a
+  // fabricated blob mint a certificate with zero genuine recitation,
+  // verified end-to-end (fake cert rendered and downloaded).
+  //
+  // Fix: `completedAt` is now advisory-only, never sufficient by itself.
+  // Every page in a surah's range is verified at the WORD level -- every
+  // one of that surah's own word indices on that page (read from the same
+  // page-NNN.json tokens app.js loads, via token key `k`) must actually be
+  // in `revealed`. This also still catches the original context-word case
+  // (site/app.js's drawer "select a surah" jump can land a reader mid-page
+  // with a preceding surah's tail unveiled as CONTEXT rather than
+  // genuinely recited -- storage.js's progressByPage[page].contextRevealed)
+  // since context words are, by construction, never added to `revealed`.
+  //
+  // The ONLY allowed shortcut is a cheap pre-filter that never trusts a
+  // claim: a page with no `completedAt` AND an empty `revealed` cannot
+  // possibly be complete, so it's rejected without even fetching that
+  // page's tokens. Every page that clears that filter -- in particular
+  // every page carrying a completion CLAIM (`completedAt` set), regardless
+  // of `contextRevealed` -- is always fetched and word-verified. On any
+  // failure to load a page's tokens this fails CLOSED (treated as
+  // incomplete) -- a missed celebration costs nothing, a false certificate
+  // would not be acceptable. Page-token fetches are memoized in
+  // _pageSurahByWordCache (below) so the شهاداتي list's completedSurahList()
+  // -- which re-checks every surah on every render -- never refetches the
+  // same page twice.
   var _pageSurahByWordCache = {};
   function loadPageWordSurahs(pageNum) {
     if (_pageSurahByWordCache[pageNum]) return _pageSurahByWordCache[pageNum];
@@ -103,8 +119,18 @@
     if (!pages.length) return Promise.resolve(false);
     var checks = pages.map(function (p) {
       var entry = state.progressByPage[String(p)];
-      if (!entry || !entry.completedAt) return Promise.resolve(false);
-      if (!entry.contextRevealed || !entry.contextRevealed.length) return Promise.resolve(true);
+      if (!entry) return Promise.resolve(false);
+      var hasClaim = !!entry.completedAt;
+      var hasRevealed = !!(entry.revealed && entry.revealed.length);
+      // The only fetch-free shortcut: nothing here even claims completion
+      // and nothing was ever genuinely revealed either, so this page
+      // cannot possibly be complete -- no need to ask the server/cache for
+      // its tokens just to prove a negative that's already obvious.
+      if (!hasClaim && !hasRevealed) return Promise.resolve(false);
+      // Anything else -- most importantly a bare completedAt claim with an
+      // empty (or fabricated) revealed/contextRevealed -- is ALWAYS
+      // word-verified. completedAt is advisory only; it never substitutes
+      // for proof.
       return pageSurahWordsGenuinelyRevealed(entry, p, surahNumber);
     });
     return Promise.all(checks).then(function (results) {
