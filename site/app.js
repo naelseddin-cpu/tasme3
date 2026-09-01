@@ -51,6 +51,7 @@
     'drawerBackdrop', 'drawer', 'drawerClose', 'drawerJump', 'drawerPageInput',
     'drawerGoBtn', 'drawerList', 'toast'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
+  window.Tasme3Account.attachGroupedInput(el.loginInput);
   var ctx = el.pagecanvas.getContext('2d');
 
   function showToast(msg) {

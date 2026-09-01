@@ -25,9 +25,60 @@
     }
     return out;
   }
+  // 3-3-4 space grouping, partial-safe for any digit-string length 0..10
+  // (e.g. "47285" -> "472 85"). formatCode() (full 10-digit display, e.g.
+  // the big post-creation code) and the live login-input formatter below
+  // both build on this so the grouping is defined in exactly one place.
+  function groupDigits(digits) {
+    var parts = [];
+    if (digits.length > 0) parts.push(digits.slice(0, 3));
+    if (digits.length > 3) parts.push(digits.slice(3, 6));
+    if (digits.length > 6) parts.push(digits.slice(6, 10));
+    return parts.join(' ');
+  }
   function formatCode(digits) {
     if (digits.length !== 10) return digits;
-    return digits.slice(0, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6, 10);
+    return groupDigits(digits);
+  }
+  function isDigitLikeChar(ch) {
+    return (ch >= '0' && ch <= '9') || !!DIGIT_MAP[ch];
+  }
+  // Index into `formatted` (a groupDigits() result: western digits + spaces
+  // only) right after the Nth digit character, for caret restoration.
+  function caretIndexForDigitCount(formatted, digitCount) {
+    if (digitCount <= 0) return 0;
+    var seen = 0;
+    for (var i = 0; i < formatted.length; i++) {
+      if (formatted[i] >= '0' && formatted[i] <= '9') {
+        seen++;
+        if (seen === digitCount) return i + 1;
+      }
+    }
+    return formatted.length;
+  }
+  // Live-formats a text <input> as digits are typed/pasted: accepts
+  // Arabic-Indic digits (displayed normalized to Western, per spec), strips
+  // any pasted spaces/dashes/other characters, caps at 10 digits, and
+  // re-groups 3-3-4 with spaces on every keystroke while keeping the caret
+  // in a sane spot (reformat-then-restore-by-digit-count, the standard
+  // approach for this kind of masked input). Submission-time normalization
+  // (normalizeCode on the field's raw value) is unrelated and unaffected --
+  // this only changes what's displayed while typing.
+  function attachGroupedInput(inputEl) {
+    inputEl.addEventListener('input', function () {
+      var raw = inputEl.value;
+      var caret = inputEl.selectionStart == null ? raw.length : inputEl.selectionStart;
+      var digitsBeforeCaret = 0;
+      for (var i = 0; i < caret && i < raw.length; i++) {
+        if (isDigitLikeChar(raw[i])) digitsBeforeCaret++;
+      }
+      var allDigits = normalizeCode(raw).slice(0, 10);
+      if (digitsBeforeCaret > allDigits.length) digitsBeforeCaret = allDigits.length;
+      var formatted = groupDigits(allDigits);
+      inputEl.value = formatted;
+      var newCaret = caretIndexForDigitCount(formatted, digitsBeforeCaret);
+      try { inputEl.setSelectionRange(newCaret, newCaret); } catch (_) {}
+    });
   }
 
   function serverUrl() {
@@ -129,6 +180,8 @@
     isEnabled: isEnabled,
     normalizeCode: normalizeCode,
     formatCode: formatCode,
+    groupDigits: groupDigits,
+    attachGroupedInput: attachGroupedInput,
     createAccount: createAccount,
     fetchProgress: fetchProgress,
     putProgress: putProgress,
