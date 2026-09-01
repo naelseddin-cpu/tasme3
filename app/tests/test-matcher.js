@@ -144,5 +144,106 @@ check('merged token matches via alternate forms at L4', r.pointer === 2 && r.mat
 // sanity: the plain n+n merge alone would NOT satisfy L4 exact tolerance
 check('merged n-only combo is not an exact match (sanity)', M.levenshtein('ملكيوم', 'مالكيوم') > 0);
 
+// ===================== New coverage (merge-loophole audit fix) =====================
+// Adversarial audit 2026-09-01 (a5-recite/browser-results.json finding G1)
+// confirmed FALSE-REVEAL bugs; the Iron Rule is a word must NEVER be
+// revealed unless genuinely recited. See site/tests/test-merge-loophole.js
+// for the full 637-consecutive-pair scan across real page data; the cases
+// below cover the matcher's unit-level acceptance criteria directly.
+
+// --- Rule 1+2: merge split verification (2-word and 3-word) -----------------
+
+// A lone word[1] must never reveal an unspoken word[0] via the merge path,
+// at any level (this is the exact G1 audit finding, at unit level).
+[1, 2, 3, 4, undefined].forEach(function (level) {
+  r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }], 0, 'الذين', level);
+  check('lone الذين does not reveal unspoken ان at level ' + level, r.matched.indexOf(0) === -1);
+});
+
+// Genuinely glued 'انالذين' (both words truly present, no separator) must
+// reveal both, at every level.
+[1, 2, 3, 4, undefined].forEach(function (level) {
+  r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }], 0, 'انالذين', level);
+  check('glued انالذين reveals both at level ' + level, r.pointer === 2 && r.matched.length === 2);
+});
+
+// Triple-glued 'انالذينكفروا' as ONE token (no separators at all) must
+// reveal all three at L1-L3, since 3-word merge support is new.
+[1, 2, 3].forEach(function (level) {
+  r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0, 'انالذينكفروا', level);
+  check('triple-glued token reveals all three at level ' + level, r.pointer === 3 && r.matched.length === 3);
+});
+// At L4 (exact-only), the same verbatim-concatenated triple-glued token
+// still reveals all three, because every part is an exact split.
+r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0, 'انالذينكفروا', 4);
+check('triple-glued exact-concatenation token reveals all three at L4', r.pointer === 3 && r.matched.length === 3);
+// A triple-glued token that is only APPROXIMATELY the concatenation (one
+// part off by one vowel edit) is rejected at L4 (exact-only) but still
+// accepted at L1-L3 (which tolerate a single vowel edit at this length).
+r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0, 'انالذينكفروه', 4);
+check('near-miss triple-glued token rejected at L4', r.pointer === 0 && r.matched.length === 0);
+r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0, 'انالذينكفروه', 3);
+check('near-miss triple-glued token still accepted at L3 (1 vowel edit within tolerance)', r.pointer === 3 && r.matched.length === 3);
+
+// The old merge loophole itself, reproduced directly: expected [ان, الذين],
+// spoken ONLY 'الذين' at pointer 0 must not advance the pointer or reveal
+// anything -- word[0]='ان' is short (rule 3: exact-only) so no split of
+// 'الذين' can satisfy it, and word[1] cannot be matched out of order at
+// pointer 0. Old code's concatenated-length tolerance for len('انالذين')=7
+// would have wrongly accepted this as a merge.
+r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }], 0, 'الذين', 2);
+check('merge-loophole reproduction: ان stays veiled, pointer does not advance', r.pointer === 0 && r.matched.length === 0);
+
+// --- Rule 3: short words (normalized length <=3) are exact-match only, at ALL levels ---
+
+[1, 2, 3, 4, undefined].forEach(function (level) {
+  check('ان vs من rejected at level ' + level, !M.fuzzyEqual('ان', 'من', level));
+  check('لم vs لا rejected at level ' + level, !M.fuzzyEqual('لم', 'لا', level));
+  check('هم vs ام rejected at level ' + level, !M.fuzzyEqual('هم', 'ام', level));
+});
+// Sanity: an exact-length-3-or-less word still matches itself exactly.
+check('exact short word still matches at L1', M.fuzzyEqual('ان', 'ان', 1));
+check('toleranceFor(1, 2) is 0 (was 1 before the fix)', M.toleranceFor(1, 2) === 0);
+check('toleranceFor(1, 3) is 0 (was 1 before the fix)', M.toleranceFor(1, 3) === 0);
+
+// --- Rule 4: weighted edit distance rejects meaning-changing consonant swaps ---
+
+[1, 2, 3, 4, undefined].forEach(function (level) {
+  check('والاصر rejected for والعصر at level ' + level, !M.fuzzyEqual('والاصر', 'والعصر', level));
+});
+check('weightedEditDistance(والاصر, والعصر) is 3 (one consonant swap)', M.weightedEditDistance('والاصر', 'والعصر') === 3);
+check('plain levenshtein(والاصر, والعصر) is 1 (unweighted, for contrast)', M.levenshtein('والاصر', 'والعصر') === 1);
+
+// Forgiving cases that MUST STILL PASS at L1-L3 (pure vowel/orthography edits):
+[1, 2, 3].forEach(function (level) {
+  check('السموات matches السماوات (insert ا) at level ' + level, M.fuzzyEqual('السموات', 'السماوات', level));
+  check('الصلوه matches الصلاه (و<->ا) at level ' + level, M.fuzzyEqual('الصلوه', 'الصلاه', level));
+  check('ابرهيم matches ابراهيم (insert ا) at level ' + level, M.fuzzyEqual('ابرهيم', 'ابراهيم', level));
+});
+// الرحمن vs الرحمان: real usage goes through the n/a alternate-form pair
+// (see normalize-vectors.json), which is an exact match on the alt form and
+// so is unaffected by tolerance/weighting entirely -- confirmed via
+// matchTranscript against the {n,a} expected entry, at every level.
+[1, 2, 3, 4, undefined].forEach(function (level) {
+  r = M.matchTranscript([{ n: 'الرحمن', a: 'الرحمان' }], 0, 'الرحمان', level);
+  check('الرحمان matches {n:الرحمن,a:الرحمان} at level ' + level, r.pointer === 1 && r.matched.length === 1);
+});
+
+// ملك (len3) vs مالك (len4, insert ا, cost 1): the length used for the
+// tolerance lookup is max(3,4)=4, so rule 3's len<=3 exact-only guard does
+// NOT apply here (it only fires when the LONGER side is also <=3) -- this
+// stays accepted at the default level exactly as before the fix (existing
+// case 4 above already covers this via the fatiha pointer-11 assertion).
+// At L4 (exact-only) it is rejected, as it always was.
+check('ملك vs مالك still accepted at default level (unchanged)', M.fuzzyEqual('ملك', 'مالك'));
+check('ملك vs مالك rejected at L4 (exact-only, unchanged)', !M.fuzzyEqual('ملك', 'مالك', 4));
+
+// --- Wrong-word storm at a short word: 0 reveals at all levels --------------
+[1, 2, 3, 4, undefined].forEach(function (level) {
+  r = M.matchTranscript([{ n: 'ان' }, { n: 'الذين' }, { n: 'كفروا' }], 0,
+    'براءه من واعلموا مخزي الناس قال معي بعدها عذرا استطعما هل لن كي', level);
+  check('wrong-word storm at short-word pointer reveals nothing at level ' + level, r.matched.length === 0 && r.pointer === 0);
+});
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

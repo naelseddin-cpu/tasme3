@@ -17,6 +17,8 @@ from server.matching import (
     match_transcript,
     normalize_arabic,
     normalize_arabic_alt,
+    tolerance_for,
+    weighted_edit_distance,
 )
 
 VECTORS_PATH = (
@@ -195,3 +197,164 @@ def test_merged_token_matches_via_alternate_forms_at_l4():
 
 def test_merged_n_only_combo_is_not_exact_match_sanity():
     assert levenshtein("ملكيوم", "مالكيوم") > 0
+
+
+# ----------------------- Merge-loophole audit fix coverage -----------------------
+# Adversarial audit 2026-09-01 (a5-recite/browser-results.json finding G1)
+# confirmed FALSE-REVEAL bugs; the Iron Rule is a word must NEVER be
+# revealed unless genuinely recited. Python port of the new cases in
+# app/tests/test-matcher.js -- keep both files in sync.
+
+PAGES_DIR = Path(__file__).resolve().parent.parent.parent / "site" / "pages"
+AUDIT_PAGES = [3, 187, 302, 562, 603, 604]
+
+
+def _load_page_words(page_num):
+    p = PAGES_DIR / ("page-%03d.json" % page_num)
+    with open(p, "r", encoding="utf-8") as f:
+        d = json.load(f)
+    out = []
+    for tk in d["tokens"]:
+        if tk.get("e"):
+            continue
+        out.append({"n": tk["n"], "a": tk.get("a")})
+    return out
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_637_pair_merge_loophole_scan_zero_false_reveals(level):
+    """For every consecutive word pair on the 6 audit pages, speaking ONLY
+    word[i+1] (word[i] never uttered) must never reveal word[i] via the
+    merge path, at any level. Mirrors site/tests/test-merge-loophole.js."""
+    total = 0
+    bad = []
+    for page_num in AUDIT_PAGES:
+        words = _load_page_words(page_num)
+        for i in range(len(words) - 1):
+            total += 1
+            r = match_transcript(words, i, words[i + 1]["n"], level)
+            if i in r["matched"]:
+                bad.append((page_num, i, words[i]["n"], words[i + 1]["n"]))
+    assert total == 637
+    assert not bad, bad[:5]
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_lone_second_word_does_not_reveal_unspoken_first_word(level):
+    r = match_transcript([{"n": "ان"}, {"n": "الذين"}], 0, "الذين", level)
+    assert 0 not in r["matched"]
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_glued_two_words_reveals_both(level):
+    r = match_transcript([{"n": "ان"}, {"n": "الذين"}], 0, "انالذين", level)
+    assert r["pointer"] == 2
+    assert len(r["matched"]) == 2
+
+
+@pytest.mark.parametrize("level", [1, 2, 3])
+def test_triple_glued_token_reveals_all_three(level):
+    r = match_transcript(
+        [{"n": "ان"}, {"n": "الذين"}, {"n": "كفروا"}], 0, "انالذينكفروا", level
+    )
+    assert r["pointer"] == 3
+    assert len(r["matched"]) == 3
+
+
+def test_triple_glued_exact_concatenation_reveals_all_three_at_l4():
+    r = match_transcript(
+        [{"n": "ان"}, {"n": "الذين"}, {"n": "كفروا"}], 0, "انالذينكفروا", 4
+    )
+    assert r["pointer"] == 3
+    assert len(r["matched"]) == 3
+
+
+def test_near_miss_triple_glued_rejected_at_l4():
+    r = match_transcript(
+        [{"n": "ان"}, {"n": "الذين"}, {"n": "كفروا"}], 0, "انالذينكفروه", 4
+    )
+    assert r["pointer"] == 0
+    assert r["matched"] == []
+
+
+def test_near_miss_triple_glued_accepted_at_l3():
+    r = match_transcript(
+        [{"n": "ان"}, {"n": "الذين"}, {"n": "كفروا"}], 0, "انالذينكفروه", 3
+    )
+    assert r["pointer"] == 3
+    assert len(r["matched"]) == 3
+
+
+def test_merge_loophole_reproduction_an_stays_veiled():
+    r = match_transcript([{"n": "ان"}, {"n": "الذين"}], 0, "الذين", 2)
+    assert r["pointer"] == 0
+    assert r["matched"] == []
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_short_particle_pairs_rejected_at_every_level(level):
+    assert not fuzzy_equal("ان", "من", level)
+    assert not fuzzy_equal("لم", "لا", level)
+    assert not fuzzy_equal("هم", "ام", level)
+
+
+def test_short_word_exact_match_still_works():
+    assert fuzzy_equal("ان", "ان", 1)
+
+
+def test_tolerance_for_short_words_is_zero_at_l1():
+    assert tolerance_for(1, 2) == 0
+    assert tolerance_for(1, 3) == 0
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_consonant_swap_rejected_at_every_level(level):
+    assert not fuzzy_equal("والاصر", "والعصر", level)
+
+
+def test_weighted_edit_distance_consonant_swap_costs_3():
+    assert weighted_edit_distance("والاصر", "والعصر") == 3
+
+
+def test_plain_levenshtein_consonant_swap_costs_1_for_contrast():
+    assert levenshtein("والاصر", "والعصر") == 1
+
+
+@pytest.mark.parametrize("level", [1, 2, 3])
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("السموات", "السماوات"),
+        ("الصلوه", "الصلاه"),
+        ("ابرهيم", "ابراهيم"),
+    ],
+)
+def test_forgiving_vowel_edits_still_pass(level, a, b):
+    assert fuzzy_equal(a, b, level)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_rahman_alternate_form_matches_at_every_level(level):
+    r = match_transcript([{"n": "الرحمن", "a": "الرحمان"}], 0, "الرحمان", level)
+    assert r["pointer"] == 1
+    assert len(r["matched"]) == 1
+
+
+def test_malik_vs_maalik_still_accepted_at_default_level():
+    assert fuzzy_equal("ملك", "مالك")
+
+
+def test_malik_vs_maalik_rejected_at_l4():
+    assert not fuzzy_equal("ملك", "مالك", 4)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_wrong_word_storm_at_short_word_pointer_reveals_nothing(level):
+    r = match_transcript(
+        [{"n": "ان"}, {"n": "الذين"}, {"n": "كفروا"}],
+        0,
+        "براءه من واعلموا مخزي الناس قال معي بعدها عذرا استطعما هل لن كي",
+        level,
+    )
+    assert r["matched"] == []
+    assert r["pointer"] == 0
