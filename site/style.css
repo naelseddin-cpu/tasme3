@@ -297,7 +297,16 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
 
 /* Stacked above .donebanner -- a page completion that also finishes a surah
    shows both at once (e.g. page 604 finishes 3 surahs). */
-.surahcelebrate { display:none; position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 108px); left:12px; right:12px; z-index:22;
+/* Residual audit A1: visibility is driven purely by the `hidden` HTML
+   attribute (app.js toggles el.surahCelebrate.hidden, never style.display)
+   -- same pattern as .install-promo below, and for the same reason (a base
+   `display:none` here would need `!important` to ever beat the global
+   `[hidden]{display:none!important}` rule when hidden is true, and would
+   otherwise just permanently hide this element even once `hidden` is
+   removed, since removing an attribute alone can't override a same-
+   specificity class rule). No explicit `display` here -- the div's UA
+   default of `block` is exactly what's wanted once `hidden` is gone. */
+.surahcelebrate { position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 108px); left:12px; right:12px; z-index:22;
   background:linear-gradient(180deg,#1f6b42,#0e3d24); border:1px solid var(--gold-deep); border-radius:12px;
   padding:12px 14px; text-align:center; color:#f3e6bb; box-shadow:0 6px 20px rgba(0,0,0,.35); }
 .surahcelebrate-text { font-weight:700; font-size:.95rem; margin-bottom:8px; }

@@ -155,6 +155,15 @@ async function typeRecite(page, text) {
     check('(A) counter total excludes the 26 context words (68-26=42)', counter.total === '42', counter);
     check('(A) counter recited starts at 0', counter.count === '0', counter);
 
+    // Residual audit A5 (word-level pointer path, unaffected by the chip
+    // token-based fix -- see site/tests/test-residuals.js's (A5) block for
+    // the pointer===0 fresh-load pages the fix itself targets): the pointer
+    // just landed on النصر's own first word, so the chip must already show
+    // النصر, never الكافرون (the printed-context surah before it).
+    let chipText = await page.evaluate(function () { return document.getElementById('pageChip').textContent; });
+    check('(A) chip shows النصر right after the surah-start jump lands on its first word',
+      chipText.indexOf('النصر') !== -1 && chipText.indexOf('الكافرون') === -1, chipText);
+
     // ---- typed-fallback recite النصر's opening ----
     await typeRecite(page, 'اذا جاء نصر الله والفتح');
     st = await readState(page);
@@ -213,7 +222,7 @@ async function typeRecite(page, text) {
       Array.from({ length: 42 }, function (_, i) { return i + 26; }).every(function (i) { return entry.revealed.indexOf(i) !== -1; }),
       entry.revealed);
 
-    const celebrateShown = await page.evaluate(function () { return document.getElementById('surahCelebrate').style.display === 'block'; });
+    const celebrateShown = await page.evaluate(function () { return document.getElementById('surahCelebrate').hidden === false; });
     check('(A) a celebration did show (for a real completion)', celebrateShown === true);
     // viewCertBtn's onclick -> openCertificateFor() is async (templates +
     // basmala + font all fetched/loaded before the modal is shown).

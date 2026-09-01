@@ -153,6 +153,20 @@ async function readProgress(page) {
     await context.close();
   }
 
+  // ---- Scenario (d): page-604 chip surah name on a fresh load (residual
+  // audit A5 -- surahForPage() used to return the LAST surah with
+  // firstPage<=p, which for this exact page happened to still agree with
+  // the TOKEN-BASED fix's answer, so this is a same-page regression guard
+  // for the boundary logic this file already exercises, not new coverage
+  // of the bug itself -- see site/tests/test-residuals.js's (A5) block for
+  // the pages that actually caught the bug). ----
+  {
+    const { context, page } = await freshPage(browser, consoleErrors);
+    const chipText = await page.evaluate(function () { return document.getElementById('pageChip').textContent; });
+    check('(d) page 604 chip shows الإخلاص on a fresh load', chipText.indexOf('الإخلاص') !== -1, chipText);
+    await context.close();
+  }
+
   // ---- (e) console errors across all of the above ----
   check('(e) zero unexpected console errors', consoleErrors.length === 0, consoleErrors);
 

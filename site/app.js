@@ -53,6 +53,11 @@
   var ratio = 1, currentVeil = SHEET;
   var tokens = [], words = [], expected = [], markersByWord = {};
   var pointer = 0, revealed = new Set();
+  // Residual audit A4: set true when the cross-tab `storage` listener fires
+  // before `t` (Tasme3I18n.t) is assigned -- flushed by the init promise
+  // below the moment `t` actually becomes callable. See that listener's own
+  // comment for why.
+  var pendingExternalRender = false;
   // Words on the current page BEFORE a surah-start jump's target index --
   // printed CONTEXT (the tail of a preceding surah), rendered unveiled so
   // the reader can see it, but NEVER counted as recited (see applyPageData,
@@ -552,33 +557,50 @@
     }
     return null;
   }
-  // Wave-2 fix (a6 #4): a deep link / go-to-page / lastPage-restore landing
-  // on a boundary page (a surah's OWN firstPage, where that surah actually
-  // starts mid-page -- e.g. page 293: الإسراء's tail runs through word 91,
-  // الكهف begins at word 92) used to show the PREVIOUS surah in the chip,
-  // because pointer sits at 0 (nothing recited/jumped yet) and word[0]'s `k`
-  // is still الإسراء's leftover printed CONTEXT from an EARLIER page.
+  // Residual audit A5 (replaces the wave-2 a6 #4 boundary override below):
+  // a deep link / go-to-page / lastPage-restore landing on a boundary page
+  // (a surah's OWN firstPage, where that surah actually starts mid-page --
+  // e.g. page 293: الإسراء's tail runs through word 91, الكهف begins at
+  // word 92) used to show the PREVIOUS surah in the chip, because pointer
+  // sits at 0 (nothing recited/jumped yet) and word[0]'s `k` is still
+  // الإسراء's leftover printed CONTEXT from an EARLIER page. The old fix
+  // (surahForPage() -- the LAST surah in the index with firstPage <= this
+  // page) got pages 594/596/599/600 wrong whenever more than one surah
+  // starts on the same page (it always picked the LAST of them, not the one
+  // the reader actually landed on), and page 76 wrong the other way (its
+  // surah-index firstPage bookkeeping made an unrelated, later surah look
+  // like it "started" there even though it doesn't).
   //
-  // Fix: at pointer===0 specifically (truly nothing recited/jumped into yet
-  // on this page), if the word-level surah started on an earlier page (its
-  // firstPage < this page) AND a DIFFERENT surah's firstPage IS this exact
-  // page, prefer that one -- the surah the reader actually landed here for.
-  // This must NOT simply prefer surahForPage(pageNum) unconditionally at
-  // pointer 0, though: a page like 604 has THREE surahs all starting on it
-  // (الإخلاص/الفلق/الناس, firstPage 604 each) -- surahForPage() alone
-  // returns the LAST of the three (الناس), which would wrongly override
-  // word[0]'s already-correct الإخلاص. The `pageSurah.firstPage === pageNum`
-  // guard below only ever fires for a GENUINE page-604-is-this-surah's-own-
-  // start situation, i.e. exactly the deep-link boundary case (293/523/583),
-  // never a same-page multi-surah page where word[0] already IS the first of
-  // several surahs beginning on this very page.
+  // TOKEN-BASED fix: scan this page's own word tokens in page (reading)
+  // order -- the same order they're rendered/recited in -- for the FIRST
+  // one whose `k` ("surah:ayah") has ayah number 1; that word is the first
+  // word of whichever surah genuinely begins on this page, so its surah is
+  // exactly the one a fresh reader landed here for (page 604's three
+  // same-page surahs correctly resolve to the FIRST of them, الإخلاص, not
+  // surahForPage()'s last). No token on the page has ayah===1 (page 76,
+  // page 3 -- no surah starts there at all) -- fall through to word[0]'s own
+  // surah exactly as before. Verified against every page's own token data:
+  // the basmala is never emitted as a word token in this corpus (see
+  // build-assets.mjs / the mushaf page-JSON generator), so there is no
+  // ayah-0 "basmala token" that could be mistaken for a false ayah-1 start.
   //
-  // The word-level lookup itself is otherwise unchanged and still handles
-  // every other pointer value exactly as before -- both genuine mid-page
-  // progress into a later surah (the drawer's surah-start jump, or reading
-  // straight past the boundary) and multi-surah pages like 604, tracking
-  // whichever surah is actually being recited right now rather than just
-  // the page's first (or, per the bug above, sometimes wrongly its last).
+  // This replacement only ever changes the POINTER===0 case (a fresh page
+  // load, nothing recited/jumped into yet) -- once pointer advances past 0
+  // (genuine recitation, or applySurahStartJump's own jump), the word-level
+  // `bySurah` lookup below is unchanged and keeps tracking whichever surah
+  // is actually being recited right now, exactly as before.
+  function chipSurahStartOnPage() {
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      if (!w || !w.k) continue;
+      var parts = w.k.split(':');
+      if (parseInt(parts[1], 10) === 1) {
+        var sNum = parseInt(parts[0], 10);
+        return Number.isFinite(sNum) ? surahByNumber(sNum) : null;
+      }
+    }
+    return null;
+  }
   function currentSurah() {
     var idx = Utils.clamp(pointer, 0, words.length - 1);
     var w = words[idx];
@@ -587,9 +609,9 @@
       var sNum = parseInt(w.k.split(':')[0], 10);
       bySurah = Number.isFinite(sNum) ? surahByNumber(sNum) : null;
     }
-    if (pointer === 0 && bySurah && bySurah.firstPage < pageNum) {
-      var pageSurah = surahForPage(pageNum);
-      if (pageSurah && pageSurah.firstPage === pageNum) return pageSurah;
+    if (pointer === 0) {
+      var startSurah = chipSurahStartOnPage();
+      if (startSurah) return startSurah;
     }
     if (bySurah) return bySurah;
     return surahForPage(pageNum);
@@ -788,6 +810,14 @@
       entry.opener.focus();
     }
   }
+  // Residual audit A2: closes every currently-open overlay, topmost first --
+  // used by showMicHelp() below so the typed fallback (a body-level sibling
+  // of #setupSheet) is never left inert behind an overlay the reveal itself
+  // didn't think to close.
+  function closeAllOverlays() {
+    var top;
+    while ((top = topOverlay())) top.close();
+  }
   // Tab trap: only the topmost overlay's own focusable elements are ever
   // allowed to hold focus while any overlay is open.
   document.addEventListener('keydown', function (e) {
@@ -825,14 +855,31 @@
   //       deliberate) browser-back can never actually leave the app: it
   //       just closes whatever overlay is open (if any) and lands right
   //       back where it was.
-  function pushGuardState() {
-    try { history.pushState({ tasme3Guard: true }, '', location.href); } catch (_) {}
+  //
+  // Residual audit A3: the original version pushed exactly ONE guard entry
+  // at boot and re-pushed exactly one per popstate -- fine for isolated back
+  // presses, but several fast presses in a row can outrun a single-entry
+  // buffer (each popstate's own re-push is a separate JS turn; if the
+  // browser advances the session-history pointer back by more than one step
+  // before that turn runs -- a real risk with rapid/coalesced back
+  // navigations -- the single spare entry is already used up and the next
+  // press escapes). GUARD_MAX_DEPTH+1 entries are kept buffered at all
+  // times instead of just one: each carries its own `depth` (0..7) so a
+  // popstate landing anywhere in the buffer can tell how far it fell and
+  // top the buffer back up to full depth in one go, rather than only ever
+  // replacing the single step just consumed.
+  var GUARD_MAX_DEPTH = 7;
+  function pushGuardState(depth) {
+    try { history.pushState({ tasme3Guard: true, depth: depth }, '', location.href); } catch (_) {}
   }
-  pushGuardState();
+  for (var guardBootDepth = 0; guardBootDepth <= GUARD_MAX_DEPTH; guardBootDepth++) pushGuardState(guardBootDepth);
   window.addEventListener('popstate', function () {
     var top = topOverlay();
     if (top) top.close();
-    pushGuardState();
+    var st = history.state;
+    var fromDepth = (st && st.tasme3Guard && typeof st.depth === 'number') ? st.depth : -1;
+    if (fromDepth >= GUARD_MAX_DEPTH) return; // buffer already full -- nothing to top up
+    for (var d = fromDepth + 1; d <= GUARD_MAX_DEPTH; d++) pushGuardState(d);
   });
 
   // ---------------------------------------------------------- swipe to turn
@@ -1194,11 +1241,25 @@
       applyMatches(Matcher.matchTranscript(expected, pointer, el.typeInput.value, level));
     });
   }
+  // Residual audit A2: #helpBox/#fallback/#typeInput are body-level siblings
+  // of #setupSheet -- while the sheet (or any other overlay) is open, the
+  // overlay stack's setInertSiblings() marks them `inert`, so simply
+  // revealing them here was not enough: the only path INTO this function
+  // from a real user gesture is #micHelpLink, which lives INSIDE the sheet,
+  // so the typed fallback stayed genuinely unfocusable/untypable until the
+  // user separately closed the sheet. Closing every open overlay first (the
+  // sheet's own closeSetupSheet() un-inerts its siblings as part of its
+  // normal registerOverlayClose() bookkeeping) then focusing #typeInput
+  // fixes both problems in the one place every mic-help path funnels
+  // through (the sheet link, a real mic-permission error, and the
+  // no-SpeechRecognition-support path below all call this).
   function showMicHelp() {
+    closeAllOverlays();
     el.helpBox.style.display = 'block';
     el.fallback.style.display = 'block';
     wireTyping();
     setStatus(t('mic.needPermission'), 'err');
+    el.typeInput.focus();
   }
   el.micHelpLink.onclick = function (e) { e.preventDefault(); showMicHelp(); };
   el.openTab.onclick = function () { window.open(location.href, '_blank'); };
@@ -1538,15 +1599,22 @@
       if (!newlyDone.length) return;
       renderCertList();
       var surah = newlyDone[0];
-      el.surahCelebrate.style.display = 'block';
+      // Residual audit A1: this banner used to toggle style.display, but
+      // #surahCelebrate carries the HTML `hidden` attribute (index.html) --
+      // style.css's global `[hidden]{display:none!important}` rule always
+      // wins over an equal-specificity inline style.display, so
+      // style.display='block' here could never actually show it. Toggling
+      // the `hidden` property directly is what index.html's own attribute
+      // was already set up for.
+      el.surahCelebrate.hidden = false;
       announceStatus(t('recite.surahComplete'));
       el.viewCertBtn.onclick = function () {
-        el.surahCelebrate.style.display = 'none';
+        el.surahCelebrate.hidden = true;
         openCertificateFor(surah);
       };
     });
   }
-  el.surahCelebrateClose.onclick = function () { el.surahCelebrate.style.display = 'none'; };
+  el.surahCelebrateClose.onclick = function () { el.surahCelebrate.hidden = true; };
 
   // ------------------------------------------------------ cross-tab sync
   // Multi-tab clobber audit (finding 1): Storage.save() now merges into
@@ -1591,7 +1659,20 @@
         el.doneBanner.style.display = (pointer >= expected.length && expected.length > 0) ? 'block' : 'none';
       }
     }
-    renderProgressPanel();
+    // Residual audit A4: this listener can fire before Tasme3I18n's
+    // setLanguage() promise has resolved -- e.g. a second tab writes
+    // progress the instant this tab finishes loading, well before its own
+    // i18n fetch settles -- and renderProgressPanel() calls `t(...)`, which
+    // is still null at that point (see the top of this file: `var t =
+    // null`, assigned only once the init promise below resolves). Calling
+    // it anyway threw an uncaught "t is not a function" and crashed the
+    // whole handler (including the state merge above, which had already
+    // completed by then, but also renderCertList() below, which never ran).
+    // The state merge itself is unconditional and safe (uses no i18n); only
+    // the render is deferred -- to right after `t` is actually assigned,
+    // via pendingExternalRender's flush in the init promise below.
+    if (typeof t === 'function') renderProgressPanel();
+    else pendingExternalRender = true;
     renderCertList();
   });
 
@@ -1933,6 +2014,10 @@
   populateLangSelect();
   window.Tasme3I18n.setLanguage(window.Tasme3I18n.initialLanguage()).then(function () {
     t = window.Tasme3I18n.t;
+    // Residual audit A4: `t` just became callable for the first time --
+    // flush a render the cross-tab `storage` listener above deferred
+    // because it fired while `t` was still null.
+    if (pendingExternalRender) { pendingExternalRender = false; renderProgressPanel(); }
     el.privacyLine.setAttribute('data-i18n', SERVER_MODE ? 'server.privacyServer' : 'server.privacyInterim');
     window.Tasme3I18n.applyTranslations(document);
     activateLevelUI();
