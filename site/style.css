@@ -187,6 +187,31 @@ body.chrome-visible .chrome-handle { display:none; }
 .pageerror button { padding:9px 20px; background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb;
   border:1px solid var(--gold-deep); border-radius:9px; font-size:.95rem; cursor:pointer; }
 
+/* ---- page loading spinner (wave-2 fix #1): a subtle gold ring centered
+   over the page area, distinct from the veiled-but-loaded page and from the
+   error state above -- shown ~150ms into any page fetch/turn (see app.js's
+   showPageSpinnerSoon()) so a fast/cached load never flickers it, hidden the
+   instant the image decodes or the error view takes over. ---- */
+.pagespinner { display:none; position:absolute; top:50%; left:50%; z-index:4;
+  width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%;
+  border:3px solid rgba(184,162,74,.28); border-top-color:var(--gold-deep); pointer-events:none; }
+.pagespinner.show { display:block; animation:tasme3-spin .8s linear infinite; }
+@keyframes tasme3-spin { to { transform:rotate(360deg); } }
+
+/* ---- drawer surah-index load-failure row (wave-2 fix #2): replaces the
+   surah/juz list with an explicit "couldn't load, tap to retry" instead of
+   an unexplained empty drawer. ---- */
+.drawer-error { display:flex; flex-direction:column; align-items:center; gap:12px;
+  padding:36px 22px; text-align:center; color:var(--muted); font-size:.88rem; }
+.drawer-error button { width:auto; display:inline-block; padding:9px 22px; margin-top:0; }
+
+/* ---- listen button pending/loading state (wave-2 fix #10): a distinct look
+   from both idle and .on (actively playing) while audio is still fetching,
+   so a stalled tap on a slow connection has visible feedback instead of
+   looking identical to before the tap. ---- */
+.listenpanel button.pending { background:linear-gradient(180deg,#e4d9b8,#d8c99a); color:#5d5133;
+  opacity:.85; cursor:wait; }
+
 /* ---- shared row look (progress, accounts) -- now inside .sheet-section ---- */
 .panelrow { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:.85rem;
   padding:3px 0; }
@@ -331,6 +356,11 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
   .progressbar > div, .progressstrip > div {
     transition:none;
   }
+  /* wave-2 fix #1: the spinner's rotation is a loading indicator, not
+     decoration, but a continuous spin is still motion -- swap it for a
+     static ring (still clearly distinct from "loaded but veiled") instead
+     of removing the animation with nothing replacing it. */
+  .pagespinner.show { animation:none; opacity:.85; }
 }
 
 /* landscape: give every extra pixel to the Quran text */

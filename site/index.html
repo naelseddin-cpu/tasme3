@@ -10,7 +10,19 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-<link rel="stylesheet" href="fonts.css">
+<!-- Wave-2 fix #4: fonts.css is a single @font-face rule carrying a ~122KB
+     base64 decorative Arabic display font (UthmanicHafs, used for the logo
+     and surah names) -- loading it as a plain blocking <link rel=stylesheet>
+     held up first paint on a slow connection for the sake of text that's
+     only ever a small fraction of the page. preload+swap fetches it at high
+     priority WITHOUT blocking rendering, then swaps it in as a real
+     stylesheet the moment it arrives (the onload handler); style.css (small,
+     and needed for basic layout) stays a normal blocking stylesheet. The
+     <noscript> fallback covers the (rare) no-JS case. Trade-off accepted per
+     spec: the logo/drawer surah names may render in the system font for a
+     brief moment before swapping to UthmanicHafs. -->
+<link rel="preload" href="fonts.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="fonts.css"></noscript>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -48,6 +60,7 @@
   <div class="fallback" id="fallback"><input id="typeInput" data-i18n-placeholder="mic.typeFallback" /></div>
 
   <div class="pagebox" id="pagebox"><canvas id="pagecanvas"></canvas>
+    <div class="pagespinner" id="pageSpinner" aria-hidden="true"></div>
     <div class="pageerror" id="pageError"><p data-i18n="error.pageLoad">تعذر تحميل الصفحة</p><button id="pageErrorRetry" data-i18n="common.retry">إعادة المحاولة</button></div>
   </div>
 
@@ -228,16 +241,25 @@
 <div class="toast" id="toast" aria-live="polite"></div>
 <div id="status" class="visually-hidden" role="status" aria-live="polite"></div>
 
-<script src="config.js"></script>
-<script src="utils.js"></script>
-<script src="storage.js"></script>
-<script src="i18n.js"></script>
-<script src="vendor/matcher.js"></script>
-<script src="account.js"></script>
-<script src="share.js"></script>
-<script src="certificate.js"></script>
-<script src="listen.js"></script>
-<script src="recorder.js"></script>
-<script src="app.js"></script>
+<!-- Wave-2 fix #4: `defer` on every one of these (all already at the very end
+     of body, so this changes nothing about the "run after the DOM is
+     parsed" timing) lets the browser fetch them all in PARALLEL instead of
+     one strictly blocking the next's download -- a meaningful first-load
+     win on a slow/flaky connection. `defer` preserves relative execution
+     order for external scripts per spec, so the dependency chain each file
+     relies on (config -> utils -> storage -> i18n -> matcher -> account ->
+     share -> certificate -> listen -> recorder -> app, verified against
+     each file's own top-of-file `window.Tasme3X` reads) is unaffected. -->
+<script src="config.js" defer></script>
+<script src="utils.js" defer></script>
+<script src="storage.js" defer></script>
+<script src="i18n.js" defer></script>
+<script src="vendor/matcher.js" defer></script>
+<script src="account.js" defer></script>
+<script src="share.js" defer></script>
+<script src="certificate.js" defer></script>
+<script src="listen.js" defer></script>
+<script src="recorder.js" defer></script>
+<script src="app.js" defer></script>
 </body>
 </html>
