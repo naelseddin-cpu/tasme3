@@ -130,5 +130,6 @@
   "progress.wordsToday": "آج {count} الفاظ",
   "progress.totalWords": "مجموعی طور پر {count} الفاظ",
   "error.pageLoad": "صفحہ لوڈ نہیں ہو سکا",
-  "mic.helpLink": "🎤 مائیکروفون کام نہیں کر رہا؟"
+  "mic.helpLink": "🎤 مائیکروفون کام نہیں کر رہا؟",
+  "listen.attribution": "تلاوت: شیخ محمود خلیل حصری — آواز everyayah.com سے"
 }

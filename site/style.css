@@ -126,6 +126,7 @@ html[dir="ltr"] body { direction:ltr; }
 .msg.err { color:var(--danger); }
 .msg.ok { color:var(--green-deep); font-weight:600; }
 .footer-privacy { text-align:center; font-size:.72rem; color:rgba(246,241,228,.65); padding:4px 12px 10px; }
+.listen-attribution { text-align:center; font-size:.66rem; color:#5d5133; padding:0 12px 4px; }
 
 /* ---- drawer (surah / juz / page navigation) ---- */
 .drawer-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:30; }

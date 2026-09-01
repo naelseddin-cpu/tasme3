@@ -130,5 +130,6 @@
   "progress.wordsToday": "{count} کلمه امروز",
   "progress.totalWords": "در مجموع {count} کلمه",
   "error.pageLoad": "بارگذاری صفحه ممکن نشد",
-  "mic.helpLink": "🎤 میکروفون کار نمی‌کند؟"
+  "mic.helpLink": "🎤 میکروفون کار نمی‌کند؟",
+  "listen.attribution": "تلاوت: شیخ محمود خلیل حصری — صدا از everyayah.com"
 }

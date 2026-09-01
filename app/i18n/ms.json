@@ -130,5 +130,6 @@
   "progress.wordsToday": "{count} perkataan hari ini",
   "progress.totalWords": "{count} perkataan secara keseluruhan",
   "error.pageLoad": "Tidak dapat memuatkan halaman",
-  "mic.helpLink": "🎤 Mikrofon tidak berfungsi?"
+  "mic.helpLink": "🎤 Mikrofon tidak berfungsi?",
+  "listen.attribution": "Bacaan: Syeikh Mahmoud Khalil al-Husary — audio daripada everyayah.com"
 }

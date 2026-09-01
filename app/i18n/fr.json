@@ -130,5 +130,6 @@
   "progress.wordsToday": "{count} mots aujourd'hui",
   "progress.totalWords": "{count} mots au total",
   "error.pageLoad": "Impossible de charger la page",
-  "mic.helpLink": "🎤 Le microphone ne fonctionne pas ?"
+  "mic.helpLink": "🎤 Le microphone ne fonctionne pas ?",
+  "listen.attribution": "Récitation : Cheikh Mahmoud Khalil al-Husary — audio fourni par everyayah.com"
 }

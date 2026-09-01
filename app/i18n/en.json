@@ -130,5 +130,6 @@
   "progress.wordsToday": "{count} words today",
   "progress.totalWords": "{count} words in total",
   "error.pageLoad": "Could not load the page",
-  "mic.helpLink": "🎤 Microphone not working?"
+  "mic.helpLink": "🎤 Microphone not working?",
+  "listen.attribution": "Recitation: Sheikh Mahmoud Khalil al-Husary — audio courtesy of everyayah.com"
 }

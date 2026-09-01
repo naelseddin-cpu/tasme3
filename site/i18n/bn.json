@@ -130,5 +130,6 @@
   "progress.wordsToday": "আজ {count} শব্দ",
   "progress.totalWords": "মোট {count} শব্দ",
   "error.pageLoad": "পৃষ্ঠা লোড করা যায়নি",
-  "mic.helpLink": "🎤 মাইক্রোফোন কাজ করছে না?"
+  "mic.helpLink": "🎤 মাইক্রোফোন কাজ করছে না?",
+  "listen.attribution": "তিলাওয়াত: শায়খ মাহমুদ খলিল আল-হুসারি — অডিও everyayah.com থেকে"
 }

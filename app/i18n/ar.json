@@ -130,5 +130,6 @@
   "progress.wordsToday": "{count} كلمة اليوم",
   "progress.totalWords": "{count} كلمة إجمالًا",
   "error.pageLoad": "تعذر تحميل الصفحة",
-  "mic.helpLink": "🎤 الميكروفون لا يعمل؟"
+  "mic.helpLink": "🎤 الميكروفون لا يعمل؟",
+  "listen.attribution": "التلاوة: الشيخ محمود خليل الحصري — الصوت من everyayah.com"
 }

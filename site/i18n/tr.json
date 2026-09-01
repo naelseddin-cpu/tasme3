@@ -130,5 +130,6 @@
   "progress.wordsToday": "Bugün {count} kelime",
   "progress.totalWords": "Toplam {count} kelime",
   "error.pageLoad": "Sayfa yüklenemedi",
-  "mic.helpLink": "🎤 Mikrofon çalışmıyor mu?"
+  "mic.helpLink": "🎤 Mikrofon çalışmıyor mu?",
+  "listen.attribution": "Kıraat: Şeyh Mahmud Halil el-Husarî — ses everyayah.com üzerinden"
 }

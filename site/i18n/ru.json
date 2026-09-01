@@ -130,5 +130,6 @@
   "progress.wordsToday": "{count} слов сегодня",
   "progress.totalWords": "Всего {count} слов",
   "error.pageLoad": "Не удалось загрузить страницу",
-  "mic.helpLink": "🎤 Микрофон не работает?"
+  "mic.helpLink": "🎤 Микрофон не работает?",
+  "listen.attribution": "Чтение: шейх Махмуд Халиль аль-Хусари — аудио предоставлено everyayah.com"
 }

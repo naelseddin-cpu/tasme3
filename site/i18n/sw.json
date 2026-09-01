@@ -130,5 +130,6 @@
   "progress.wordsToday": "Maneno {count} leo",
   "progress.totalWords": "Jumla ya maneno {count}",
   "error.pageLoad": "Imeshindwa kupakia ukurasa",
-  "mic.helpLink": "🎤 Kipaza sauti hakifanyi kazi?"
+  "mic.helpLink": "🎤 Kipaza sauti hakifanyi kazi?",
+  "listen.attribution": "Usomaji: Sheikh Mahmoud Khalil al-Husary — sauti kutoka everyayah.com"
 }
