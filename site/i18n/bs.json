@@ -148,5 +148,7 @@
   "cert.share": "Podijeli",
   "cert.download": "Preuzmi",
   "nav.frontPagesInProgress": "Stranice Al-Fatihe i početka Al-Bekare još se pripremaju",
-  "listen.panelToggle": "Opcije slušanja"
+  "listen.panelToggle": "Opcije slušanja",
+  "chip.surahPage": "Sura {surah} · {page}",
+  "progress.pageProgress": "Napredak stranice"
 }

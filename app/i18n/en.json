@@ -148,5 +148,7 @@
   "cert.empty": "No certificates yet — complete a surah to earn one",
   "cert.viewButton": "View certificate",
   "cert.share": "Share",
-  "cert.download": "Download"
+  "cert.download": "Download",
+  "chip.surahPage": "Surah {surah} · {page}",
+  "progress.pageProgress": "Page progress"
 }

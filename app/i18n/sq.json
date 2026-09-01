@@ -148,5 +148,7 @@
   "cert.empty": "Ende pa certifikata — përfundo një sure për ta fituar një",
   "cert.viewButton": "Shiko certifikatën",
   "cert.share": "Ndaj",
-  "cert.download": "Shkarko"
+  "cert.download": "Shkarko",
+  "chip.surahPage": "Sureja {surah} · {page}",
+  "progress.pageProgress": "Përparimi i faqes"
 }

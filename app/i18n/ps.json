@@ -148,5 +148,7 @@
   "cert.empty": "تر اوسه هېڅ تصدیقنامه نشته — د یوې ترلاسه کولو لپاره یو سورت بشپړ کړئ",
   "cert.viewButton": "تصدیقنامه وګورئ",
   "cert.share": "شریکول",
-  "cert.download": "ډاونلوډ"
+  "cert.download": "ډاونلوډ",
+  "chip.surahPage": "سورة {surah} · {page}",
+  "progress.pageProgress": "د پاڼې پرمختګ"
 }

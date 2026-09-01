@@ -148,5 +148,7 @@
   "cert.empty": "Aucun certificat pour l'instant — termine une sourate pour en obtenir un",
   "cert.viewButton": "Voir le certificat",
   "cert.share": "Partager",
-  "cert.download": "Télécharger"
+  "cert.download": "Télécharger",
+  "chip.surahPage": "Sourate {surah} · {page}",
+  "progress.pageProgress": "Progression de la page"
 }

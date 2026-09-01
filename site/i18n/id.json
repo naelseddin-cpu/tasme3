@@ -148,5 +148,7 @@
   "cert.share": "Bagikan",
   "cert.download": "Unduh",
   "nav.frontPagesInProgress": "Halaman Al-Fatihah dan awal Al-Baqarah sedang dipersiapkan",
-  "listen.panelToggle": "Opsi dengar"
+  "listen.panelToggle": "Opsi dengar",
+  "chip.surahPage": "Surah {surah} · {page}",
+  "progress.pageProgress": "Kemajuan halaman"
 }

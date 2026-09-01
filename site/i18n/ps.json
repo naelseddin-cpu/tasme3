@@ -148,5 +148,7 @@
   "cert.share": "شریکول",
   "cert.download": "ډاونلوډ",
   "nav.frontPagesInProgress": "د الفاتحې او د بقرې د پیل مخونه لا تر اوسه چمتو کیږي",
-  "listen.panelToggle": "د اورېدو غوراوي"
+  "listen.panelToggle": "د اورېدو غوراوي",
+  "chip.surahPage": "سورة {surah} · {page}",
+  "progress.pageProgress": "د پاڼې پرمختګ"
 }

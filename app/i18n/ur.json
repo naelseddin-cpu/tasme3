@@ -148,5 +148,7 @@
   "cert.empty": "ابھی کوئی سند نہیں — ایک سورہ مکمل کریں تاکہ آپ کو مل جائے",
   "cert.viewButton": "سند دیکھیں",
   "cert.share": "شیئر کریں",
-  "cert.download": "ڈاؤن لوڈ"
+  "cert.download": "ڈاؤن لوڈ",
+  "chip.surahPage": "سورۃ {surah} · {page}",
+  "progress.pageProgress": "صفحے کی پیش رفت"
 }

@@ -148,5 +148,7 @@
   "cert.share": "اشتراک‌گذاری",
   "cert.download": "دانلود",
   "nav.frontPagesInProgress": "صفحات فاتحه و آغاز بقره در حال آماده‌سازی است",
-  "listen.panelToggle": "گزینه‌های شنیدن"
+  "listen.panelToggle": "گزینه‌های شنیدن",
+  "chip.surahPage": "سوره {surah} · {page}",
+  "progress.pageProgress": "پیشرفت صفحه"
 }

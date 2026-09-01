@@ -148,5 +148,7 @@
   "cert.share": "Delen",
   "cert.download": "Downloaden",
   "nav.frontPagesInProgress": "De pagina's van Al-Fatiha en het begin van Al-Baqarah worden nog voorbereid",
-  "listen.panelToggle": "Luisteropties"
+  "listen.panelToggle": "Luisteropties",
+  "chip.surahPage": "Soera {surah} · {page}",
+  "progress.pageProgress": "Paginavoortgang"
 }

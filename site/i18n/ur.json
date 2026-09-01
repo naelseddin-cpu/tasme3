@@ -148,5 +148,7 @@
   "cert.share": "شیئر کریں",
   "cert.download": "ڈاؤن لوڈ",
   "nav.frontPagesInProgress": "الفاتحہ اور سورۃ البقرہ کے آغاز کے صفحات ابھی تیار کیے جا رہے ہیں",
-  "listen.panelToggle": "سننے کے اختیارات"
+  "listen.panelToggle": "سننے کے اختیارات",
+  "chip.surahPage": "سورۃ {surah} · {page}",
+  "progress.pageProgress": "صفحے کی پیش رفت"
 }

@@ -148,5 +148,7 @@
   "cert.empty": "Belum ada sertifikat — selesaikan satu surat untuk mendapatkannya",
   "cert.viewButton": "Lihat sertifikat",
   "cert.share": "Bagikan",
-  "cert.download": "Unduh"
+  "cert.download": "Unduh",
+  "chip.surahPage": "Surah {surah} · {page}",
+  "progress.pageProgress": "Kemajuan halaman"
 }

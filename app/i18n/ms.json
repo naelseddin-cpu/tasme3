@@ -148,5 +148,7 @@
   "cert.empty": "Belum ada sijil — selesaikan satu surah untuk mendapatkannya",
   "cert.viewButton": "Lihat sijil",
   "cert.share": "Kongsi",
-  "cert.download": "Muat turun"
+  "cert.download": "Muat turun",
+  "chip.surahPage": "Surah {surah} · {page}",
+  "progress.pageProgress": "Kemajuan halaman"
 }

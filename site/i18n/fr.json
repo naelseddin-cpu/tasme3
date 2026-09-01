@@ -148,5 +148,7 @@
   "cert.share": "Partager",
   "cert.download": "Télécharger",
   "nav.frontPagesInProgress": "Les pages d'Al-Fatiha et du début d'Al-Baqarah sont en cours de préparation",
-  "listen.panelToggle": "Options d'écoute"
+  "listen.panelToggle": "Options d'écoute",
+  "chip.surahPage": "Sourate {surah} · {page}",
+  "progress.pageProgress": "Progression de la page"
 }

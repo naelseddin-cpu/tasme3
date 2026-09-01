@@ -148,5 +148,7 @@
   "cert.share": "പങ്കിടുക",
   "cert.download": "ഡൗൺലോഡ് ചെയ്യുക",
   "nav.frontPagesInProgress": "അൽ-ഫാത്തിഹയുടെയും അൽ-ബഖറയുടെ തുടക്കത്തിന്റെയും പേജുകൾ തയ്യാറാക്കിക്കൊണ്ടിരിക്കുന്നു",
-  "listen.panelToggle": "കേൾക്കൽ ഓപ്ഷനുകൾ"
+  "listen.panelToggle": "കേൾക്കൽ ഓപ്ഷനുകൾ",
+  "chip.surahPage": "സൂറ {surah} · {page}",
+  "progress.pageProgress": "പേജ് പുരോഗതി"
 }

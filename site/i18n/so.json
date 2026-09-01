@@ -148,5 +148,7 @@
   "cert.share": "La wadaag",
   "cert.download": "Soo deji",
   "nav.frontPagesInProgress": "Boggagga Al-Faatixa iyo bilowga Al-Baqarah waa la diyaarinayaa",
-  "listen.panelToggle": "Ikhtiyaarrada dhagaysiga"
+  "listen.panelToggle": "Ikhtiyaarrada dhagaysiga",
+  "chip.surahPage": "Suurat {surah} · {page}",
+  "progress.pageProgress": "Horumarka boggan"
 }

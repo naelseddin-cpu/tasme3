@@ -148,5 +148,7 @@
   "cert.empty": "Babu takardar shaida tukuna — kammala sura ɗaya don samun ɗaya",
   "cert.viewButton": "Duba takardar shaida",
   "cert.share": "Raba",
-  "cert.download": "Sauke"
+  "cert.download": "Sauke",
+  "chip.surahPage": "Suura {surah} · {page}",
+  "progress.pageProgress": "Ci gaban shafi"
 }

@@ -148,5 +148,7 @@
   "cert.share": "பகிர்",
   "cert.download": "பதிவிறக்கு",
   "nav.frontPagesInProgress": "அல்-ஃபாத்திஹா மற்றும் அல்-பகராவின் தொடக்கப் பக்கங்கள் தயாராகி வருகின்றன",
-  "listen.panelToggle": "கேட்பதற்கான விருப்பங்கள்"
+  "listen.panelToggle": "கேட்பதற்கான விருப்பங்கள்",
+  "chip.surahPage": "சூரா {surah} · {page}",
+  "progress.pageProgress": "பக்க முன்னேற்றம்"
 }

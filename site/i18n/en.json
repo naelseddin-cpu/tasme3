@@ -148,5 +148,7 @@
   "cert.share": "Share",
   "cert.download": "Download",
   "nav.frontPagesInProgress": "Al-Fatihah and the start of Al-Baqarah pages are being prepared",
-  "listen.panelToggle": "Listen options"
+  "listen.panelToggle": "Listen options",
+  "chip.surahPage": "Surah {surah} · {page}",
+  "progress.pageProgress": "Page progress"
 }

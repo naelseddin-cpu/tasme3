@@ -148,5 +148,7 @@
   "cert.empty": "هنوز گواهی‌ای نیست — یک سوره را کامل کن تا یکی بگیری",
   "cert.viewButton": "مشاهده گواهی",
   "cert.share": "اشتراک‌گذاری",
-  "cert.download": "دانلود"
+  "cert.download": "دانلود",
+  "chip.surahPage": "سوره {surah} · {page}",
+  "progress.pageProgress": "پیشرفت صفحه"
 }

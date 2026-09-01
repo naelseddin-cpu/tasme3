@@ -148,5 +148,7 @@
   "cert.share": "مشاركة",
   "cert.download": "تحميل",
   "nav.frontPagesInProgress": "صفحتا الفاتحة وبداية البقرة قيد الإعداد",
-  "listen.panelToggle": "خيارات الاستماع"
+  "listen.panelToggle": "خيارات الاستماع",
+  "chip.surahPage": "سورة {surah} · {page}",
+  "progress.pageProgress": "تقدم الصفحة"
 }

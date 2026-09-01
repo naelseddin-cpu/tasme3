@@ -15,10 +15,13 @@ body {
 html[dir="rtl"] body { direction:rtl; }
 html[dir="ltr"] body { direction:ltr; }
 
-:root { --bar-h:112px; } /* fallback used only before app.js's first measurement */
-.frame { width:100%; display:flex; flex-direction:column; padding-bottom:calc(var(--bar-h) + env(safe-area-inset-bottom) + 16px); }
-.bottombar { position:fixed; bottom:0; left:0; right:0; z-index:20; border-top:1px solid #8f7226; }
-.bottombar { padding-bottom:env(safe-area-inset-bottom); }
+/* Minimal chrome: no persistent bottom bar. --fab-clear is the static
+   clearance the floating mic/setup buttons need (button diameter + their
+   own bottom offset + a small gap) -- everything that floats above them
+   (toasts, the done banner, the surah-celebration card) anchors off this
+   one variable instead of a bar height app.js used to measure at runtime. */
+:root { --fab-clear:84px; }
+.frame { width:100%; display:flex; flex-direction:column; padding-bottom:calc(env(safe-area-inset-bottom) + 12px); }
 .goldbar {
   background:linear-gradient(155deg, #efe1b4 0%, var(--gold) 30%, #e9d9a5 55%, #c8a951 80%, #f0e3b8 100%);
   border-bottom:1px solid #8f7226;
@@ -33,7 +36,8 @@ html[dir="ltr"] body { direction:ltr; }
   box-shadow:0 2px 4px rgba(90,70,15,.35), inset 0 1px 0 #fff; flex-shrink:0; }
 .pagenav { display:flex; align-items:center; gap:6px; }
 .pagenav .chip { border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#ece1c2);
-  border-radius:999px; padding:6px 14px; font-size:.85rem; min-width:70px; text-align:center; font-weight:600;
+  border-radius:999px; padding:6px 14px; font-size:.85rem; min-width:70px; max-width:min(62vw,280px);
+  text-align:center; font-weight:600; overflow:hidden; text-overflow:ellipsis;
   box-shadow:inset 0 1px 0 #fff, 0 1px 3px rgba(90,70,15,.3); cursor:pointer; white-space:nowrap; }
 .topbar-right, .topbar-left { display:flex; align-items:center; gap:6px; }
 
@@ -41,16 +45,24 @@ html[dir="ltr"] body { direction:ltr; }
 .pagebox { width:100%; min-height:220px; background:var(--sheet); position:relative; }
 #pagecanvas { display:block; width:100%; height:auto; }
 
-/* ---- compact bottom bar: progress strip + mic/status row + controls row,
-   the listen/repeat/reciter controls tucked behind a slide-up panel so the
-   bar stays short and the page area keeps the recovered height (founder:
-   "too much space for settings buttons, very less for Quran"). ---- */
-.progressbar { height:3px; width:100%; overflow:hidden; flex-shrink:0;
+/* ---- minimal main screen: just the page + two floating buttons. Every
+   control that used to live in the bottom bar (level, listen/repeat/reciter,
+   word counter) now lives inside the setup sheet -- see .sheet* below --
+   reachable through the small gear button next to the mic (founder: "all
+   info in the buttons can come out and be in a pop window for setup...
+   what's left is only Quran page and a mic button"). ---- */
+.progressbar, .progressstrip { height:3px; width:100%; overflow:hidden; flex-shrink:0;
   background:linear-gradient(180deg,#bfa14f,#e6d49a); }
-.progressbar > div { height:100%; width:0%;
+.progressstrip { background:rgba(255,255,255,.18); }
+.progressbar > div, .progressstrip > div { height:100%; width:0%;
   background:linear-gradient(90deg,#0e3d24,#1a5c38 60%,#2e7d52); transition:width .4s; }
 
-.mainrow { display:flex; align-items:center; gap:10px; padding:4px 12px 2px; }
+/* Floating controls: pinned to the inline-end corner (bottom-left in RTL,
+   bottom-right in LTR) -- the corner opposite the drawer button, which sits
+   at inline-start in the top bar -- safe-area aware. */
+.floatbar { position:fixed; bottom:calc(env(safe-area-inset-bottom) + 16px); inset-inline-end:16px; z-index:20;
+  display:flex; align-items:center; gap:10px; }
+.floatbar .setupbtn { width:44px; height:44px; font-size:1.2rem; border-radius:50%; }
 .recbtn { width:56px; height:56px; border-radius:50%; border:3px solid var(--gold-deep); flex-shrink:0;
   background:radial-gradient(circle at 32% 28%, #3f9e6b 0%, #1a5c38 34%, #0e3d24 62%, #1f6b42 82%, #0a2c19 100%);
   color:#eafff2; font-size:1.5rem; cursor:pointer;
@@ -60,35 +72,33 @@ html[dir="ltr"] body { direction:ltr; }
   box-shadow:0 0 0 7px rgba(176,58,36,.25), 0 3px 10px rgba(0,0,0,.4); }
 .recbtn.busy { opacity:.65; }
 .recbtn:disabled { opacity:.4; }
-.status { flex:1; min-width:0; font-size:.8rem; color:var(--muted); text-align:start;
-  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.status.good { color:var(--green-deep); font-weight:600; }
-.status.err { color:var(--danger); font-weight:600; }
 
-.controlsrow { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:2px 10px 4px; }
-.levels { display:flex; gap:5px; align-items:center; }
-.level-seg { width:40px; height:40px; min-width:40px; border-radius:9px; border:1px solid var(--gold-deep);
-  background:linear-gradient(180deg,var(--pearl),#e4d9b8); color:#5d5133; font-size:.92rem; font-weight:700;
-  font-variant-numeric:tabular-nums; cursor:pointer; display:flex; align-items:center; justify-content:center;
-  box-shadow:inset 0 1px 0 #fff; }
+/* ---- setup bottom sheet (level / listen / progress / share / account /
+   certificates / privacy -- everything that used to sit in the always-on
+   bottom bar or in always-visible panels below the page). ---- */
+.sheet-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:32; }
+.sheet { position:fixed; left:0; right:0; bottom:0; z-index:33; max-height:85vh;
+  background:var(--sheet); border-radius:18px 18px 0 0; box-shadow:0 -8px 30px rgba(0,0,0,.4);
+  display:flex; flex-direction:column; transform:translateY(100%); transition:transform .25s ease;
+  padding-bottom:env(safe-area-inset-bottom); }
+.sheet.open { transform:translateY(0); }
+.sheet-handle { width:40px; height:4px; border-radius:2px; background:var(--gold-line); margin:8px auto 0; flex-shrink:0; }
+.sheet-head { display:flex; align-items:center; justify-content:space-between; padding:6px 14px 2px; flex-shrink:0; }
+.sheet-head h2 { font-size:1rem; color:var(--green-deep); }
+.sheet-body { overflow-y:auto; padding:0 14px 14px; -webkit-overflow-scrolling:touch; }
+.sheet-section { margin-top:14px; padding-top:14px; border-top:1px solid var(--gold-line); }
+.sheet-section:first-child { margin-top:6px; padding-top:0; border-top:none; }
+.sheet-section h3 { font-size:.85rem; color:var(--muted); margin-bottom:8px; font-weight:700; }
+
+.levels { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.level-seg { flex-direction:column; gap:2px; min-height:56px; border-radius:10px; border:1px solid var(--gold-deep);
+  background:linear-gradient(180deg,var(--pearl),#e4d9b8); color:#5d5133; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; box-shadow:inset 0 1px 0 #fff; }
+.level-seg-num { font-size:1.05rem; font-weight:800; font-variant-numeric:tabular-nums; }
+.level-seg-name { font-size:.75rem; font-weight:600; }
 .level-seg.active { background:linear-gradient(180deg,#47a874,#1a5c38 60%,#0e3d24); color:#eafff2; border-color:#0e3d24; }
-.stats { font-size:.78rem; color:#5d5133; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; padding:0 4px; }
-.listentoggle { width:40px; height:40px; min-width:40px; border-radius:9px; border:1px solid var(--gold-deep);
-  background:linear-gradient(180deg,var(--pearl),#e4d9b8); font-size:1.15rem; cursor:pointer; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center; }
-.listentoggle.active { background:linear-gradient(180deg,#47a874,#1a5c38 60%,#0e3d24); box-shadow:inset 0 1px 3px rgba(0,0,0,.3); }
 
-/* Slide-up panel: absolutely positioned above the bar's own box so it never
-   changes the bar's measured height (app.js's syncFramePadding reads
-   .bottombar's rendered height for the page-area clearance -- this panel
-   must stay out of that measurement whether open or closed). */
-.listenpanel { position:absolute; left:0; right:0; bottom:100%; z-index:1;
-  display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;
-  padding:10px 12px; border-top:1px solid #8f7226;
-  background:linear-gradient(155deg, #efe1b4 0%, var(--gold) 30%, #e9d9a5 55%, #c8a951 80%, #f0e3b8 100%);
-  box-shadow:0 -4px 12px rgba(0,0,0,.3);
-  transform:translateY(8px); opacity:0; pointer-events:none; transition:transform .2s ease, opacity .2s ease; }
-.listenpanel.open { transform:translateY(0); opacity:1; pointer-events:auto; }
+.listenpanel { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; padding:2px 0 4px; }
 .listenpanel button { border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#e4d9b8);
   color:var(--green-deep); border-radius:999px; padding:8px 16px; font-size:.85rem; cursor:pointer; font-weight:600;
   min-height:40px; }
@@ -96,18 +106,24 @@ html[dir="ltr"] body { direction:ltr; }
 .listenpanel select { border:1px solid var(--gold-deep); border-radius:999px; padding:8px 12px; font-size:.8rem;
   background:var(--pearl); color:var(--green-deep); min-height:40px; }
 
-.donebanner { display:none; position:fixed; bottom:calc(var(--bar-h) + 10px); left:12px; right:12px; z-index:21; color:#f3e6bb; text-align:center;
+.donebanner { display:none; position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 58px); left:12px; right:12px; z-index:21; color:#f3e6bb; text-align:center;
   background:linear-gradient(180deg,#1f6b42,#0e3d24); border:1px solid var(--gold-deep);
   border-radius:10px; padding:8px 16px; margin:6px 12px 0; font-size:.95rem; }
 
-.sharebar { display:none; padding:0 12px 8px; text-align:center; }
+.sharebar { display:none; position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 10px);
+  left:12px; right:12px; z-index:21; padding:0; text-align:center; }
 .sharebar button { background:linear-gradient(180deg,#25d366,#128c3e); color:#fff; border:1px solid #0d7233;
   border-radius:10px; padding:9px 18px; font-size:.9rem; font-weight:700; cursor:pointer;
   box-shadow:0 2px 6px rgba(0,0,0,.3); }
 
-.michelp-toggle { text-align:center; padding:6px 0 8px; }
-.michelp-toggle a { color:#f3e6bb; font-size:.8rem; text-decoration:underline; cursor:pointer; }
-.helpbox { display:none; margin:6px 12px 10px; padding:10px 12px; background:var(--sheet);
+/* Relocated inside the setup sheet's listen section -- link color follows
+   the sheet's cream background now instead of the (removed) gold bar. */
+.michelp-toggle { text-align:center; padding:8px 0 0; }
+.michelp-toggle a { color:var(--green-deep); font-size:.8rem; text-decoration:underline; cursor:pointer; }
+/* In-flow above the page (same pattern as .zoomwarn) so the typed fallback
+   stays visible without scrolling the instant the mic path fails, with zero
+   footprint the rest of the time. */
+.helpbox { display:none; margin:0 12px 10px; padding:10px 12px; background:var(--sheet);
   border:1px solid var(--gold-deep); border-radius:10px; font-size:.82rem; line-height:1.9; }
 .helpbox button { display:block; width:100%; margin:8px 0; padding:9px;
   background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb;
@@ -121,10 +137,7 @@ html[dir="ltr"] body { direction:ltr; }
 .pageerror button { padding:9px 20px; background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb;
   border:1px solid var(--gold-deep); border-radius:9px; font-size:.95rem; cursor:pointer; }
 
-/* ---- panels shared look (progress, accounts) ---- */
-.panel { margin:10px 12px; padding:12px 14px; background:var(--sheet); border:1px solid var(--gold-deep);
-  border-radius:12px; }
-.panel h3 { font-size:.95rem; color:var(--green-deep); margin-bottom:8px; }
+/* ---- shared row look (progress, accounts) -- now inside .sheet-section ---- */
 .panelrow { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:.85rem;
   padding:3px 0; }
 .panelrow .num { font-weight:700; color:var(--green-deep); font-variant-numeric:tabular-nums; }
@@ -178,14 +191,17 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
 .lang-select { border:1px solid var(--gold-deep); border-radius:8px; padding:6px 8px; font-size:.85rem;
   background:var(--pearl); color:var(--green-deep); }
 
-.toast { position:fixed; left:50%; bottom:calc(var(--bar-h) + 54px + env(safe-area-inset-bottom)); transform:translateX(-50%);
+.toast { position:fixed; left:50%; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 58px); transform:translateX(-50%);
   background:#2a2a20; color:#fff; padding:9px 16px; border-radius:999px; font-size:.85rem; z-index:40;
   box-shadow:0 4px 14px rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:opacity .25s; max-width:88vw;
   text-align:center; }
 .toast.show { opacity:1; }
 
 /* -------------------------------------------------- greeting / name / certificates */
-.greeting { text-align:center; font-size:.85rem; font-weight:600; color:#f3e6bb; padding:6px 12px 0; }
+/* Lives inside the setup sheet now (cream/white background), not the old
+   gold bottom bar, so this needs a dark ink color rather than the pale gold
+   that used to sit on that bar. */
+.greeting { text-align:center; font-size:.9rem; font-weight:600; color:var(--green-deep); padding:0 0 10px; }
 
 .namerow { margin-top:10px; padding-top:10px; border-top:1px solid var(--gold-line); }
 .namerow p { font-size:.85rem; color:var(--green-deep); margin-bottom:8px; text-align:center; }
@@ -197,7 +213,7 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
 
 /* Stacked above .donebanner -- a page completion that also finishes a surah
    shows both at once (e.g. page 604 finishes 3 surahs). */
-.surahcelebrate { display:none; position:fixed; bottom:calc(var(--bar-h) + 90px); left:12px; right:12px; z-index:22;
+.surahcelebrate { display:none; position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 108px); left:12px; right:12px; z-index:22;
   background:linear-gradient(180deg,#1f6b42,#0e3d24); border:1px solid var(--gold-deep); border-radius:12px;
   padding:12px 14px; text-align:center; color:#f3e6bb; box-shadow:0 6px 20px rgba(0,0,0,.35); }
 .surahcelebrate-text { font-weight:700; font-size:.95rem; margin-bottom:8px; }
@@ -227,13 +243,9 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
 /* landscape: give every extra pixel to the Quran text */
 @media (orientation: landscape) {
   .topbar { padding:3px 10px; }
-  .logo { font-size:1.05rem; }
   .iconbtn { width:30px; height:30px; font-size:.9rem; }
   .pagenav .chip { padding:3px 12px; font-size:.78rem; min-width:60px; }
-  .status { display:none; }
-  .mainrow { padding:3px 10px 1px; }
+  .floatbar { bottom:calc(env(safe-area-inset-bottom) + 10px); inset-inline-end:10px; gap:8px; }
+  .floatbar .setupbtn { width:38px; height:38px; font-size:1.05rem; }
   .recbtn { width:46px; height:46px; font-size:1.2rem; }
-  .controlsrow { padding:1px 10px 3px; }
-  /* .frame's padding-bottom already tracks the bar's real measured height
-     via --bar-h (app.js syncFramePadding) -- no fixed override needed here. */
 }

@@ -148,5 +148,7 @@
   "cert.empty": "এখনও কোনো সার্টিফিকেট নেই — একটি পেতে একটি সূরা সম্পন্ন করুন",
   "cert.viewButton": "সার্টিফিকেট দেখুন",
   "cert.share": "শেয়ার করুন",
-  "cert.download": "ডাউনলোড"
+  "cert.download": "ডাউনলোড",
+  "chip.surahPage": "সূরা {surah} · {page}",
+  "progress.pageProgress": "পৃষ্ঠার অগ্রগতি"
 }

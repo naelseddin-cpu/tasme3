@@ -148,5 +148,7 @@
   "cert.share": "Поделиться",
   "cert.download": "Скачать",
   "nav.frontPagesInProgress": "Страницы Аль-Фатихи и начала Аль-Бакара пока готовятся",
-  "listen.panelToggle": "Настройки прослушивания"
+  "listen.panelToggle": "Настройки прослушивания",
+  "chip.surahPage": "Сура {surah} · {page}",
+  "progress.pageProgress": "Прогресс страницы"
 }

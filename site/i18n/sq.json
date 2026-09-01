@@ -148,5 +148,7 @@
   "cert.share": "Ndaj",
   "cert.download": "Shkarko",
   "nav.frontPagesInProgress": "Faqet e Fatihasë dhe fillimi i Bekaresë ende po përgatiten",
-  "listen.panelToggle": "Opsionet e dëgjimit"
+  "listen.panelToggle": "Opsionet e dëgjimit",
+  "chip.surahPage": "Sureja {surah} · {page}",
+  "progress.pageProgress": "Përparimi i faqes"
 }

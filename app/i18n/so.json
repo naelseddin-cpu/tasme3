@@ -148,5 +148,7 @@
   "cert.empty": "Wali shahaado ma jirto — dhammee suurad si aad u hesho mid",
   "cert.viewButton": "Fiiri shahaadada",
   "cert.share": "La wadaag",
-  "cert.download": "Soo deji"
+  "cert.download": "Soo deji",
+  "chip.surahPage": "Suurat {surah} · {page}",
+  "progress.pageProgress": "Horumarka boggan"
 }

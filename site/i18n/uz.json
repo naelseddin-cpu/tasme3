@@ -148,5 +148,7 @@
   "cert.share": "Ulashish",
   "cert.download": "Yuklab olish",
   "nav.frontPagesInProgress": "Fotiha va Baqara surasi boshlanishi sahifalari hali tayyorlanmoqda",
-  "listen.panelToggle": "Tinglash sozlamalari"
+  "listen.panelToggle": "Tinglash sozlamalari",
+  "chip.surahPage": "{surah} surasi · {page}",
+  "progress.pageProgress": "Sahifa jarayoni"
 }

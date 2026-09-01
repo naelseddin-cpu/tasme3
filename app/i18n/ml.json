@@ -148,5 +148,7 @@
   "cert.empty": "ഇതുവരെ സർട്ടിഫിക്കറ്റുകൾ ഒന്നുമില്ല — ഒന്ന് നേടാൻ ഒരു സൂറ പൂർത്തിയാക്കുക",
   "cert.viewButton": "സർട്ടിഫിക്കറ്റ് കാണുക",
   "cert.share": "പങ്കിടുക",
-  "cert.download": "ഡൗൺലോഡ് ചെയ്യുക"
+  "cert.download": "ഡൗൺലോഡ് ചെയ്യുക",
+  "chip.surahPage": "സൂറ {surah} · {page}",
+  "progress.pageProgress": "പേജ് പുരോഗതി"
 }

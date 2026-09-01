@@ -148,5 +148,7 @@
   "cert.share": "Paylaş",
   "cert.download": "Yüklə",
   "nav.frontPagesInProgress": "Əl-Fatihə və Əl-Bəqərənin başlanğıc səhifələri hələ hazırlanır",
-  "listen.panelToggle": "Dinləmə seçimləri"
+  "listen.panelToggle": "Dinləmə seçimləri",
+  "chip.surahPage": "{surah} surəsi · {page}",
+  "progress.pageProgress": "Səhifə irəliləyişi"
 }

@@ -148,5 +148,7 @@
   "cert.share": "Raba",
   "cert.download": "Sauke",
   "nav.frontPagesInProgress": "Shafukan Al-Fatiha da farkon Al-Baqarah suna cikin shiri",
-  "listen.panelToggle": "Zaɓuɓɓukan saurare"
+  "listen.panelToggle": "Zaɓuɓɓukan saurare",
+  "chip.surahPage": "Suura {surah} · {page}",
+  "progress.pageProgress": "Ci gaban shafi"
 }

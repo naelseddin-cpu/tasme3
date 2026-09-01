@@ -148,5 +148,7 @@
   "cert.share": "Paylaş",
   "cert.download": "İndir",
   "nav.frontPagesInProgress": "Fatiha ve Bakara suresinin başlangıç sayfaları hazırlanıyor",
-  "listen.panelToggle": "Dinleme seçenekleri"
+  "listen.panelToggle": "Dinleme seçenekleri",
+  "chip.surahPage": "{surah} Suresi · {page}",
+  "progress.pageProgress": "Sayfa ilerlemesi"
 }

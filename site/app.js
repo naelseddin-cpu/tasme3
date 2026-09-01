@@ -40,10 +40,11 @@
   // ------------------------------------------------------------- elements
   var el = {};
   [
-    'menuBtn', 'langSelect', 'fsBtn', 'nextPg', 'prevPg', 'pageChip', 'zoomWarn',
+    'menuBtn', 'langSelect', 'fsBtn', 'pageChip', 'zoomWarn', 'pagebox',
     'pagecanvas', 'pageError', 'pageErrorRetry', 'doneBanner', 'shareBar', 'shareBtn',
-    'status', 'recBtn', 'levels', 'count', 'total', 'listenBtn', 'repeatBtn',
-    'reciterSelect', 'listenToggle', 'listenPanel', 'pbar', 'micHelpLink', 'fallback', 'typeInput', 'helpBox',
+    'shareProgressBtn', 'status', 'recBtn', 'setupBtn', 'setupSheet', 'setupBackdrop', 'setupClose',
+    'levels', 'count', 'total', 'listenBtn', 'repeatBtn',
+    'reciterSelect', 'listenPanel', 'pbar', 'pbarTop', 'micHelpLink', 'fallback', 'typeInput', 'helpBox',
     'openTab', 'streakNum', 'wordsTodayLabel', 'wordsTodayNum', 'wordsTotalLabel',
     'wordsTotalNum', 'acctDisabled', 'acctGuest', 'acctCodeShown', 'acctLoggedIn',
     'saveProgressBtn', 'showLoginBtn', 'loginRow', 'loginInput', 'loginBtn', 'acctMsg',
@@ -63,6 +64,17 @@
     el.toast.classList.add('show');
     clearTimeout(showToast._tm);
     showToast._tm = setTimeout(function () { el.toast.classList.remove('show'); }, 2600);
+  }
+
+  // The old bottom bar carried a persistent status line ("listening…",
+  // "well done", errors); the minimal main screen has no permanent chrome
+  // for that, so this is now the ONE place that reports recite feedback --
+  // it still updates the (hidden, legacy) #status node too, so nothing that
+  // reads el.status.textContent elsewhere breaks.
+  function setStatus(text, cls) {
+    el.status.className = cls ? 'status ' + cls : 'status';
+    el.status.textContent = text;
+    showToast(text);
   }
 
   // ------------------------------------------------------------ rendering
@@ -105,21 +117,20 @@
     setInterval(zoomCheck, 1500);
   }
 
-  var frameEl = document.querySelector('.frame'), bottombarEl = document.querySelector('.bottombar');
-  function syncFramePadding() {
-    if (!frameEl || !bottombarEl) return;
-    // .bottombar's own rendered height only -- the listen/reciter slide-up
-    // panel is absolutely positioned above it (see .listenpanel) precisely
-    // so opening/closing it never perturbs this measurement.
-    var h = bottombarEl.getBoundingClientRect().height;
-    document.documentElement.style.setProperty('--bar-h', h + 'px');
-    frameEl.style.paddingBottom = 'calc(' + h + 'px + env(safe-area-inset-bottom) + 16px)';
+  // No more --bar-h to measure (no persistent bottom bar) -- .frame's
+  // padding-bottom is a static safe-area-only value set in CSS. Only the
+  // canvas redraw on resize/rotate/fullscreen remains.
+  window.addEventListener('resize', draw);
+  window.addEventListener('orientationchange', function () { setTimeout(draw, 250); });
+  document.addEventListener('fullscreenchange', function () { setTimeout(draw, 50); });
+
+  // Word-progress bar: mirrored in two places -- the always-visible 3px
+  // strip under the top bar, and the fuller counter inside the setup sheet.
+  function setProgress(pointerN, totalN) {
+    var pct = (100 * pointerN / Math.max(1, totalN)) + '%';
+    el.pbar.style.width = pct;
+    el.pbarTop.style.width = pct;
   }
-  window.addEventListener('load', syncFramePadding);
-  window.addEventListener('resize', function () { draw(); syncFramePadding(); });
-  window.addEventListener('orientationchange', function () { setTimeout(function () { draw(); syncFramePadding(); }, 250); });
-  document.addEventListener('fullscreenchange', function () { setTimeout(function () { draw(); syncFramePadding(); }, 50); });
-  syncFramePadding();
 
   // -------------------------------------------------------------- paging
   function ensureBoxesLoaded() {
@@ -153,12 +164,65 @@
     }
     el.total.textContent = digits(expected.length);
     el.count.textContent = digits(pointer);
-    el.pbar.style.width = (100 * pointer / Math.max(1, expected.length)) + '%';
+    setProgress(pointer, expected.length);
     el.doneBanner.style.display = (pointer >= expected.length && expected.length > 0) ? 'block' : 'none';
     el.shareBar.style.display = 'none';
+    updatePageChip(); // words[]/pointer for this page are ready now -- safe to derive the surah
   }
 
   function pageLabel(p) { return t('recite.page', { count: digits(p) }); }
+
+  // ---------------------------------------------------- surah chip (top bar)
+  // Founder: "it is not showing the Surah name" -- the chip must always show
+  // the current surah, derived from the page (last surah entry whose
+  // firstPage <= page), refined to the exact word at the reading pointer
+  // when that's cheaply available so a page spanning a surah boundary shows
+  // the surah actually being recited rather than just the page's first one.
+  function surahForPage(p) {
+    if (!surahIndex || !surahIndex.surahs || !surahIndex.surahs.length) return null;
+    var found = null;
+    for (var i = 0; i < surahIndex.surahs.length; i++) {
+      if (surahIndex.surahs[i].firstPage <= p) found = surahIndex.surahs[i]; else break;
+    }
+    return found;
+  }
+  function surahByNumber(n) {
+    if (!surahIndex || !surahIndex.surahs) return null;
+    for (var i = 0; i < surahIndex.surahs.length; i++) {
+      if (surahIndex.surahs[i].number === n) return surahIndex.surahs[i];
+    }
+    return null;
+  }
+  function currentSurah() {
+    var idx = Utils.clamp(pointer, 0, words.length - 1);
+    var w = words[idx];
+    if (w && w.k) {
+      var sNum = parseInt(w.k.split(':')[0], 10);
+      var bySurah = Number.isFinite(sNum) ? surahByNumber(sNum) : null;
+      if (bySurah) return bySurah;
+    }
+    return surahForPage(pageNum);
+  }
+  function updatePageChip() {
+    // Guards a real race: surah-index.json can resolve before the initial
+    // i18n setLanguage() promise does (see the "surah-index" fetch below,
+    // which is independent of the init chain and calls this eagerly the
+    // moment it arrives) -- loadPage()'s own call into this always runs
+    // after t is ready, so skipping here just means that early arrival
+    // waits the same short moment everything else already does.
+    if (!t) return;
+    var s = currentSurah();
+    // The surah name is always Arabic (RTL) even inside an LTR catalog's
+    // template ("Surah {surah} · {page}") -- without isolating it, the
+    // bidi algorithm can visually swap the name and the page number around
+    // the "·" (Unicode RLI/PDI, U+2067/U+2069) keep the name's script
+    // contained so the surrounding words/number stay in their authored
+    // order regardless of document direction.
+    var isolatedName = s ? '⁧' + s.name + '⁩' : '';
+    el.pageChip.textContent = s
+      ? t('chip.surahPage', { surah: isolatedName, page: digits(pageNum) })
+      : pageLabel(pageNum);
+  }
 
   function loadPageImage(src, onFail) {
     el.pageError.style.display = 'none';
@@ -205,18 +269,49 @@
   }
 
   el.pageErrorRetry.onclick = function () { loadPage(pageNum); };
-  el.nextPg.onclick = function () { loadPage(pageNum >= NAV_MAX ? NAV_MIN : Math.max(pageNum + 1, NAV_MIN)); };
+  // No dedicated next/prev buttons in the top bar (founder: minimal main
+  // screen) -- goNext/goPrev are the one shared implementation behind the
+  // keyboard arrows and the canvas swipe below.
+  function goNext() { loadPage(pageNum >= NAV_MAX ? NAV_MIN : Math.max(pageNum + 1, NAV_MIN)); }
   // Prev stops dead at page 3 -- pages 1-2 are ornamental/excluded, so unlike
   // "next" (which wraps around at the end), "prev" must never wrap back
   // into them.
-  el.prevPg.onclick = function () { if (pageNum > NAV_MIN) loadPage(pageNum - 1); };
+  function goPrev() { if (pageNum > NAV_MIN) loadPage(pageNum - 1); }
   el.pageChip.onclick = function () { openDrawer('page'); };
 
   document.addEventListener('keydown', function (e) {
     if (e.target && /^(input|textarea)$/i.test(e.target.tagName)) return;
-    if (e.key === 'ArrowLeft') el.prevPg.click();
-    else if (e.key === 'ArrowRight') el.nextPg.click();
+    if (e.key === 'ArrowLeft') goPrev();
+    else if (e.key === 'ArrowRight') goNext();
   });
+
+  // ---------------------------------------------------------- swipe to turn
+  // No next/prev buttons on the minimal main screen, so the page canvas
+  // itself must support a page-turn swipe. The Mushaf's page order is fixed
+  // RTL regardless of the current UI language (the Arabic text is always
+  // RTL even when the chrome is English) -- pages advance moving toward the
+  // physical left, same direction a paper Mushaf turns -- so swiping left
+  // always goes to the next page and swiping right always goes back,
+  // independent of html[dir].
+  (function wireSwipe() {
+    var target = el.pagebox;
+    if (!target) return;
+    var startX = null, startY = null, startT = 0;
+    var MIN_DX = 40, MAX_DY = 60, MAX_MS = 700;
+    target.addEventListener('touchstart', function (e) {
+      if (e.touches.length !== 1) { startX = null; return; }
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY; startT = Date.now();
+    }, { passive: true });
+    target.addEventListener('touchend', function (e) {
+      if (startX === null) return;
+      var touch = e.changedTouches[0];
+      var dx = touch.clientX - startX, dy = touch.clientY - startY;
+      startX = null;
+      if (Date.now() - startT > MAX_MS) return;
+      if (Math.abs(dx) < MIN_DX || Math.abs(dy) > MAX_DY) return;
+      if (dx < 0) goNext(); else goPrev();
+    }, { passive: true });
+  })();
 
   // ------------------------------------------------------------- matching
   function applyMatches(r) {
@@ -225,7 +320,8 @@
     pointer = r.pointer;
     var newlyRevealed = revealed.size - before;
     el.count.textContent = digits(pointer);
-    el.pbar.style.width = (100 * pointer / Math.max(1, expected.length)) + '%';
+    setProgress(pointer, expected.length);
+    updatePageChip(); // cheap -- catches the pointer crossing a surah boundary mid-page
     draw();
 
     state.progressByPage[String(pageNum)] = state.progressByPage[String(pageNum)] || { pointer: 0, revealed: [], completedAt: null };
@@ -246,8 +342,7 @@
       window.Tasme3Account.scheduleSync(function () { return state; });
       celebrateNewlyCompletedSurahs(pageNum);
     } else if ((r.matched || []).length) {
-      el.status.textContent = t('recite.wellDone');
-      el.status.className = 'status good';
+      setStatus(t('recite.wellDone'), 'good');
     }
     Storage.save(state);
   }
@@ -264,10 +359,20 @@
     };
   }
 
+  // Always-reachable "share" entry inside the setup sheet (founder spec:
+  // share button belongs in the setup popup, not only as a transient banner
+  // right after finishing a page) -- shares today's furthest progress on
+  // this page regardless of whether it was *just* completed.
+  el.shareProgressBtn.onclick = function () {
+    var text = window.Tasme3Share.pageCompleteText(pageNum);
+    var statLine = t('recite.page', { count: digits(pageNum) });
+    window.Tasme3Share.shareAchievement(text, statLine);
+  };
+
   // ------------------------------------------------------ level selector
-  // Compact 4-segment control (numbers, not full labels) -- each segment's
-  // `title` carries the full level name (level.beginner/intermediate/
-  // precise/ijazah) for anyone who long-presses or hovers.
+  // Full-name 4-option control inside the setup sheet (founder: show full
+  // names, not just numbers) -- each segment still carries its level number
+  // for the matcher plus a visible translated name.
   el.levels.addEventListener('click', function (e) {
     var elm = e.target.closest('.level-seg');
     if (!elm) return;
@@ -284,7 +389,7 @@
   // language's numeral system (Arabic-Indic vs. Latin), same as every other
   // on-screen count -- re-run whenever the language changes.
   function populateLevelSegDigits() {
-    document.querySelectorAll('.level-seg').forEach(function (x) { x.textContent = digits(x.dataset.l); });
+    document.querySelectorAll('.level-seg-num').forEach(function (x) { x.textContent = digits(x.parentElement.dataset.l); });
   }
 
   // --------------------------------------------------- server ASR (tap/tap)
@@ -298,8 +403,7 @@
     el.recBtn.classList.add('busy');
     el.recBtn.disabled = true;
     evalInFlight = true;
-    el.status.className = 'status';
-    el.status.textContent = t('record.uploading');
+    setStatus(t('record.uploading'));
     var form = new FormData();
     var ext = mimeType.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
     form.append('audio', blob, 'clip.' + ext);
@@ -314,8 +418,7 @@
         if (!(('done' in data) ? data.done : pointer >= expected.length)) renderStatusIdle();
       })
       .catch(function () {
-        el.status.className = 'status err';
-        el.status.textContent = t('record.error.network');
+        setStatus(t('record.error.network'), 'err');
       })
       .finally(function () {
         evalInFlight = false;
@@ -328,24 +431,22 @@
     el.recBtn.classList.remove('listening', 'busy');
     el.recBtn.disabled = false;
     if (reason === 'mic') { showMicHelp(); return; }
-    el.status.className = 'status err';
-    el.status.textContent = reason === 'format' || reason === 'unsupported'
-      ? t('record.error.format') : t('record.error.generic');
+    setStatus(reason === 'format' || reason === 'unsupported'
+      ? t('record.error.format') : t('record.error.generic'), 'err');
   }
 
   el.recBtn.onclick = function () {
     if (SERVER_MODE) {
       if (recorder.isRecording()) {
         recorder.stop();
-        el.status.textContent = t('record.uploading');
+        setStatus(t('record.uploading'));
       } else if (!recorder.isBusy() && !evalInFlight) {
         recorder.start(onRecordDone, onRecordError);
         el.recBtn.classList.add('listening');
-        el.status.className = 'status';
-        el.status.textContent = t('record.tapToStop');
+        setStatus(t('record.tapToStop'));
       }
     } else {
-      listening ? (stopListening(), el.status.textContent = t('recite.paused')) : startListening();
+      listening ? (stopListening(), setStatus(t('recite.paused'))) : startListening();
     }
   };
 
@@ -366,8 +467,7 @@
     el.helpBox.style.display = 'block';
     el.fallback.style.display = 'block';
     wireTyping();
-    el.status.className = 'status err';
-    el.status.textContent = t('mic.needPermission');
+    setStatus(t('mic.needPermission'), 'err');
   }
   el.micHelpLink.onclick = function (e) { e.preventDefault(); showMicHelp(); };
   el.openTab.onclick = function () { window.open(location.href, '_blank'); };
@@ -404,8 +504,8 @@
       try {
         rec.start(); listening = true;
         el.recBtn.classList.add('listening'); el.recBtn.textContent = '⏹';
-        el.status.className = 'status'; el.status.textContent = t('recite.listening');
-      } catch (_) { el.status.textContent = t('record.error.generic'); }
+        setStatus(t('recite.listening'));
+      } catch (_) { setStatus(t('record.error.generic'), 'err'); }
     }).catch(function () { showMicHelp(); });
   }
   function stopListening() {
@@ -418,7 +518,7 @@
     el.recBtn.disabled = true;
     el.fallback.style.display = 'block';
     wireTyping();
-    el.status.textContent = t('mic.notSupported');
+    setStatus(t('mic.notSupported'), 'err');
   }
 
   // ---------------------------------------------------------------- listen
@@ -446,17 +546,8 @@
     state.settings.listenRepeat = on;
     Storage.save(state);
   };
-  // Listen/repeat/reciter live inside a slide-up panel behind the compact
-  // 🎧 toggle (bottom bar space is tight on phones) -- state remembered so
-  // a user who keeps it open sees it open again next visit.
-  function setListenPanelOpen(open) {
-    el.listenPanel.classList.toggle('open', open);
-    el.listenToggle.classList.toggle('active', open);
-    el.listenToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-    state.settings.listenPanelOpen = open;
-    Storage.save(state);
-  }
-  el.listenToggle.onclick = function () { setListenPanelOpen(!el.listenPanel.classList.contains('open')); };
+  // Listen/repeat/reciter now live directly in the setup sheet's "listen"
+  // section (no more slide-up toggle -- the sheet itself is the reveal).
   el.reciterSelect.onchange = function () {
     state.settings.reciterSet = el.reciterSelect.value;
     Storage.save(state);
@@ -669,6 +760,7 @@
   // --------------------------------------------------------------- drawer
   function pad3n(n) { return pad3(n); }
   function openDrawer(tab) {
+    closeSetupSheet();
     el.drawer.classList.add('open');
     el.drawerBackdrop.style.display = 'block';
     if (tab) setDrawerTab(tab);
@@ -680,6 +772,24 @@
   el.menuBtn.onclick = function () { openDrawer('surah'); };
   el.drawerClose.onclick = closeDrawer;
   el.drawerBackdrop.onclick = closeDrawer;
+
+  // ------------------------------------------------------------ setup sheet
+  // Everything that used to live in the always-on bottom bar (level, listen/
+  // repeat/reciter, word counter) plus the account/progress/certificate
+  // panels that used to sit below the page -- founder: "all info in the
+  // buttons can come out and be in a pop window for setup".
+  function openSetupSheet() {
+    closeDrawer();
+    el.setupSheet.classList.add('open');
+    el.setupBackdrop.style.display = 'block';
+  }
+  function closeSetupSheet() {
+    el.setupSheet.classList.remove('open');
+    el.setupBackdrop.style.display = 'none';
+  }
+  el.setupBtn.onclick = function () { openSetupSheet(); };
+  el.setupClose.onclick = closeSetupSheet;
+  el.setupBackdrop.onclick = closeSetupSheet;
 
   function setDrawerTab(tab) {
     document.querySelectorAll('.drawer-tabs button').forEach(function (b) {
@@ -725,6 +835,7 @@
 
   fetch('surah-index.json').then(function (r) { return r.json(); }).then(function (data) {
     surahIndex = data;
+    updatePageChip(); // the chip may have rendered with just the page number before this arrived
     if (el.drawer.classList.contains('open')) setDrawerTab(document.querySelector('.drawer-tabs button.active').dataset.tab);
     renderCertList();
   }).catch(function () { surahIndex = { surahs: [], juz: [] }; });
@@ -762,7 +873,7 @@
   document.addEventListener('tasme3:lang-changed', function () {
     t = window.Tasme3I18n.t;
     el.langSelect.value = window.Tasme3I18n.currentLang();
-    el.pageChip.textContent = pageLabel(pageNum);
+    updatePageChip();
     renderStatusIdle();
     renderProgressPanel();
     renderGreeting();
@@ -783,7 +894,6 @@
     window.Tasme3I18n.applyTranslations(document);
     activateLevelUI();
     populateLevelSegDigits();
-    setListenPanelOpen(!!state.settings.listenPanelOpen);
     syncReciterDefault();
     renderAccountPanel();
     renderProgressPanel();

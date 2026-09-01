@@ -148,5 +148,7 @@
   "cert.empty": "还没有证书——完成一章即可获得",
   "cert.viewButton": "查看证书",
   "cert.share": "分享",
-  "cert.download": "下载"
+  "cert.download": "下载",
+  "chip.surahPage": "苏拉 {surah} · {page}",
+  "progress.pageProgress": "页面进度"
 }

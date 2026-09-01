@@ -148,5 +148,7 @@
   "cert.empty": "Ainda não há certificados — conclua uma surata para ganhar um",
   "cert.viewButton": "Ver certificado",
   "cert.share": "Compartilhar",
-  "cert.download": "Baixar"
+  "cert.download": "Baixar",
+  "chip.surahPage": "Surata {surah} · {page}",
+  "progress.pageProgress": "Progresso da página"
 }

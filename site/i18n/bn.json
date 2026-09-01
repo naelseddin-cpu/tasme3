@@ -148,5 +148,7 @@
   "cert.share": "শেয়ার করুন",
   "cert.download": "ডাউনলোড",
   "nav.frontPagesInProgress": "আল-ফাতিহা ও আল-বাকারার শুরুর পৃষ্ঠাগুলো প্রস্তুত করা হচ্ছে",
-  "listen.panelToggle": "শোনার বিকল্প"
+  "listen.panelToggle": "শোনার বিকল্প",
+  "chip.surahPage": "সূরা {surah} · {page}",
+  "progress.pageProgress": "পৃষ্ঠার অগ্রগতি"
 }

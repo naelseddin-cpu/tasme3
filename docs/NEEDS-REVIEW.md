@@ -1,5 +1,26 @@
 # Translations needing native-speaker review
 
+**Date:** 2026-09-01 · **Context:** minimal-UI redesign (founder decision --
+"it is not showing the Surah name; all info in the buttons can come out and
+be in a pop window for setup"). Two new keys were added to all 25
+`app/i18n/*.json` catalogs and should get the same native-speaker pass as
+everything else on this page:
+
+- `chip.surahPage` — the always-visible top-bar chip template, e.g. Arabic
+  `"سورة {surah} · {page}"`. `{surah}` is always the Arabic surah name (never
+  translated, per the existing convention below) and `{page}` is the page
+  number in the UI language's own digits; only the surrounding word for
+  "Surah" and its word order are language-specific. Arabic and English are
+  high-confidence (founder/native-fluent, matching the rest of this doc); all
+  23 other languages are machine-drafted, including the word order chosen for
+  languages where "Surah" more naturally follows the name than precedes it
+  (Turkish `"{surah} Suresi"`, Uzbek `"{surah} surasi"`, Azerbaijani `"{surah}
+  surəsi"`) — a native speaker should confirm both the word choice and that
+  placement.
+- `progress.pageProgress` — short label ("Page progress") for the word
+  counter now inside the setup sheet. Low risk, same machine-drafted status
+  as other short UI strings on this page.
+
 **Date:** 2026-09-01 · **Context:** certificate-of-completion feature
 (founder decision — see the git log for the "certificate" commit); updated
 the same day for the 12 → 25 language expansion (also a founder decision).

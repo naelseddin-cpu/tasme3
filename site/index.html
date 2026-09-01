@@ -18,19 +18,32 @@
   <div class="topbar goldbar">
     <div class="topbar-left">
       <button id="menuBtn" class="iconbtn" data-i18n-aria-label="nav.menu">☰</button>
-      <div class="logo" data-i18n="app.name">تسميع</div>
     </div>
     <div class="pagenav">
-      <button id="fsBtn" class="iconbtn" aria-label="fullscreen">⛶</button>
-      <button id="nextPg" class="iconbtn" aria-label="next">›</button>
       <div class="chip" id="pageChip"></div>
-      <button id="prevPg" class="iconbtn" aria-label="prev">‹</button>
+    </div>
+    <div class="topbar-right">
+      <button id="fsBtn" class="iconbtn" aria-label="fullscreen">⛶</button>
     </div>
   </div>
-
-  <div class="greeting" id="greetingLine" hidden></div>
+  <div class="progressstrip"><div id="pbarTop"></div></div>
 
   <div class="zoomwarn" id="zoomWarn">⚠️ الصفحة مكبّرة من جلسة سابقة — أغلق هذا التبويب تمامًا وافتح الرابط في تبويب جديد</div>
+
+  <!-- Mic-blocked recovery: normally hidden (in-flow, like .zoomwarn above),
+       shown only via showMicHelp() in app.js -- auto on mic error, or
+       manually from the setup sheet's link. Sits above the page rather than
+       floating over it so the typed fallback stays fully usable the moment
+       the mic path fails, with no permanent footprint the rest of the time. -->
+  <div class="helpbox" id="helpBox">
+    <b data-i18n="mic.blockedTitle">الميكروفون محجوب — جرّب الآتي:</b>
+    <button id="openTab" data-i18n="mic.openNewWindow">↗ افتح الصفحة في نافذة مستقلة ثم اضغط الميكروفون</button>
+    <div>
+      <span data-i18n="mic.iosSteps"></span><br>
+      <span data-i18n="mic.androidSteps"></span>
+    </div>
+  </div>
+  <div class="fallback" id="fallback"><input id="typeInput" data-i18n-placeholder="mic.typeFallback" /></div>
 
   <div class="pagebox" id="pagebox"><canvas id="pagecanvas"></canvas>
     <div class="pageerror" id="pageError"><p data-i18n="error.pageLoad">تعذر تحميل الصفحة</p><button id="pageErrorRetry" data-i18n="common.retry">إعادة المحاولة</button></div>
@@ -58,95 +71,104 @@
     </div>
   </div>
 
-  <div class="bottombar goldbar">
-    <div class="progressbar"><div id="pbar"></div></div>
-    <div class="mainrow">
-      <button class="recbtn" id="recBtn" data-i18n-aria-label="record.tapToStart">🎙️</button>
-      <div class="status" id="status" data-i18n="recite.instruction">اضغط للبدء واقرأ غيبًا</div>
-    </div>
-    <div class="controlsrow">
+  <div class="floatbar">
+    <button class="iconbtn setupbtn" id="setupBtn" data-i18n-aria-label="nav.settings">⚙️</button>
+    <button class="recbtn" id="recBtn" data-i18n-aria-label="record.tapToStart">🎙️</button>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="setupBackdrop"></div>
+<div class="sheet" id="setupSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <h2 data-i18n="nav.settings">الإعدادات</h2>
+    <button class="iconbtn" id="setupClose" data-i18n-aria-label="drawer.close">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="greeting" id="greetingLine" hidden></div>
+
+    <section class="sheet-section">
+      <h3 data-i18n="level.label">مستوى الصعوبة</h3>
       <div class="levels" id="levels">
-        <button type="button" class="level-seg" data-l="1" data-i18n-title="level.beginner"></button>
-        <button type="button" class="level-seg active" data-l="2" data-i18n-title="level.intermediate"></button>
-        <button type="button" class="level-seg" data-l="3" data-i18n-title="level.precise"></button>
-        <button type="button" class="level-seg" data-l="4" data-i18n-title="level.ijazah"></button>
+        <button type="button" class="level-seg" data-l="1" data-i18n-title="level.beginner"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.beginner"></span></button>
+        <button type="button" class="level-seg active" data-l="2" data-i18n-title="level.intermediate"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.intermediate"></span></button>
+        <button type="button" class="level-seg" data-l="3" data-i18n-title="level.precise"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.precise"></span></button>
+        <button type="button" class="level-seg" data-l="4" data-i18n-title="level.ijazah"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.ijazah"></span></button>
       </div>
-      <div class="stats"><span id="count">٠</span>/<span id="total">٠</span></div>
-      <button type="button" class="listentoggle" id="listenToggle" aria-expanded="false" data-i18n-aria-label="listen.panelToggle">🎧</button>
-    </div>
-    <div class="listenpanel" id="listenPanel">
-      <button id="listenBtn" data-i18n="listen.button">استمع</button>
-      <button id="repeatBtn" data-i18n="listen.repeat">تكرار</button>
-      <select id="reciterSelect">
-        <option value="murattal" data-i18n="listen.reciterMurattal">المرتل (الحصري)</option>
-        <option value="muallim" data-i18n="listen.reciterMuallim">المصحف المعلم (الحصري)</option>
-        <option value="minshawi" data-i18n="listen.reciterMinshawi">المنشاوي — مرتل</option>
-        <option value="abdulbasit" data-i18n="listen.reciterAbdulBasit">عبد الباسط عبد الصمد — مرتل</option>
-        <option value="alafasy" data-i18n="listen.reciterAlafasy">مشاري العفاسي</option>
-      </select>
-    </div>
-  </div>
-  <div class="listen-attribution" id="listenAttribution" data-i18n="listen.attribution">التلاوة: الشيخ محمود خليل الحصري — الصوت من everyayah.com</div>
+    </section>
 
-  <div class="michelp-toggle"><a id="micHelpLink" href="#" data-i18n="mic.helpLink">🎤 الميكروفون لا يعمل؟</a></div>
-  <div class="fallback" id="fallback"><input id="typeInput" data-i18n-placeholder="mic.typeFallback" /></div>
-  <div class="helpbox" id="helpBox">
-    <b data-i18n="mic.blockedTitle">الميكروفون محجوب — جرّب الآتي:</b>
-    <button id="openTab" data-i18n="mic.openNewWindow">↗ افتح الصفحة في نافذة مستقلة ثم اضغط الميكروفون</button>
-    <div>
-      <span data-i18n="mic.iosSteps"></span><br>
-      <span data-i18n="mic.androidSteps"></span>
-    </div>
-  </div>
-
-  <div class="panel" id="progressPanel">
-    <h3 data-i18n="progress.title">تقدمك</h3>
-    <div class="panelrow"><span data-i18n="home.streak">السلسلة اليومية</span><span class="num" id="streakNum">٠</span></div>
-    <div class="panelrow"><span id="wordsTodayLabel">٠ كلمة اليوم</span><span class="num" id="wordsTodayNum"></span></div>
-    <div class="panelrow"><span id="wordsTotalLabel">٠ كلمة إجمالًا</span><span class="num" id="wordsTotalNum"></span></div>
-  </div>
-
-  <div class="panel" id="certListPanel">
-    <h3 data-i18n="cert.panelTitle">شهاداتي</h3>
-    <div id="certListEmpty" class="comingsoon" data-i18n="cert.empty" hidden>لا توجد شهادات بعد — أكمل حفظ سورة لتحصل على واحدة</div>
-    <div id="certList" class="cert-list"></div>
-  </div>
-
-  <div class="panel" id="accountPanel">
-    <h3 data-i18n="account.title">حسابك</h3>
-    <div id="acctDisabled" class="comingsoon" data-i18n="account.comingSoon" hidden>متاح قريبًا</div>
-    <div id="acctGuest" hidden>
-      <button id="saveProgressBtn" class="bigbtn" data-i18n="account.saveProgress">احفظ تقدمك</button>
-      <button id="showLoginBtn" class="ghostbtn" data-i18n="account.loginTitle">لديك رمز؟ سجّل الدخول</button>
-      <div class="loginrow" id="loginRow" hidden>
-        <input id="loginInput" data-i18n-placeholder="account.loginPlaceholder" inputmode="numeric" maxlength="12" autocomplete="off">
-        <button id="loginBtn" data-i18n="account.loginButton">دخول</button>
+    <section class="sheet-section">
+      <h3 data-i18n="listen.panelToggle">خيارات الاستماع</h3>
+      <div class="listenpanel" id="listenPanel">
+        <button id="listenBtn" data-i18n="listen.button">استمع</button>
+        <button id="repeatBtn" data-i18n="listen.repeat">تكرار</button>
+        <select id="reciterSelect">
+          <option value="murattal" data-i18n="listen.reciterMurattal">المرتل (الحصري)</option>
+          <option value="muallim" data-i18n="listen.reciterMuallim">المصحف المعلم (الحصري)</option>
+          <option value="minshawi" data-i18n="listen.reciterMinshawi">المنشاوي — مرتل</option>
+          <option value="abdulbasit" data-i18n="listen.reciterAbdulBasit">عبد الباسط عبد الصمد — مرتل</option>
+          <option value="alafasy" data-i18n="listen.reciterAlafasy">مشاري العفاسي</option>
+        </select>
       </div>
-      <div class="msg" id="acctMsg"></div>
-    </div>
-    <div id="acctCodeShown" hidden>
-      <p data-i18n="account.codeHint">احتفظ بهذا الرمز لتسجيل الدخول من أي جهاز — لا يوجد كلمة مرور</p>
-      <div class="codebig" id="codeBig"></div>
-      <div class="codebtnrow">
-        <button id="sendWaBtn" class="ghostbtn" data-i18n="account.sendWhatsApp">أرسله لنفسك على واتساب</button>
-        <button id="copyCodeBtn" class="ghostbtn" data-i18n="account.copy">نسخ</button>
-      </div>
-    </div>
-    <div id="acctLoggedIn" hidden>
-      <div class="panelrow"><span data-i18n="account.loggedInAs">مسجّل الدخول برمز الحفظ</span><span class="num" id="acctSyncState"></span></div>
-      <button id="logoutBtn" class="ghostbtn" data-i18n="account.logout">تسجيل الخروج</button>
-    </div>
-    <div id="namePromptRow" class="namerow" hidden>
-      <p data-i18n="account.namePrompt">ما اسمك؟ (اختياري)</p>
-      <div class="namerow-inputs">
-        <input id="nameInput" data-i18n-placeholder="account.namePlaceholder" maxlength="40">
-        <button id="nameSaveBtn" class="ghostbtn" data-i18n="common.save">حفظ</button>
-      </div>
-      <button id="nameSkipBtn" class="ghostbtn" data-i18n="account.nameSkip">لاحقًا</button>
-    </div>
-  </div>
+      <div class="listen-attribution" id="listenAttribution" data-i18n="listen.attribution">التلاوة: الشيخ محمود خليل الحصري — الصوت من everyayah.com</div>
+      <div class="michelp-toggle"><a id="micHelpLink" href="#" data-i18n="mic.helpLink">🎤 الميكروفون لا يعمل؟</a></div>
+    </section>
 
-  <div class="footer-privacy" id="privacyLine" data-i18n="server.privacyInterim">التعرف الصوتي حاليًا عبر متصفحك — لا يوجد خادم متصل</div>
+    <section class="sheet-section">
+      <h3 data-i18n="progress.title">تقدمك</h3>
+      <div class="progressbar"><div id="pbar"></div></div>
+      <div class="panelrow"><span data-i18n="progress.pageProgress">تقدم الصفحة</span><span class="num"><span id="count">٠</span>/<span id="total">٠</span></span></div>
+      <div class="panelrow"><span data-i18n="home.streak">السلسلة اليومية</span><span class="num" id="streakNum">٠</span></div>
+      <div class="panelrow"><span id="wordsTodayLabel">٠ كلمة اليوم</span><span class="num" id="wordsTodayNum"></span></div>
+      <div class="panelrow"><span id="wordsTotalLabel">٠ كلمة إجمالًا</span><span class="num" id="wordsTotalNum"></span></div>
+    </section>
+
+    <section class="sheet-section">
+      <button class="bigbtn" id="shareProgressBtn" data-i18n="share.button">شارك إنجازك</button>
+    </section>
+
+    <section class="sheet-section" id="accountPanel">
+      <h3 data-i18n="account.title">حسابك</h3>
+      <div id="acctDisabled" class="comingsoon" data-i18n="account.comingSoon" hidden>متاح قريبًا</div>
+      <div id="acctGuest" hidden>
+        <button id="saveProgressBtn" class="bigbtn" data-i18n="account.saveProgress">احفظ تقدمك</button>
+        <button id="showLoginBtn" class="ghostbtn" data-i18n="account.loginTitle">لديك رمز؟ سجّل الدخول</button>
+        <div class="loginrow" id="loginRow" hidden>
+          <input id="loginInput" data-i18n-placeholder="account.loginPlaceholder" inputmode="numeric" maxlength="12" autocomplete="off">
+          <button id="loginBtn" data-i18n="account.loginButton">دخول</button>
+        </div>
+        <div class="msg" id="acctMsg"></div>
+      </div>
+      <div id="acctCodeShown" hidden>
+        <p data-i18n="account.codeHint">احتفظ بهذا الرمز لتسجيل الدخول من أي جهاز — لا يوجد كلمة مرور</p>
+        <div class="codebig" id="codeBig"></div>
+        <div class="codebtnrow">
+          <button id="sendWaBtn" class="ghostbtn" data-i18n="account.sendWhatsApp">أرسله لنفسك على واتساب</button>
+          <button id="copyCodeBtn" class="ghostbtn" data-i18n="account.copy">نسخ</button>
+        </div>
+      </div>
+      <div id="acctLoggedIn" hidden>
+        <div class="panelrow"><span data-i18n="account.loggedInAs">مسجّل الدخول برمز الحفظ</span><span class="num" id="acctSyncState"></span></div>
+        <button id="logoutBtn" class="ghostbtn" data-i18n="account.logout">تسجيل الخروج</button>
+      </div>
+      <div id="namePromptRow" class="namerow" hidden>
+        <p data-i18n="account.namePrompt">ما اسمك؟ (اختياري)</p>
+        <div class="namerow-inputs">
+          <input id="nameInput" data-i18n-placeholder="account.namePlaceholder" maxlength="40">
+          <button id="nameSaveBtn" class="ghostbtn" data-i18n="common.save">حفظ</button>
+        </div>
+        <button id="nameSkipBtn" class="ghostbtn" data-i18n="account.nameSkip">لاحقًا</button>
+      </div>
+    </section>
+
+    <section class="sheet-section" id="certListPanel">
+      <h3 data-i18n="cert.panelTitle">شهاداتي</h3>
+      <div id="certListEmpty" class="comingsoon" data-i18n="cert.empty" hidden>لا توجد شهادات بعد — أكمل حفظ سورة لتحصل على واحدة</div>
+      <div id="certList" class="cert-list"></div>
+    </section>
+
+    <div class="footer-privacy" id="privacyLine" data-i18n="server.privacyInterim">التعرف الصوتي حاليًا عبر متصفحك — لا يوجد خادم متصل</div>
+  </div>
 </div>
 
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
@@ -171,6 +193,7 @@
 </div>
 
 <div class="toast" id="toast"></div>
+<div id="status" hidden></div>
 
 <script src="config.js"></script>
 <script src="utils.js"></script>

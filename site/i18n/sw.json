@@ -148,5 +148,7 @@
   "cert.share": "Shiriki",
   "cert.download": "Pakua",
   "nav.frontPagesInProgress": "Kurasa za Al-Fatiha na mwanzo wa Al-Baqarah bado zinaandaliwa",
-  "listen.panelToggle": "Chaguo za kusikiliza"
+  "listen.panelToggle": "Chaguo za kusikiliza",
+  "chip.surahPage": "Surah {surah} · {page}",
+  "progress.pageProgress": "Maendeleo ya ukurasa"
 }

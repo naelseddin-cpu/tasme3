@@ -148,5 +148,7 @@
   "cert.empty": "Hələ sertifikat yoxdur — birini qazanmaq üçün bir surəni tamamla",
   "cert.viewButton": "Sertifikatı göstər",
   "cert.share": "Paylaş",
-  "cert.download": "Yüklə"
+  "cert.download": "Yüklə",
+  "chip.surahPage": "{surah} surəsi · {page}",
+  "progress.pageProgress": "Səhifə irəliləyişi"
 }
