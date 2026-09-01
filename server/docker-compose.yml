@@ -1,0 +1,29 @@
+# Run from the repo root: docker compose -f server/docker-compose.yml up -d
+services:
+  tasme3-server:
+    build:
+      context: ..
+      dockerfile: server/Dockerfile
+    image: tasme3-server:latest
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # Comma-separated list, e.g. https://tasme3.example.com — lock this
+      # down before going live (see RUNBOOK.md). Default here is
+      # permissive for first boot/testing only.
+      ALLOWED_ORIGINS: "${ALLOWED_ORIGINS:-*}"
+      # Any faster-whisper-compatible model id/size, or a local CT2 model
+      # directory path mounted into the container (see RUNBOOK.md
+      # "Quran-tuned model conversion"). Falls back to the code default
+      # (tarteel-ai/whisper-base-ar-quran) if unset.
+      WHISPER_MODEL: "${WHISPER_MODEL:-}"
+    volumes:
+      # Persist the SQLite accounts/progress DB across container recreation.
+      - tasme3-data:/srv/app/server/data
+      # Optional: mount a pre-converted CT2 model directory read-only and
+      # point WHISPER_MODEL at /models/<name> above.
+      - ${WHISPER_MODEL_DIR:-./models}:/models:ro
+
+volumes:
+  tasme3-data:

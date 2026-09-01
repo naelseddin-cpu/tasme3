@@ -1,0 +1,10 @@
+# server/ (WP-C)
+server/.venv/
+server/data/*.db
+server/data/*.db-journal
+server/data/*.db-wal
+server/data/*.db-shm
+server/models/
+__pycache__/
+*.pyc
+.pytest_cache/
