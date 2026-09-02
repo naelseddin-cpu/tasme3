@@ -1,6 +1,7 @@
 {
   "app.name": "塔斯米 — تسميع",
   "app.tagline": "背诵古兰经 — 你的声音永远不会离开你的设备",
+  "app.updateReady": "更新已就绪——请重新打开应用以生效",
   "nav.recite": "背诵",
   "nav.progress": "进度",
   "nav.groups": "小组",

@@ -1,6 +1,7 @@
 {
   "app.name": "Tasmee' — تسميع",
   "app.tagline": "Memorize the Quran — your voice never leaves your device",
+  "app.updateReady": "Update ready — reopen the app to apply it",
   "nav.recite": "Recite",
   "nav.progress": "Progress",
   "nav.groups": "Groups",

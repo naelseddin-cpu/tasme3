@@ -172,5 +172,6 @@
   "hint.settings": "⚙️ für Einstellungen, Stufe und Zertifikate",
   "mic.retrying": "Erneuter Versuch…",
   "help.title": "Wie funktioniert die App?",
-  "help.body": "Drücke das Mikrofon und rezitiere auswendig. Wörter erscheinen, sobald du sie richtig rezitierst. Nutze ⚙️, um deine Stufe zu ändern oder deine Zertifikate anzusehen."
+  "help.body": "Drücke das Mikrofon und rezitiere auswendig. Wörter erscheinen, sobald du sie richtig rezitierst. Nutze ⚙️, um deine Stufe zu ändern oder deine Zertifikate anzusehen.",
+  "app.updateReady": "Update bereit — App erneut öffnen, um es zu übernehmen"
 }

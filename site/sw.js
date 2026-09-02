@@ -3,7 +3,7 @@
 // must be purged, not accumulate forever).
 //
 // Bump CACHE_VERSION on every deploy that changes any precached file.
-var CACHE_VERSION = 'tasme3-v22';
+var CACHE_VERSION = 'tasme3-v23';
 var SHELL_CACHE = CACHE_VERSION + '-shell';
 var RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 var RUNTIME_CAP = 50; // ~50-entry LRU-ish cap on runtime-cached page images/i18n/fonts
@@ -78,6 +78,20 @@ function isRuntimeCacheable(url) {
     /\/icons\//.test(url.pathname);
 }
 
+// The app shell's HTML entry point ('./' and 'index.html') is the one file
+// that must always reflect the LATEST deploy on a good connection, because
+// it is what references every other (versioned-by-CACHE_VERSION) asset --
+// a stale cached index.html is exactly how a phone can sit on an old build
+// indefinitely even after a new service worker ships (founder's iPhone
+// report). So this one file goes network-first (fresh HTML whenever the
+// network answers, refreshing the shell cache entry so it also improves
+// the offline fallback) while every other shell file stays cache-first
+// (fast, and correctness comes from CACHE_VERSION + activate-time purge,
+// not from re-fetching them every load).
+function isAppShellEntry(url) {
+  return url.pathname.slice(-1) === '/' || /\/index\.html$/.test(url.pathname);
+}
+
 self.addEventListener('fetch', function (event) {
   var request = event.request;
   if (request.method !== 'GET') return; // never intercept POST/PUT (the /evaluate, /account, /progress API)
@@ -111,9 +125,33 @@ self.addEventListener('fetch', function (event) {
     return;
   }
 
-  // Shell files: cache-first, falling back to network (and refreshing the
-  // shell cache entry so the NEXT activate cycle picks up a same-version
-  // change without a full re-deploy).
+  if (isAppShellEntry(url)) {
+    event.respondWith(
+      fetch(request).then(function (resp) {
+        if (resp && resp.ok) {
+          caches.open(SHELL_CACHE).then(function (cache) { cache.put(request, resp.clone()); });
+        }
+        return resp;
+      }).catch(function () {
+        // Offline (or the request errored): fall back to whatever HTML is
+        // cached, trying the exact request first, then the other of
+        // './'/'index.html' (cache.addAll precached both as distinct keys),
+        // since only one of the two is guaranteed to have been refreshed by
+        // an actual past navigation.
+        return caches.match(request).then(function (cached) {
+          if (cached) return cached;
+          return caches.match('index.html').then(function (c2) {
+            return c2 || caches.match('./');
+          });
+        });
+      })
+    );
+    return;
+  }
+
+  // Other shell files: cache-first, falling back to network (and
+  // refreshing the shell cache entry so the NEXT activate cycle picks up a
+  // same-version change without a full re-deploy).
   event.respondWith(
     caches.match(request).then(function (cached) {
       if (cached) return cached;

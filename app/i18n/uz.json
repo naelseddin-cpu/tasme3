@@ -1,6 +1,7 @@
 {
   "app.name": "Tasmee' — تسميع",
   "app.tagline": "Qur'onni yodlang — ovozingiz hech qachon qurilmangizdan chiqmaydi",
+  "app.updateReady": "Yangilanish tayyor — uni qo'llash uchun ilovani qayta oching",
   "nav.recite": "Tilovat",
   "nav.progress": "Jarayon",
   "nav.groups": "Guruhlar",

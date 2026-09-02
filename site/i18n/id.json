@@ -172,5 +172,6 @@
   "hint.settings": "⚙️ untuk pengaturan, tingkat, dan sertifikat",
   "mic.retrying": "Mencoba lagi…",
   "help.title": "Bagaimana cara kerja aplikasi ini?",
-  "help.body": "Tekan mikrofon dan bacalah dari hafalan. Kata-kata akan muncul saat kamu membacanya dengan benar. Gunakan ⚙️ untuk mengubah tingkat atau melihat sertifikat."
+  "help.body": "Tekan mikrofon dan bacalah dari hafalan. Kata-kata akan muncul saat kamu membacanya dengan benar. Gunakan ⚙️ untuk mengubah tingkat atau melihat sertifikat.",
+  "app.updateReady": "Pembaruan siap — buka kembali aplikasi untuk menerapkannya"
 }

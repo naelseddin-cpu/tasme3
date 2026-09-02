@@ -172,5 +172,6 @@
   "hint.settings": "⚙️ ayarlar, seviye ve sertifikalar için",
   "mic.retrying": "Yeniden deneniyor…",
   "help.title": "Uygulama nasıl çalışır?",
-  "help.body": "Mikrofona basın ve ezberden okuyun. Doğru okuduğunuz her kelime yerinde belirir. Seviyenizi değiştirmek veya sertifikalarınızı görmek için ⚙️ kullanın."
+  "help.body": "Mikrofona basın ve ezberden okuyun. Doğru okuduğunuz her kelime yerinde belirir. Seviyenizi değiştirmek veya sertifikalarınızı görmek için ⚙️ kullanın.",
+  "app.updateReady": "Güncelleme hazır — etkinleştirmek için uygulamayı yeniden açın"
 }

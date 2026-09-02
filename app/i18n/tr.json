@@ -1,6 +1,7 @@
 {
   "app.name": "Tasmee' — تسميع",
   "app.tagline": "Kur'an'ı ezberle — sesin cihazından asla ayrılmaz",
+  "app.updateReady": "Güncelleme hazır — etkinleştirmek için uygulamayı yeniden açın",
   "nav.recite": "Tilavet",
   "nav.progress": "İlerleme",
   "nav.groups": "Gruplar",

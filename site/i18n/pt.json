@@ -172,5 +172,6 @@
   "hint.settings": "⚙️ para configurações, nível e certificados",
   "mic.retrying": "Tentando novamente…",
   "help.title": "Como funciona o aplicativo?",
-  "help.body": "Pressione o microfone e recite de memória. As palavras aparecem à medida que você as recita corretamente. Use ⚙️ para mudar de nível ou ver seus certificados."
+  "help.body": "Pressione o microfone e recite de memória. As palavras aparecem à medida que você as recita corretamente. Use ⚙️ para mudar de nível ou ver seus certificados.",
+  "app.updateReady": "Atualização pronta — reabra o aplicativo para aplicá-la"
 }

@@ -172,5 +172,6 @@
   "hint.settings": "⚙️ sozlamalar, daraja va sertifikatlar uchun",
   "mic.retrying": "Qayta urinilmoqda…",
   "help.title": "Ilova qanday ishlaydi?",
-  "help.body": "Mikrofonni bosing va yoddan o'qing. To'g'ri o'qigan so'zlaringiz sahifada paydo bo'ladi. Darajangizni o'zgartirish yoki sertifikatlaringizni ko'rish uchun ⚙️ dan foydalaning."
+  "help.body": "Mikrofonni bosing va yoddan o'qing. To'g'ri o'qigan so'zlaringiz sahifada paydo bo'ladi. Darajangizni o'zgartirish yoki sertifikatlaringizni ko'rish uchun ⚙️ dan foydalaning.",
+  "app.updateReady": "Yangilanish tayyor — uni qo'llash uchun ilovani qayta oching"
 }

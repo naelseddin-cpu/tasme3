@@ -1,5 +1,22 @@
 # Translations needing native-speaker review
 
+**Date:** 2026-09-02 · **Context:** service-worker update UX (founder saw a
+stale cached build on iPhone -- the SW now checks for updates on load/tab
+focus and, once a new worker takes over, either reloads immediately or --
+if the user is mid-recitation (listening) or has typed-fallback text
+in-flight -- shows a toast instead and reloads on the next
+hidden→visible transition). One new key added to all 25
+`app/i18n/*.json` catalogs:
+
+- `app.updateReady` — the toast text telling the user an update is ready
+  and the app needs to be reopened to apply it (`site/app.js`, the
+  `controllerchange` handler near the service-worker registration).
+
+Arabic and English are founder-specified/native-fluent. **All 23 other
+languages are machine/LLM-drafted for this key and should get a
+native-speaker pass before shipping**, same as every other
+non-Arabic/English catalog on this page.
+
 **Date:** 2026-09-01 · **Context:** residual-findings pass (10-auditor
 re-audit -- surah-completion celebration banner, typed-fallback focus,
 back-button hardening, an ASR-retry toast, and an elderly-usability help

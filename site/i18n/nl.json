@@ -172,5 +172,6 @@
   "hint.settings": "⚙️ voor instellingen, niveau en certificaten",
   "mic.retrying": "Opnieuw proberen…",
   "help.title": "Hoe werkt de app?",
-  "help.body": "Druk op de microfoon en reciteer uit je hoofd. Woorden verschijnen zodra je ze correct reciteert. Gebruik ⚙️ om je niveau te wijzigen of je certificaten te bekijken."
+  "help.body": "Druk op de microfoon en reciteer uit je hoofd. Woorden verschijnen zodra je ze correct reciteert. Gebruik ⚙️ om je niveau te wijzigen of je certificaten te bekijken.",
+  "app.updateReady": "Update gereed — open de app opnieuw om deze toe te passen"
 }

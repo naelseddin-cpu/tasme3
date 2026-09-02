@@ -172,5 +172,6 @@
   "hint.settings": "⚙️ za postavke, nivo i sertifikate",
   "mic.retrying": "Ponovni pokušaj…",
   "help.title": "Kako aplikacija radi?",
-  "help.body": "Pritisnite mikrofon i učite napamet. Riječi se pojavljuju čim ih tačno izgovorite. Koristite ⚙️ za promjenu nivoa ili pregled sertifikata."
+  "help.body": "Pritisnite mikrofon i učite napamet. Riječi se pojavljuju čim ih tačno izgovorite. Koristite ⚙️ za promjenu nivoa ili pregled sertifikata.",
+  "app.updateReady": "Ažuriranje je spremno — ponovo otvorite aplikaciju da ga primijenite"
 }

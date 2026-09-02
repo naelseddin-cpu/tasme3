@@ -2214,9 +2214,74 @@
     loadPage(startPage);
   });
 
+  // ------------------------------------------------- service-worker update
+  // Founder report: an iPhone stayed on an old cached build because sw.js's
+  // shell cache is cache-first and nothing ever told the page a new worker
+  // had installed, let alone reloaded it -- the page only ever picks up a
+  // waiting worker's changes on ITS NEXT load. Fix, in three parts:
+  //  1. Proactively ask the browser to check for a new worker (reg.update())
+  //     right after registration, and again on every tab-focus, throttled
+  //     to once/60s so backgrounding/foregrounding rapidly can't spam it.
+  //  2. `controllerchange` fires once a new worker has taken over. If this
+  //     load already had an active controller (i.e. this is a genuine
+  //     update, not the very first install/activation, which also fires
+  //     `controllerchange` but has nothing to disrupt), reload -- exactly
+  //     once, guarded by `swReloaded` so it can never loop even if the
+  //     browser fires the event more than once.
+  //  3. Reloading out from under a user who is mid-recitation (listening
+  //     for speech, or typing into the fallback box) would silently drop
+  //     their progress in that instant -- so in that case a toast is shown
+  //     instead (app.updateReady) and the reload is deferred to the next
+  //     hidden -> visible transition (the point after a real navigation
+  //     back into the app already reloads it anyway; the update takes
+  //     effect there too since the new worker already controls the page).
   if ('serviceWorker' in navigator) {
+    var swHadController = !!navigator.serviceWorker.controller;
+    var swReloaded = false;
+    var swUpdateToastShown = false;
+    var swLastUpdateCheck = 0;
+    var SW_UPDATE_CHECK_THROTTLE_MS = 60000;
+    var swWasHidden = document.visibilityState === 'hidden';
+
+    function swMidAction() {
+      return listening || !!(el.typeInput && el.typeInput.value);
+    }
+    function swReloadNow() {
+      if (swReloaded) return;
+      swReloaded = true;
+      location.reload();
+    }
+    var swPendingReload = false;
+    function swTryReload() {
+      if (swMidAction()) {
+        swPendingReload = true;
+        if (!swUpdateToastShown) { swUpdateToastShown = true; showToast(t('app.updateReady')); }
+        return;
+      }
+      swReloadNow();
+    }
+    function swCheckForUpdate(reg) {
+      var now = Date.now();
+      if (now - swLastUpdateCheck < SW_UPDATE_CHECK_THROTTLE_MS) return;
+      swLastUpdateCheck = now;
+      reg.update().catch(function () {});
+    }
+
     window.addEventListener('load', function () {
-      navigator.serviceWorker.register('sw.js').catch(function () {});
+      navigator.serviceWorker.register('sw.js').then(function (reg) {
+        swCheckForUpdate(reg);
+        document.addEventListener('visibilitychange', function () {
+          if (document.visibilityState !== 'visible') { swWasHidden = true; return; }
+          swCheckForUpdate(reg);
+          if (swPendingReload && swWasHidden) { swPendingReload = false; swTryReload(); }
+          swWasHidden = false;
+        });
+      }).catch(function () {});
+    });
+
+    navigator.serviceWorker.addEventListener('controllerchange', function () {
+      if (!swHadController) { swHadController = true; return; } // first install, nothing to disrupt
+      swTryReload();
     });
   }
 
