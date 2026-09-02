@@ -1,7 +1,25 @@
 (function () {
   'use strict';
 
-  var t = null; // set after i18n ready: Tasme3I18n.t
+  // F3 fix (translation function null before catalogs load): `t` used to
+  // start out as a bare `null`, only ever assigned once Tasme3I18n's own
+  // setLanguage() promise resolved further down in this file. Anything that
+  // could run before that promise settles -- a user tapping "microphone not
+  // working?" or typing a word within the first second after a reload --
+  // called `t(...)` while it was still `null` and threw
+  // "TypeError: t is not a function", uncaught.
+  //
+  // Fix: `t` starts life as a fail-soft delegate to window.Tasme3I18n.t,
+  // which already returns a sane fallback (the current dict's value, else
+  // the English dict's, else the bare key -- see site/i18n.js's own t())
+  // even before any catalog has finished loading, so nothing here has to
+  // wait. The later `t = Tasme3I18n.t` assignments (once setLanguage()
+  // resolves) simply swap in the real bound function afterwards -- both
+  // states behave identically, this delegate just never throws in between.
+  var t = function (key, params) {
+    var I = window.Tasme3I18n;
+    return (I && typeof I.t === 'function') ? I.t(key, params) : key;
+  };
   var Utils = window.Tasme3Utils;
   var Storage = window.Tasme3Storage;
   var Matcher = window.QuranMatcher;
@@ -115,6 +133,7 @@
     'installPromo', 'installPromoClose', 'installPromoIos', 'installPromoBtn', 'installPromoDismiss',
     'chromeHandle', 'firstRunHint'
   ].forEach(function (id) { el[id] = document.getElementById(id); });
+  el.firstRunHintArrow = el.firstRunHint ? el.firstRunHint.querySelector('.first-run-hint-arrow') : null;
   window.Tasme3Account.attachGroupedInput(el.loginInput);
   var ctx = el.pagecanvas.getContext('2d');
 
@@ -406,7 +425,14 @@
   // above has finished handing crop control back to the plain full-page
   // view, re-centering it in the same gesture instead of waiting for the
   // next reveal to notice.
-  function handleViewportChange() { updateFocusMode(false); maybeAutoFollow(); }
+  function handleViewportChange() {
+    updateFocusMode(false);
+    maybeAutoFollow();
+    // F4 fix: a rotation/resize while the first-run hint is still visible
+    // (its 3s window) must re-run its positioning -- see positionFirstRunHint()
+    // below for why a one-time placement goes stale across a rotation.
+    if (el.firstRunHint && !el.firstRunHint.hidden) positionFirstRunHint();
+  }
   // Debounced (wave-2 fix a9, extended to `resize` by residual audit B4):
   // some devices/browsers fire orientationchange more than once per physical
   // rotation (occasionally alongside a burst of resize events mid-rotation),
@@ -2074,6 +2100,31 @@
   // style beats the CSS's logical inset-inline-end regardless of RTL/LTR)
   // so the two centers always coincide, however wide the hint's text
   // happens to wrap in the current language.
+  //
+  // F4 fix, part 1 (hint doesn't survive a rotation): the box's `left` was
+  // only ever computed ONCE, when the hint is first shown -- a device
+  // rotation during the hint's 3s visible window (viewport width changes,
+  // #recBtn moves) left the already-positioned box stranded wherever it was
+  // computed for the OLD viewport, up to hundreds of px from the mic. Fixed
+  // by re-running this same positioning from handleViewportChange() below
+  // whenever the hint is currently visible, not just on first show.
+  //
+  // F4 fix, part 2 (arrow can't reach the mic at narrow widths): at 390px
+  // width the hint box itself gets clamped against the viewport edge (the
+  // `Math.max(margin, Math.min(...))` above) well before its CENTER can
+  // reach #recBtn's center, since .floatbar sits only 16px from the
+  // inline-end edge while the (up to 220px wide) hint box needs its own
+  // half-width of clearance just to stay on-screen -- centering the whole
+  // BOX on the mic is geometrically impossible there, so the box's clamped
+  // left previously left the arrow (which just inherited the box's
+  // text-align:center) up to ~74px away from the button it's meant to point
+  // at. Fixed by decoupling the two: the BOX position keeps clamping to the
+  // viewport as before (readable text is still the priority), but the ARROW
+  // is now absolutely positioned WITHIN the box, independently offset so
+  // its own center-x always equals #recBtn's center-x, clamped only to the
+  // box's own inner width (so it can still slide close to an edge of the
+  // box, but never past it, to point at a mic that sits outside the box's
+  // horizontal center).
   function positionFirstRunHint() {
     if (!el.firstRunHint || !el.recBtn) return;
     var micRect = el.recBtn.getBoundingClientRect();
@@ -2085,6 +2136,23 @@
     el.firstRunHint.style.insetInlineEnd = 'auto';
     el.firstRunHint.style.right = 'auto';
     el.firstRunHint.style.left = left + 'px';
+
+    if (!el.firstRunHintArrow) return;
+    // Re-measure the box's actual on-screen rect now that `left` is applied
+    // (hintRect above was captured before this move) so arrowLeft is
+    // computed against where the box really ends up.
+    var boxRect = el.firstRunHint.getBoundingClientRect();
+    var arrowWidth = el.firstRunHintArrow.offsetWidth || 20;
+    var arrowMargin = 6; // keep the arrow's glyph clear of the box's own rounded corner/border
+    var arrowLeft = centerX - boxRect.left - arrowWidth / 2;
+    arrowLeft = Math.max(arrowMargin, Math.min(arrowLeft, boxRect.width - arrowWidth - arrowMargin));
+    // The CSS default (`left:50%; transform:translateX(-50%)`) is only the
+    // pre-JS fallback -- once a pixel `left` is computed here it fully
+    // replaces that centering, so the transform must be cleared or it would
+    // shift the arrow another half-width off from this already-precise
+    // position.
+    el.firstRunHintArrow.style.transform = 'none';
+    el.firstRunHintArrow.style.left = arrowLeft + 'px';
   }
   function maybeShowFirstRunHint() {
     if (!el.firstRunHint) return;

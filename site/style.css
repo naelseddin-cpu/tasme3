@@ -64,6 +64,24 @@ body.chrome-visible .topbar { transform:translateY(0); opacity:1; pointer-events
   width:64px; height:14px; border:1px solid #8f7226; border-top:none; border-radius:0 0 10px 10px;
   background:linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
   box-shadow:0 2px 6px rgba(0,0,0,.35); padding:0; cursor:pointer; pointer-events:auto; opacity:.9; }
+/* F5: the 64x14 visual tab is well under the 44px touch-target floor. The
+   visual size stays exactly as designed (a thin discoverability hint, not a
+   button that should look tappable) -- instead an invisible ::before
+   enlarges the actual HIT area to 44px tall. It can't grow downward past
+   the page's own 16px-reserved strip (.pagebox's padding-top above) without
+   covering line 1 of the mushaf text more than that strip already allows,
+   so only 2px of downward room exists (14px visual -> 16px strip edge); the
+   rest extends upward, off the top edge of the viewport -- still part of
+   the button's own rendered box (a ::before positioned absolute relative to
+   this fixed-position button is part of the SAME element, so a tap anywhere
+   in its box fires the button's click same as a tap on the visible tab),
+   and harmless even where that region is covered by system chrome. The
+   ::before's own containing block is this button's PADDING box, which
+   (global *{box-sizing:border-box} + the 1px bottom border, no top border)
+   is 13px tall, not the visual 14px -- top/bottom below are picked so the
+   computed height (containing-block-height - top - bottom) comes out to
+   exactly 44px: 13 - (-29) - (-2) = 44. */
+.chrome-handle::before { content:''; position:absolute; top:-29px; bottom:-2px; left:0; right:0; pointer-events:auto; }
 body.chrome-visible .chrome-handle { display:none; }
 .logo { font-family:'UthmanicHafs',serif; font-size:1.4rem; font-weight:bold; color:var(--green-deep);
   text-shadow:0 1px 0 rgba(255,250,225,.75); white-space:nowrap; }
@@ -72,7 +90,7 @@ body.chrome-visible .chrome-handle { display:none; }
   box-shadow:0 2px 4px rgba(90,70,15,.35), inset 0 1px 0 #fff; flex-shrink:0; }
 .pagenav { display:flex; align-items:center; gap:6px; }
 .pagenav .chip { border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#ece1c2);
-  border-radius:999px; padding:6px 14px; font-size:.85rem; min-width:70px; max-width:min(62vw,280px);
+  border-radius:999px; padding:6px 14px; font-size:14px; min-width:70px; max-width:min(62vw,280px); /* F5: #pageChip, was .85rem/13.6px */
   text-align:center; font-weight:600; overflow:hidden; text-overflow:ellipsis;
   box-shadow:inset 0 1px 0 #fff, 0 1px 3px rgba(90,70,15,.3); cursor:pointer; white-space:nowrap; }
 .topbar-right, .topbar-left { display:flex; align-items:center; gap:6px; }
@@ -138,7 +156,7 @@ body.chrome-visible .chrome-handle { display:none; }
 .sheet-body { overflow-y:auto; padding:0 14px 14px; -webkit-overflow-scrolling:touch; }
 .sheet-section { margin-top:14px; padding-top:14px; border-top:1px solid var(--gold-line); }
 .sheet-section:first-child { margin-top:6px; padding-top:0; border-top:none; }
-.sheet-section h3 { font-size:.85rem; color:var(--muted); margin-bottom:8px; font-weight:700; }
+.sheet-section h3 { font-size:14px; color:var(--muted); margin-bottom:8px; font-weight:700; } /* F5: was .85rem/13.6px, under the 14px floor */
 
 .levels { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
 /* Focus-line auto/on/off toggle (founder idea #3) reuses the level-seg look
@@ -222,7 +240,7 @@ body.chrome-visible .chrome-handle { display:none; }
   opacity:.85; cursor:wait; }
 
 /* ---- shared row look (progress, accounts) -- now inside .sheet-section ---- */
-.panelrow { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:.85rem;
+.panelrow { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:14px; /* F5: was .85rem/13.6px */
   padding:3px 0; }
 .panelrow .num { font-weight:700; color:var(--green-deep); font-variant-numeric:tabular-nums; }
 .bigbtn { display:block; width:100%; padding:11px; margin-top:6px; border-radius:10px; border:1px solid var(--gold-deep);
@@ -309,7 +327,7 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
 .drawer-head .topbar-right { min-width:0; flex-direction:row-reverse; }
 .drawer-head .lang-select { max-width:120px; min-width:0; font-size:.78rem; padding:5px 6px; }
 .drawer-tabs { display:flex; border-bottom:1px solid var(--gold-line); }
-.drawer-tabs button { flex:1; min-height:44px; padding:10px; font-size:.85rem; background:none; border:none; cursor:pointer;
+.drawer-tabs button { flex:1; min-height:44px; padding:10px; font-size:14px; background:none; border:none; cursor:pointer; /* F5: was .85rem/13.6px */
   color:var(--muted); border-bottom:2px solid transparent; }
 .drawer-tabs button.active { color:var(--green-deep); font-weight:700; border-bottom-color:var(--green-deep); }
 .drawer-jump { display:flex; gap:6px; padding:10px 14px; border-bottom:1px solid var(--gold-line); }
@@ -326,7 +344,7 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
 .drawer-item:hover, .drawer-item:active { background:#f6f1e4; }
 .drawer-item .pg { color:var(--muted); font-size:14px; font-variant-numeric:tabular-nums; }
 .lang-select { border:1px solid var(--gold-deep); border-radius:8px; padding:6px 8px; font-size:.85rem;
-  min-height:36px; min-width:0; background:var(--pearl); color:var(--green-deep); }
+  min-height:44px; min-width:0; background:var(--pearl); color:var(--green-deep); } /* F5: touch-target floor, was 36px */
 
 .toast { position:fixed; left:50%; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 58px); transform:translateX(-50%);
   background:#2a2a20; color:#fff; padding:9px 16px; border-radius:999px; font-size:.85rem; z-index:40;
@@ -405,15 +423,26 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
 /* ---- one-time first-run hint (elderly audit): points at the mic, dismisses
    on tap or after 3s, never shown again once localStorage records it.
    inset-inline-end here is only a layout fallback/starting point --
-   app.js's positionFirstRunHint() (residual audit C4) overrides it with an
-   inline `left` computed from #recBtn's real center the moment the hint is
-   shown, so the two stay centered on each other regardless of language/
-   text-wrap width. ---- */
+   app.js's positionFirstRunHint() (residual audit C4, extended by F4)
+   overrides it with an inline `left` computed from #recBtn's real center
+   the moment the hint is shown (and again on rotation/resize while it's
+   still visible), so the two stay centered on each other regardless of
+   language/text-wrap width or a mid-hint device rotation. ---- */
 .first-run-hint { position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 66px);
   inset-inline-end:16px; max-width:220px; z-index:24; background:var(--sheet); border:1px solid var(--gold-deep);
-  border-radius:12px; padding:10px 14px; box-shadow:0 6px 20px rgba(0,0,0,.35); text-align:center;
+  border-radius:12px; padding:28px 14px 10px; box-shadow:0 6px 20px rgba(0,0,0,.35); text-align:center;
   font-size:14px; color:var(--ink); cursor:pointer; }
-.first-run-hint-arrow { font-size:1.3rem; line-height:1; color:var(--gold-deep); margin-bottom:2px; }
+/* F4 fix: the arrow is absolutely positioned (independent of the box's own
+   text-align:center) so app.js can slide it to sit directly over #recBtn's
+   center even when the box itself is clamped away from that center at
+   narrow viewport widths (see positionFirstRunHint()'s F4 comment). The
+   `left` below is only the pre-JS fallback (horizontally centered in the
+   box); app.js always overrides it once the hint is shown. Color switched
+   from --gold-deep (3.4:1 against --sheet, below the 4.5:1 floor) to --ink
+   (14.2:1) for contrast. padding-top on .first-run-hint above reserves the
+   strip this absolutely-positioned arrow now occupies. */
+.first-run-hint-arrow { position:absolute; top:6px; left:50%; transform:translateX(-50%);
+  font-size:1.3rem; line-height:1; color:var(--ink); }
 /* Second line (residual audit C4: introduces the ⚙️ button) -- consecutive
    <p>s otherwise have zero gap under this file's global margin/padding
    reset. */
