@@ -1,0 +1,47 @@
+# Runs the tasme3 server + a Caddy reverse proxy (automatic HTTPS) together.
+# Used by deploy/docker/README.md's Oracle Cloud / VPS steps. NOT used for
+# Google Cloud Run (Cloud Run terminates TLS itself — see README.md's
+# Cloud Run section, which deploys the Dockerfile directly instead).
+#
+# Usage:
+#   cd deploy/docker
+#   echo "TASME3_HOSTNAME=your-name.duckdns.org" > .env
+#   docker compose up -d --build
+services:
+  tasme3-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      # Comma-separate more origins if the app is ever mirrored elsewhere.
+      - ALLOWED_ORIGINS=${ALLOWED_ORIGINS:-https://naelseddin-cpu.github.io}
+    volumes:
+      # Named volume, NOT a bind mount -- survives `docker compose up
+      # --build` (image rebuilds) and container restarts; only removed by
+      # an explicit `docker compose down -v`. This is what makes
+      # accounts/progress persistent on this path, unlike a scale-to-zero
+      # platform (see README.md's per-option persistence notes).
+      - tasme3-data:/home/user/app/data
+    expose:
+      - "8000"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - TASME3_HOSTNAME=${TASME3_HOSTNAME:?set TASME3_HOSTNAME in a .env file next to this docker-compose.yml (see README.md)}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - tasme3-server
+
+volumes:
+  tasme3-data:
+  caddy-data:
+  caddy-config:

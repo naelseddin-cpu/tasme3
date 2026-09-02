@@ -1,0 +1,16 @@
+# Reverse proxy in front of the tasme3 server, with automatic HTTPS.
+#
+# The app is served over HTTPS (GitHub Pages), and browsers block a page
+# loaded over HTTPS from calling a plain-HTTP API ("mixed content") — so
+# the server needs its own TLS certificate too, not just an open port.
+# Caddy gets one automatically (via Let's Encrypt) for whatever hostname
+# you put below, as long as that hostname's DNS actually points at this
+# machine's public IP and ports 80+443 reach it.
+#
+# EDIT THIS ONE LINE: replace the placeholder with your own free
+# duckdns.org or nip.io hostname (see deploy/docker/README.md step
+# "Point a hostname at your server"), OR set TASME3_HOSTNAME in a .env
+# file next to docker-compose.yml instead of editing this file directly.
+{$TASME3_HOSTNAME:tasme3-example.duckdns.org} {
+	reverse_proxy tasme3-server:8000
+}

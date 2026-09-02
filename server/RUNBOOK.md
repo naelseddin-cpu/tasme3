@@ -1,8 +1,39 @@
 # tasme3 server — deploy runbook
 
-Target: any 2 vCPU VPS (per docs/BUILD-PLAN.md). This service is the only
-heavy component; the client is a static PWA served elsewhere (CDN/GitHub
-Pages).
+Target: any 2 vCPU VPS (per docs/BUILD-PLAN.md), **or one of the
+free/near-free options below** if a VPS isn't already set up. This service
+is the only heavy component; the client is a static PWA served elsewhere
+(CDN/GitHub Pages).
+
+## Option A: free-and-cheap provider-neutral Docker kit (do this first)
+
+Before setting up a VPS by hand (sections 1–8 below), see
+**[`deploy/docker/README.md`](../deploy/docker/README.md)** — a
+self-contained Docker deployment kit with a full click-by-click guide
+(English and Arabic, written for a non-developer) covering three real $0-
+or-near-$0 hosts:
+
+- **Oracle Cloud "Always Free" ARM VM** — permanently free, persistent
+  storage, recommended default.
+- **Small paid VPS** (~€4/month, e.g. Hetzner CX22) — identical steps to
+  the Oracle path, on a paid box.
+- **Google Cloud Run** — least setup effort, generous free tier,
+  scale-to-zero — but read that guide's persistence caveat first: Cloud
+  Run's ephemeral/multi-instance filesystem means accounts and saved
+  progress are not reliably kept there.
+
+(Hugging Face Spaces was considered here too, but HF now requires a paid
+plan for both its Docker and Gradio SDKs — only Static Spaces, which
+can't run a server, remain free there — so it's not one of the options.)
+
+Whichever of those three you pick, the underlying app is the same
+`server/` code described in the rest of this file — sections 1–8 below
+remain the reference for what the server actually needs (system deps,
+the model conversion step, configuration, backups, load target), whether
+you set that up by hand on your own VPS or read it as background while
+`deploy/docker/`'s guide does the equivalent steps for you.
+
+## Option B: VPS / self-hosted, step by step (sections 1–8 below)
 
 ## Privacy statement (put this in the app's UI copy too)
 

@@ -19,11 +19,31 @@ The user recites from memory; the app listens and reveals each word **exactly as
 | Path | Contents |
 |---|---|
 | `app/` | The web app: matcher, mushaf page data (`mushaf/pages/*.json`), official KFGQPC fonts (`mushaf/fonts/`), 25-language i18n catalog |
+| `site/` | The deployable static PWA (GitHub Pages) |
+| `server/` | Optional FastAPI recognition + accounts service — see "Deployment" below |
 | `docs/` | Product plan, build plan, system audit, design notes |
 | `tools/` | Page-data generator, page-image renderer, scan QA tools |
 
 Current status and roadmap: see [`docs/BUILD-PLAN.md`](docs/BUILD-PLAN.md).
 Latest full system audit: [`docs/AUDIT-2026-08-30.md`](docs/AUDIT-2026-08-30.md).
+
+## Deployment
+
+The client (`site/`) is a static PWA — deploy it anywhere that serves
+static files (GitHub Pages, any CDN). The optional `server/` component
+(real server-side Whisper recognition + frictionless accounts/progress
+sync) needs somewhere to run; without it the app falls back to the
+browser's own speech recognition, which works but is noticeably weaker on
+Quranic Arabic. Two paths, both documented in
+[`server/RUNBOOK.md`](server/RUNBOOK.md):
+
+- **Free-and-cheap, provider-neutral Docker kit** (recommended to start):
+  click-by-click guide (English + Arabic) covering an Oracle Cloud
+  "Always Free" ARM VM ($0 permanently), a small paid VPS (~€4/month), or
+  Google Cloud Run — in
+  [`deploy/docker/README.md`](deploy/docker/README.md).
+- **VPS / self-hosted, by hand**: full control, persistent storage, no
+  idle-sleep — see `server/RUNBOOK.md`'s "Option B".
 
 ## Data sources (all free / official)
 
