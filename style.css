@@ -1,0 +1,502 @@
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+/* Bulletproofs the `hidden` attribute against any element rule that sets its
+   own unconditional `display` (a real bug this caught: .install-promo's own
+   `display:flex` had EQUAL CSS specificity to the UA stylesheet's
+   `[hidden]{display:none}` and, being defined later, silently won -- the
+   install card rendered fully visible even while `.hidden` was true). This
+   single higher-specificity rule guarantees `[hidden]` always wins, for
+   every current and future toggled-via-.hidden element alike. */
+[hidden] { display:none !important; }
+:root {
+  --velvet:#0c2e1b; --velvet2:#14452a;
+  --gold:#d4b96a; --gold-deep:#a8862f; --gold-line:#b8a24a;
+  --sheet:#fffdf5; --green:#1a5c38; --green-deep:#0e3d24; --ink:#2a2a20;
+  --pearl:#f6f1e4; --muted:#6b6250; --danger:#b03a24;
+}
+html,body { height:100%; overflow-x:hidden; overscroll-behavior-x:none; }
+/* Screen-reader-only text (WCAG "visually hidden" clip pattern) -- present
+   in the accessibility tree and announced by assistive tech, invisible and
+   zero-footprint on screen. Used for the ARIA live status region. */
+.visually-hidden { position:absolute !important; width:1px; height:1px; padding:0; margin:-1px;
+  overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
+body {
+  font-family:-apple-system,'Segoe UI',system-ui,sans-serif;
+  background:radial-gradient(120% 90% at 50% 0%, var(--velvet2) 0%, var(--velvet) 60%, #081f12 100%);
+  color:var(--ink); display:flex; flex-direction:column; align-items:stretch;
+  padding:0;
+}
+html[dir="rtl"] body { direction:rtl; }
+html[dir="ltr"] body { direction:ltr; }
+
+/* Minimal chrome: no persistent bottom bar. --fab-clear is the static
+   clearance the floating mic/setup buttons need (button diameter + their
+   own bottom offset + a small gap) -- everything that floats above them
+   (toasts, the done banner, the surah-celebration card) anchors off this
+   one variable instead of a bar height app.js used to measure at runtime. */
+:root { --fab-clear:84px; }
+.frame { width:100%; display:flex; flex-direction:column; padding-bottom:calc(env(safe-area-inset-bottom) + 12px); }
+.goldbar {
+  background:linear-gradient(155deg, #efe1b4 0%, var(--gold) 30%, #e9d9a5 55%, #c8a951 80%, #f0e3b8 100%);
+  border-bottom:1px solid #8f7226;
+  box-shadow:0 2px 8px rgba(0,0,0,.35);
+}
+/* Immersive mode (founder idea #1): the top bar is an OVERLAY, not a flex
+   participant -- .pagebox already starts right after the always-visible 3px
+   progress strip regardless of the bar's visibility, so toggling it never
+   reflows/jumps the canvas underneath (spec: "keep layout stable by
+   overlaying the bar rather than displacing content"). Default state is
+   hidden; body.chrome-visible reveals it. transform+opacity only (GPU, no
+   layout) so the transition is cheap and never fights the canvas resize. */
+.topbar { position:fixed; top:3px; left:0; right:0; z-index:20; display:flex; align-items:center; justify-content:space-between; gap:6px;
+  padding:6px 10px; transform:translateY(-120%); opacity:0; pointer-events:none;
+  transition:transform .28s ease, opacity .28s ease; }
+body.chrome-visible .topbar { transform:translateY(0); opacity:1; pointer-events:auto; }
+/* (see the consolidated prefers-reduced-motion block at the end of this file
+   for .topbar/.sheet/.drawer/.toast/progress-fill motion gating -- a11y F9) */
+
+/* Chrome-discoverability affordance (elderly audit #1): a slim persistent
+   gold tab at the top edge whenever the bar itself is auto-hidden, so
+   there's always a visible hint that more controls exist and a tap reveals
+   them -- gone the instant the real bar is showing (no double affordance).
+   Deliberately thin (~14px) and sits above the page image's own top margin,
+   never the Quran text itself (verified in wave-1 screenshots). */
+.chrome-handle { position:fixed; top:0; left:50%; transform:translateX(-50%); z-index:19;
+  width:64px; height:14px; border:1px solid #8f7226; border-top:none; border-radius:0 0 10px 10px;
+  background:linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
+  box-shadow:0 2px 6px rgba(0,0,0,.35); padding:0; cursor:pointer; pointer-events:auto; opacity:.9; }
+/* F5: the 64x14 visual tab is well under the 44px touch-target floor. The
+   visual size stays exactly as designed (a thin discoverability hint, not a
+   button that should look tappable) -- instead an invisible ::before
+   enlarges the actual HIT area to 44px tall. It can't grow downward past
+   the page's own 16px-reserved strip (.pagebox's padding-top above) without
+   covering line 1 of the mushaf text more than that strip already allows,
+   so only 2px of downward room exists (14px visual -> 16px strip edge); the
+   rest extends upward, off the top edge of the viewport -- still part of
+   the button's own rendered box (a ::before positioned absolute relative to
+   this fixed-position button is part of the SAME element, so a tap anywhere
+   in its box fires the button's click same as a tap on the visible tab),
+   and harmless even where that region is covered by system chrome. The
+   ::before's own containing block is this button's PADDING box, which
+   (global *{box-sizing:border-box} + the 1px bottom border, no top border)
+   is 13px tall, not the visual 14px -- top/bottom below are picked so the
+   computed height (containing-block-height - top - bottom) comes out to
+   exactly 44px: 13 - (-29) - (-2) = 44. */
+.chrome-handle::before { content:''; position:absolute; top:-29px; bottom:-2px; left:0; right:0; pointer-events:auto; }
+body.chrome-visible .chrome-handle { display:none; }
+.logo { font-family:'UthmanicHafs',serif; font-size:1.4rem; font-weight:bold; color:var(--green-deep);
+  text-shadow:0 1px 0 rgba(255,250,225,.75); white-space:nowrap; }
+.iconbtn { border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#e4d9b8);
+  color:var(--green-deep); border-radius:9px; width:44px; height:44px; font-size:1.05rem; cursor:pointer;
+  box-shadow:0 2px 4px rgba(90,70,15,.35), inset 0 1px 0 #fff; flex-shrink:0; }
+.pagenav { display:flex; align-items:center; gap:6px; }
+.pagenav .chip { border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#ece1c2);
+  border-radius:999px; padding:6px 14px; font-size:14px; min-width:70px; max-width:min(62vw,280px); /* F5: #pageChip, was .85rem/13.6px */
+  text-align:center; font-weight:600; overflow:hidden; text-overflow:ellipsis;
+  box-shadow:inset 0 1px 0 #fff, 0 1px 3px rgba(90,70,15,.3); cursor:pointer; white-space:nowrap; }
+.topbar-right, .topbar-left { display:flex; align-items:center; gap:6px; }
+
+.zoomwarn { display:none; background:#b03a24; color:#fff; text-align:center; padding:10px 14px; font-size:.95rem; font-weight:600; }
+/* Residual audit B7: .chrome-handle is a fixed, 14px-tall gold tab pinned to
+   the very top of the viewport whenever the top bar auto-hides -- on an
+   ordinary page (progressstrip is only 3px tall, so the page image starts
+   almost immediately below it) that tab physically covers the first line's
+   diacritics. padding-top here (handle height 14px + 2px) pushes the
+   canvas -- and so the rendered page image, in BOTH portrait and landscape/
+   focus-line crop, since it's the same canvas element either way -- down
+   far enough that the handle never overlaps it, while the page still fills
+   the full width (padding-top adds no horizontal inset). */
+.pagebox { width:100%; min-height:220px; padding-top:16px; background:var(--sheet); position:relative; }
+#pagecanvas { display:block; width:100%; height:auto; }
+
+/* ---- minimal main screen: just the page + two floating buttons. Every
+   control that used to live in the bottom bar (level, listen/repeat/reciter,
+   word counter) now lives inside the setup sheet -- see .sheet* below --
+   reachable through the small gear button next to the mic (founder: "all
+   info in the buttons can come out and be in a pop window for setup...
+   what's left is only Quran page and a mic button"). ---- */
+.progressbar, .progressstrip { height:3px; width:100%; overflow:hidden; flex-shrink:0;
+  background:linear-gradient(180deg,#bfa14f,#e6d49a); }
+.progressstrip { background:rgba(255,255,255,.18); }
+.progressbar > div, .progressstrip > div { height:100%; width:0%;
+  background:linear-gradient(90deg,#0e3d24,#1a5c38 60%,#2e7d52); transition:width .4s; }
+
+/* Floating controls: pinned to the inline-end corner (bottom-left in RTL,
+   bottom-right in LTR) -- the corner opposite the drawer button, which sits
+   at inline-start in the top bar -- safe-area aware. */
+.floatbar { position:fixed; bottom:calc(env(safe-area-inset-bottom) + 16px); inset-inline-end:16px; z-index:20;
+  display:flex; align-items:center; gap:10px; }
+.floatbar .setupbtn { width:44px; height:44px; font-size:1.2rem; border-radius:50%; }
+.recbtn { width:56px; height:56px; border-radius:50%; border:3px solid var(--gold-deep); flex-shrink:0;
+  background:radial-gradient(circle at 32% 28%, #3f9e6b 0%, #1a5c38 34%, #0e3d24 62%, #1f6b42 82%, #0a2c19 100%);
+  color:#eafff2; font-size:1.5rem; cursor:pointer;
+  box-shadow:0 3px 10px rgba(0,0,0,.45), inset 0 2px 5px rgba(255,255,255,.28), 0 0 0 1px #8f7226;
+  display:flex; align-items:center; justify-content:center; }
+.recbtn.listening { background:radial-gradient(circle at 32% 28%, #e57358 0%, #b03a24 40%, #7d2314 75%, #96341f 100%);
+  box-shadow:0 0 0 7px rgba(176,58,36,.25), 0 3px 10px rgba(0,0,0,.4); }
+.recbtn.busy { opacity:.65; }
+.recbtn:disabled { opacity:.4; }
+
+/* ---- setup bottom sheet (level / listen / progress / share / account /
+   certificates / privacy -- everything that used to sit in the always-on
+   bottom bar or in always-visible panels below the page). ---- */
+.sheet-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:32; }
+.sheet { position:fixed; left:0; right:0; bottom:0; z-index:33; max-height:85vh;
+  background:var(--sheet); border-radius:18px 18px 0 0; box-shadow:0 -8px 30px rgba(0,0,0,.4);
+  display:flex; flex-direction:column; transform:translateY(100%); visibility:hidden;
+  transition:transform .25s ease, visibility 0s linear .25s;
+  padding-bottom:env(safe-area-inset-bottom); }
+/* visibility flips to hidden only AFTER the slide-out transition finishes
+   (the `visibility 0s linear .25s` delay above), so a closed sheet is truly
+   unfocusable/untabbable (a11y M1) while the close animation still plays;
+   opening flips it back to visible with no delay so the slide-in is seen. */
+.sheet.open { transform:translateY(0); visibility:visible; transition:transform .25s ease, visibility 0s linear 0s; }
+.sheet-handle { width:40px; height:4px; border-radius:2px; background:var(--gold-line); margin:8px auto 0; flex-shrink:0; }
+.sheet-head { display:flex; align-items:center; justify-content:space-between; padding:6px 14px 2px; flex-shrink:0; }
+.sheet-head h2 { font-size:1rem; color:var(--green-deep); }
+.sheet-body { overflow-y:auto; padding:0 14px 14px; -webkit-overflow-scrolling:touch; }
+.sheet-section { margin-top:14px; padding-top:14px; border-top:1px solid var(--gold-line); }
+.sheet-section:first-child { margin-top:6px; padding-top:0; border-top:none; }
+.sheet-section h3 { font-size:14px; color:var(--muted); margin-bottom:8px; font-weight:700; } /* F5: was .85rem/13.6px, under the 14px floor */
+
+.levels { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+/* Focus-line auto/on/off toggle (founder idea #3) reuses the level-seg look
+   but as a flat 3-up row rather than the level selector's 2x2 grid. */
+.focusline-toggle { grid-template-columns:1fr 1fr 1fr; }
+.focusline-toggle .level-seg { min-height:44px; font-size:.82rem; font-weight:600; }
+.level-seg { flex-direction:column; gap:2px; min-height:56px; border-radius:10px; border:1px solid var(--gold-deep);
+  background:linear-gradient(180deg,var(--pearl),#e4d9b8); color:#5d5133; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; box-shadow:inset 0 1px 0 #fff; }
+.level-seg-num { font-size:1.05rem; font-weight:800; font-variant-numeric:tabular-nums; }
+.level-seg-name { font-size:14px; font-weight:600; }
+/* Darkened from the original #47a874 top stop -- audit found insufficient
+   contrast for the white label text on the gradient's lightest pixels
+   (min ratio was under 3:1); #2f7d55 keeps the same green hue/feel while
+   clearing >=3:1 against #eafff2 at every point in the gradient. */
+.level-seg.active { background:linear-gradient(180deg,#2f7d55,#1a5c38 60%,#0e3d24); color:#eafff2; border-color:#0e3d24; }
+
+.listenpanel { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; padding:2px 0 4px; }
+.listenpanel button { border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#e4d9b8);
+  color:var(--green-deep); border-radius:999px; padding:8px 16px; font-size:.85rem; cursor:pointer; font-weight:600;
+  min-height:40px; }
+.listenpanel button.on { background:linear-gradient(180deg,#2f7d55,#1a5c38); color:#eafff2; }
+.listenpanel select { border:1px solid var(--gold-deep); border-radius:999px; padding:8px 12px; font-size:.8rem;
+  background:var(--pearl); color:var(--green-deep); min-height:40px; }
+
+.donebanner { display:none; position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 58px); left:12px; right:12px; z-index:21; color:#f3e6bb; text-align:center;
+  background:linear-gradient(180deg,#1f6b42,#0e3d24); border:1px solid var(--gold-deep);
+  border-radius:10px; padding:8px 16px; margin:6px 12px 0; font-size:.95rem; }
+
+.sharebar { display:none; position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 10px);
+  left:12px; right:12px; z-index:21; padding:0; text-align:center; }
+.sharebar button { background:linear-gradient(180deg,#25d366,#128c3e); color:#fff; border:1px solid #0d7233;
+  border-radius:10px; padding:9px 18px; font-size:.9rem; font-weight:700; cursor:pointer;
+  box-shadow:0 2px 6px rgba(0,0,0,.3); }
+
+/* Relocated inside the setup sheet's listen section -- link color follows
+   the sheet's cream background now instead of the (removed) gold bar. */
+.michelp-toggle { text-align:center; padding:8px 0 0; }
+.michelp-toggle a { display:inline-block; min-height:32px; padding:8px 6px; color:var(--green-deep);
+  font-size:14px; text-decoration:underline; cursor:pointer; }
+/* In-flow above the page (same pattern as .zoomwarn) so the typed fallback
+   stays visible without scrolling the instant the mic path fails, with zero
+   footprint the rest of the time. */
+.helpbox { display:none; margin:0 12px 10px; padding:10px 12px; background:var(--sheet);
+  border:1px solid var(--gold-deep); border-radius:10px; font-size:14px; line-height:1.9; }
+.helpbox button { display:block; width:100%; margin:8px 0; padding:9px;
+  background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb;
+  border:1px solid var(--gold-deep); border-radius:9px; font-size:.9rem; cursor:pointer; }
+.fallback { padding:0 12px 10px; display:none; }
+.fallback input { width:100%; padding:10px; border:1px solid var(--gold-deep); border-radius:10px;
+  font-size:1rem; background:var(--sheet); }
+.pageerror { display:none; position:absolute; inset:0; background:var(--sheet); flex-direction:column;
+  align-items:center; justify-content:center; gap:12px; padding:24px; text-align:center; z-index:5; }
+.pageerror p { color:var(--danger); font-size:1rem; font-weight:600; }
+.pageerror button { padding:9px 20px; background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb;
+  border:1px solid var(--gold-deep); border-radius:9px; font-size:.95rem; cursor:pointer; }
+
+/* ---- page loading spinner (wave-2 fix #1): a subtle gold ring centered
+   over the page area, distinct from the veiled-but-loaded page and from the
+   error state above -- shown ~150ms into any page fetch/turn (see app.js's
+   showPageSpinnerSoon()) so a fast/cached load never flickers it, hidden the
+   instant the image decodes or the error view takes over. ---- */
+.pagespinner { display:none; position:absolute; top:50%; left:50%; z-index:4;
+  width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%;
+  border:3px solid rgba(184,162,74,.28); border-top-color:var(--gold-deep); pointer-events:none; }
+.pagespinner.show { display:block; animation:tasme3-spin .8s linear infinite; }
+@keyframes tasme3-spin { to { transform:rotate(360deg); } }
+
+/* ---- drawer surah-index load-failure row (wave-2 fix #2): replaces the
+   surah/juz list with an explicit "couldn't load, tap to retry" instead of
+   an unexplained empty drawer. ---- */
+.drawer-error { display:flex; flex-direction:column; align-items:center; gap:12px;
+  padding:36px 22px; text-align:center; color:var(--muted); font-size:.88rem; }
+.drawer-error button { width:auto; display:inline-block; padding:9px 22px; margin-top:0; }
+
+/* ---- listen button pending/loading state (wave-2 fix #10): a distinct look
+   from both idle and .on (actively playing) while audio is still fetching,
+   so a stalled tap on a slow connection has visible feedback instead of
+   looking identical to before the tap. ---- */
+.listenpanel button.pending { background:linear-gradient(180deg,#e4d9b8,#d8c99a); color:#5d5133;
+  opacity:.85; cursor:wait; }
+
+/* ---- shared row look (progress, accounts) -- now inside .sheet-section ---- */
+.panelrow { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:14px; /* F5: was .85rem/13.6px */
+  padding:3px 0; }
+.panelrow .num { font-weight:700; color:var(--green-deep); font-variant-numeric:tabular-nums; }
+.bigbtn { display:block; width:100%; padding:11px; margin-top:6px; border-radius:10px; border:1px solid var(--gold-deep);
+  background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb; font-size:.92rem; font-weight:600; cursor:pointer; }
+.ghostbtn { display:block; width:100%; padding:10px; margin-top:8px; border-radius:10px; border:1px solid var(--gold-deep);
+  background:linear-gradient(180deg,var(--pearl),#ece1c2); color:var(--green-deep); font-size:.88rem; cursor:pointer; }
+.codebig { font-size:1.7rem; font-weight:800; letter-spacing:.06em; color:var(--green-deep); text-align:center;
+  padding:10px; background:linear-gradient(180deg,#fff,#f6f1e4); border:1px dashed var(--gold-deep); border-radius:10px;
+  margin:6px 0; font-variant-numeric:tabular-nums; direction:ltr; }
+.codebtnrow { display:flex; gap:8px; }
+.codebtnrow button { flex:1; }
+.loginrow { display:flex; gap:8px; margin-top:6px; }
+.loginrow input { flex:1; padding:9px; border:1px solid var(--gold-deep); border-radius:9px; font-size:.95rem;
+  text-align:center; direction:ltr; }
+.loginrow button { padding:9px 16px; border-radius:9px; border:1px solid var(--gold-deep);
+  background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb; font-size:.85rem; cursor:pointer; }
+.comingsoon { text-align:center; color:var(--muted); font-size:.85rem; padding:8px 0; }
+.msg { font-size:.8rem; margin-top:6px; text-align:center; min-height:1.1em; }
+.msg.err { color:var(--danger); }
+.msg.ok { color:var(--green-deep); font-weight:600; }
+/* Sits on the (cream) sheet background, not the old dark bottom bar it was
+   originally styled for -- the pale translucent-cream color read at ~1.07:1
+   contrast there (audit #46). var(--muted) clears 4.5:1 on --sheet. */
+.footer-privacy { text-align:center; font-size:14px; color:var(--muted); padding:4px 12px 10px; }
+.listen-attribution { text-align:center; font-size:14px; color:#5d5133; padding:0 12px 4px; }
+
+/* ---- drawer (surah / juz / page navigation) ---- */
+.drawer-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:30; }
+/* Residual audit B5: at high browser zoom (or a very narrow viewport) the
+   drawer's fixed 340px/86vw width plus its content (surah/juz rows, the
+   language select) could overflow with no way to reach what fell outside --
+   max-width:100vw is a hard ceiling regardless of the min() above,
+   box-sizing:border-box keeps that ceiling honest with any border/padding
+   added later, and overflow:auto on the drawer itself (on top of
+   .drawer-list's own scroll region) means the whole panel scrolls rather
+   than clips if its children ever exceed the viewport height. */
+.drawer { position:fixed; top:0; bottom:0; width:min(340px, 86vw); max-width:100vw; box-sizing:border-box;
+  background:var(--sheet); z-index:31; overflow:auto;
+  box-shadow:0 0 24px rgba(0,0,0,.4); display:flex; flex-direction:column; transform:translateX(100%);
+  visibility:hidden; transition:transform .25s ease, visibility 0s linear .25s; }
+/* Same delayed-visibility trick as .sheet above -- a closed drawer must not
+   be reachable by Tab (a11y O1/O2) but still needs to slide out visibly. */
+.drawer.open { visibility:visible; transition:transform .25s ease, visibility 0s linear 0s; }
+html[dir="rtl"] .drawer { right:0; transform:translateX(100%); }
+html[dir="ltr"] .drawer { left:0; transform:translateX(-100%); }
+html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translateX(0); }
+/* Sticky (residual audit B5): once the drawer itself can scroll (see
+   .drawer's own overflow:auto above), the head -- and #drawerClose inside
+   it -- must stay reachable at the top rather than scrolling out of view
+   at high zoom. */
+/* Residual audit C3-touch: the drawer slides in over the ☰ button, and
+   `justify-content:space-between` used to leave the DOM's first child
+   (the <h2> title) sitting at the head's outer edge -- the same physical
+   spot ☰ occupies (both are anchored to the same screen edge, mirrored by
+   `dir`) -- with #drawerClose pushed to the far inner edge instead. A
+   second tap on ☰'s own spot therefore landed on inert title text, not the
+   close button, so nothing happened (elderly-audit finding: "tapping ☰
+   again does nothing"). `row-reverse` swaps which end is the head's outer
+   edge WITHOUT any physical left/right: it flips relative to `dir` in
+   lockstep with the h2/topbar-right *and* every other place `dir`-mirrored
+   layout already relies on (e.g. .drawer's own right:0/left:0 pairing
+   above), so #drawerClose ends up flush against the outer edge -- directly
+   under ☰ -- in both RTL and LTR. */
+.drawer-head { display:flex; flex-direction:row-reverse; align-items:center; justify-content:space-between;
+  padding:12px 14px;
+  border-bottom:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#e4d9b8);
+  position:sticky; top:0; z-index:2; }
+.drawer-head h2 { font-size:1rem; color:var(--green-deep); min-width:0; overflow:hidden;
+  text-overflow:ellipsis; white-space:nowrap; }
+/* min-width:0 on the select alone (B5) turned out not to be enough on its
+   own in Chromium's flex-shrink resolution here: .topbar-right is itself a
+   flex CONTAINER nested as one flex ITEM of .drawer-head, and its own
+   automatic minimum size (the min-content size of its child boxes when
+   overflow is visible, per the flexbox spec) still kept the select pinned
+   at its max-width and let it spill off-screen at a narrow drawer width
+   instead of shrinking. min-width:0 here too unblocks that outer level so
+   the shrink actually reaches the select. */
+/* Same row-reverse as .drawer-head above, applied one level down: without
+   it, #drawerClose (the *second* child of .topbar-right, after
+   #langSelect) would land at .topbar-right's own inner edge once
+   .topbar-right itself moves to the head's outer edge -- #langSelect would
+   be the thing flush against ☰'s spot instead. Reversing this inner row
+   too puts #drawerClose, specifically, flush against the outer edge. */
+.drawer-head .topbar-right { min-width:0; flex-direction:row-reverse; }
+.drawer-head .lang-select { max-width:120px; min-width:0; font-size:.78rem; padding:5px 6px; }
+.drawer-tabs { display:flex; border-bottom:1px solid var(--gold-line); }
+.drawer-tabs button { flex:1; min-height:44px; padding:10px; font-size:14px; background:none; border:none; cursor:pointer; /* F5: was .85rem/13.6px */
+  color:var(--muted); border-bottom:2px solid transparent; }
+.drawer-tabs button.active { color:var(--green-deep); font-weight:700; border-bottom-color:var(--green-deep); }
+.drawer-jump { display:flex; gap:6px; padding:10px 14px; border-bottom:1px solid var(--gold-line); }
+.drawer-jump input { flex:1; padding:8px; border:1px solid var(--gold-deep); border-radius:8px; font-size:.9rem;
+  text-align:center; }
+.drawer-jump button { padding:8px 14px; border-radius:8px; border:1px solid var(--gold-deep);
+  background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb; font-size:.85rem; cursor:pointer; }
+.drawer-list { overflow-y:auto; flex:1; }
+/* Real <button> elements (a11y F1 / power #1) -- reset the default button
+   chrome so the row keeps looking exactly like the old plain <div>. */
+.drawer-item { display:flex; justify-content:space-between; align-items:center; min-height:44px;
+  padding:11px 14px; border:none; border-bottom:1px solid #ece1c2; border-radius:0; background:none;
+  width:100%; font:inherit; color:inherit; text-align:inherit; cursor:pointer; font-size:.92rem; }
+.drawer-item:hover, .drawer-item:active { background:#f6f1e4; }
+.drawer-item .pg { color:var(--muted); font-size:14px; font-variant-numeric:tabular-nums; }
+.lang-select { border:1px solid var(--gold-deep); border-radius:8px; padding:6px 8px; font-size:.85rem;
+  min-height:44px; min-width:0; background:var(--pearl); color:var(--green-deep); } /* F5: touch-target floor, was 36px */
+
+.toast { position:fixed; left:50%; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 58px); transform:translateX(-50%);
+  background:#2a2a20; color:#fff; padding:9px 16px; border-radius:999px; font-size:.85rem; z-index:40;
+  box-shadow:0 4px 14px rgba(0,0,0,.4); opacity:0; pointer-events:none; transition:opacity .25s; max-width:88vw;
+  text-align:center; }
+.toast.show { opacity:1; }
+
+/* -------------------------------------------------- greeting / name / certificates */
+/* Lives inside the setup sheet now (cream/white background), not the old
+   gold bottom bar, so this needs a dark ink color rather than the pale gold
+   that used to sit on that bar. */
+.greeting { text-align:center; font-size:.9rem; font-weight:600; color:var(--green-deep); padding:0 0 10px; }
+
+.namerow { margin-top:10px; padding-top:10px; border-top:1px solid var(--gold-line); }
+.namerow p { font-size:.85rem; color:var(--green-deep); margin-bottom:8px; text-align:center; }
+.namerow-inputs { display:flex; gap:8px; }
+.namerow-inputs input { flex:1; padding:9px; border:1px solid var(--gold-deep); border-radius:9px; font-size:.95rem;
+  background:var(--pearl); color:var(--ink); }
+.namerow-inputs button { padding:9px 16px; }
+.namerow > .ghostbtn { margin-top:6px; }
+
+/* Stacked above .donebanner -- a page completion that also finishes a surah
+   shows both at once (e.g. page 604 finishes 3 surahs). */
+/* Residual audit A1: visibility is driven purely by the `hidden` HTML
+   attribute (app.js toggles el.surahCelebrate.hidden, never style.display)
+   -- same pattern as .install-promo below, and for the same reason (a base
+   `display:none` here would need `!important` to ever beat the global
+   `[hidden]{display:none!important}` rule when hidden is true, and would
+   otherwise just permanently hide this element even once `hidden` is
+   removed, since removing an attribute alone can't override a same-
+   specificity class rule). No explicit `display` here -- the div's UA
+   default of `block` is exactly what's wanted once `hidden` is gone. */
+.surahcelebrate { position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 108px); left:12px; right:12px; z-index:22;
+  background:linear-gradient(180deg,#1f6b42,#0e3d24); border:1px solid var(--gold-deep); border-radius:12px;
+  padding:12px 14px; text-align:center; color:#f3e6bb; box-shadow:0 6px 20px rgba(0,0,0,.35); }
+.surahcelebrate-text { font-weight:700; font-size:.95rem; margin-bottom:8px; }
+.surahcelebrate-actions { display:flex; align-items:center; justify-content:center; gap:10px; }
+.surahcelebrate-actions .bigbtn { flex:1; margin-top:0; max-width:220px; }
+.surahcelebrate-actions .iconbtn { flex-shrink:0; }
+
+/* ---- PWA install promotion card (founder idea #2) -- one-time, dismissible
+   forever, shown only from the user's second session onward, never inside
+   an already-installed standalone window. Sits above the surah-celebrate/
+   sharebar/donebanner stack (z-index 23 > 22/21) since it can in principle
+   coincide with any of them, but in practice fires at most once ever. ---- */
+.install-promo { display:flex; flex-direction:column; gap:8px; position:fixed;
+  left:12px; right:12px; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 108px);
+  z-index:23; background:var(--sheet); border:1px solid var(--gold-deep); border-radius:14px;
+  padding:14px 16px; box-shadow:0 8px 28px rgba(0,0,0,.4); }
+.install-promo-close { position:absolute; top:8px; inset-inline-end:8px; width:28px; height:28px; font-size:.85rem; }
+.install-promo-title { font-weight:700; font-size:.92rem; color:var(--green-deep); padding-inline-end:26px; }
+.install-promo-ios { display:flex; flex-direction:column; gap:8px; }
+.install-step { display:flex; align-items:center; gap:10px; font-size:.85rem; }
+.install-icon { width:26px; height:26px; flex-shrink:0; color:var(--green-deep); }
+.install-promo .bigbtn, .install-promo .ghostbtn { margin-top:0; }
+
+.cert-list { display:flex; flex-direction:column; gap:0; }
+.cert-item { display:flex; justify-content:space-between; align-items:center; padding:10px 4px;
+  border-bottom:1px solid var(--gold-line); font-size:.85rem; background:none; border-left:none; border-right:none;
+  border-top:none; width:100%; text-align:inherit; cursor:pointer; color:var(--ink); }
+.cert-item:last-child { border-bottom:none; }
+.cert-item:hover, .cert-item:active { background:#f6f1e4; }
+.cert-item .cert-name { font-weight:700; color:var(--green-deep); font-family:'UthmanicHafs',serif; font-size:1rem; }
+.cert-item .cert-date { color:var(--muted); font-size:.75rem; font-variant-numeric:tabular-nums; }
+
+.cert-modal { display:none; position:fixed; inset:0; z-index:50; background:rgba(10,20,14,.82);
+  align-items:center; justify-content:center; padding:16px; }
+.cert-modal-inner { position:relative; width:100%; max-width:420px; display:flex; flex-direction:column;
+  align-items:center; gap:12px; }
+.cert-canvas-wrap { width:100%; border-radius:10px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,.5); }
+#certCanvas { display:block; width:100%; height:auto; }
+.cert-close { position:absolute; top:-46px; right:0; background:var(--pearl); }
+.cert-actions { display:flex; gap:10px; width:100%; }
+.cert-actions button { flex:1; }
+
+/* ---- one-time first-run hint (elderly audit): points at the mic, dismisses
+   on tap or after 3s, never shown again once localStorage records it.
+   inset-inline-end here is only a layout fallback/starting point --
+   app.js's positionFirstRunHint() (residual audit C4, extended by F4)
+   overrides it with an inline `left` computed from #recBtn's real center
+   the moment the hint is shown (and again on rotation/resize while it's
+   still visible), so the two stay centered on each other regardless of
+   language/text-wrap width or a mid-hint device rotation. ---- */
+.first-run-hint { position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 66px);
+  inset-inline-end:16px; max-width:220px; z-index:24; background:var(--sheet); border:1px solid var(--gold-deep);
+  border-radius:12px; padding:28px 14px 10px; box-shadow:0 6px 20px rgba(0,0,0,.35); text-align:center;
+  font-size:14px; color:var(--ink); cursor:pointer; }
+/* F4 fix: the arrow is absolutely positioned (independent of the box's own
+   text-align:center) so app.js can slide it to sit directly over #recBtn's
+   center even when the box itself is clamped away from that center at
+   narrow viewport widths (see positionFirstRunHint()'s F4 comment). The
+   `left` below is only the pre-JS fallback (horizontally centered in the
+   box); app.js always overrides it once the hint is shown. Color switched
+   from --gold-deep (3.4:1 against --sheet, below the 4.5:1 floor) to --ink
+   (14.2:1) for contrast. padding-top on .first-run-hint above reserves the
+   strip this absolutely-positioned arrow now occupies. */
+.first-run-hint-arrow { position:absolute; top:6px; left:50%; transform:translateX(-50%);
+  font-size:1.3rem; line-height:1; color:var(--ink); }
+/* Second line (residual audit C4: introduces the ⚙️ button) -- consecutive
+   <p>s otherwise have zero gap under this file's global margin/padding
+   reset. */
+.first-run-hint p + p { margin-top:6px; color:var(--muted); }
+
+/* ---- collapsed "how does the app work?" entry (residual audit C6) -- a
+   minimal <details>/<summary> row at the top of the setup sheet. Respects
+   the 14px text floor and the 44px touch-target floor on its summary. ---- */
+.help-entry { margin-bottom:10px; }
+.help-entry summary { display:flex; align-items:center; min-height:44px; padding:4px 2px;
+  font-size:14px; font-weight:600; color:var(--green-deep); cursor:pointer; }
+.help-entry p { font-size:14px; line-height:1.6; color:var(--ink); padding:2px 2px 6px; }
+
+/* ---- motion (a11y F9): every remaining CSS transition on a UI element that
+   moves/fades is gated behind prefers-reduced-motion -- placed last so it
+   wins the cascade over each rule's own (equal-specificity) transition. ---- */
+@media (prefers-reduced-motion: reduce) {
+  .topbar, .sheet, .sheet.open, .drawer, .drawer.open, .toast,
+  .progressbar > div, .progressstrip > div {
+    transition:none;
+  }
+  /* wave-2 fix #1: the spinner's rotation is a loading indicator, not
+     decoration, but a continuous spin is still motion -- swap it for a
+     static ring (still clearly distinct from "loaded but veiled") instead
+     of removing the animation with nothing replacing it. */
+  .pagespinner.show { animation:none; opacity:.85; }
+}
+
+/* ---- forced-colors / Windows High Contrast (residual audit B6): the
+   "pressed"/"current" states below are conveyed only by a background-color
+   swap (.level-seg.active, .drawer-tabs button.active), which forced-colors
+   mode flattens away entirely -- these states need their own
+   non-color-dependent indicator (outline + underline) so they stay visible
+   there. Targets the actual state attributes app.js maintains
+   (aria-pressed for the level/focus-line segments, aria-current for the
+   active drawer tab) rather than the presentational classes, so this never
+   drifts out of sync with what's really selected. ---- */
+@media (forced-colors: active) {
+  .level-seg[aria-pressed="true"],
+  .drawer-tabs button[aria-current],
+  .drawer-tabs button[aria-selected="true"] {
+    outline: 2px solid Highlight;
+    outline-offset: -2px;
+    text-decoration: underline;
+    border-color: Highlight;
+  }
+}
+
+/* landscape: give every extra pixel to the Quran text */
+@media (orientation: landscape) {
+  .topbar { padding:3px 10px; }
+  .iconbtn { width:30px; height:30px; font-size:.9rem; }
+  .pagenav .chip { padding:3px 12px; font-size:.78rem; min-width:60px; }
+  .floatbar { bottom:calc(env(safe-area-inset-bottom) + 10px); inset-inline-end:10px; gap:8px; }
+  .floatbar .setupbtn { width:38px; height:38px; font-size:1.05rem; }
+  .recbtn { width:46px; height:46px; font-size:1.2rem; }
+}

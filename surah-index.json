@@ -1,0 +1,811 @@
+{
+  "surahs": [
+    {
+      "number": 1,
+      "name": "الفاتحة",
+      "firstPage": 1,
+      "headerPage": 1
+    },
+    {
+      "number": 2,
+      "name": "البقرة",
+      "firstPage": 2,
+      "headerPage": 2
+    },
+    {
+      "number": 3,
+      "name": "آل عمران",
+      "firstPage": 50,
+      "headerPage": 50
+    },
+    {
+      "number": 4,
+      "name": "النساء",
+      "firstPage": 77,
+      "headerPage": 76
+    },
+    {
+      "number": 5,
+      "name": "المائدة",
+      "firstPage": 106,
+      "headerPage": 106
+    },
+    {
+      "number": 6,
+      "name": "الأنعام",
+      "firstPage": 128,
+      "headerPage": 128
+    },
+    {
+      "number": 7,
+      "name": "الأعراف",
+      "firstPage": 151,
+      "headerPage": 151
+    },
+    {
+      "number": 8,
+      "name": "الأنفال",
+      "firstPage": 177,
+      "headerPage": 177
+    },
+    {
+      "number": 9,
+      "name": "التوبة",
+      "firstPage": 187,
+      "headerPage": 187
+    },
+    {
+      "number": 10,
+      "name": "يونس",
+      "firstPage": 208,
+      "headerPage": 207
+    },
+    {
+      "number": 11,
+      "name": "هود",
+      "firstPage": 221,
+      "headerPage": 221
+    },
+    {
+      "number": 12,
+      "name": "يوسف",
+      "firstPage": 235,
+      "headerPage": 235
+    },
+    {
+      "number": 13,
+      "name": "الرعد",
+      "firstPage": 249,
+      "headerPage": 249
+    },
+    {
+      "number": 14,
+      "name": "ابراهيم",
+      "firstPage": 255,
+      "headerPage": 255
+    },
+    {
+      "number": 15,
+      "name": "الحجر",
+      "firstPage": 262,
+      "headerPage": 262
+    },
+    {
+      "number": 16,
+      "name": "النحل",
+      "firstPage": 267,
+      "headerPage": 267
+    },
+    {
+      "number": 17,
+      "name": "الإسراء",
+      "firstPage": 282,
+      "headerPage": 282
+    },
+    {
+      "number": 18,
+      "name": "الكهف",
+      "firstPage": 293,
+      "headerPage": 293
+    },
+    {
+      "number": 19,
+      "name": "مريم",
+      "firstPage": 305,
+      "headerPage": 305
+    },
+    {
+      "number": 20,
+      "name": "طه",
+      "firstPage": 312,
+      "headerPage": 312
+    },
+    {
+      "number": 21,
+      "name": "الأنبياء",
+      "firstPage": 322,
+      "headerPage": 322
+    },
+    {
+      "number": 22,
+      "name": "الحج",
+      "firstPage": 332,
+      "headerPage": 331
+    },
+    {
+      "number": 23,
+      "name": "المؤمنون",
+      "firstPage": 342,
+      "headerPage": 341
+    },
+    {
+      "number": 24,
+      "name": "النور",
+      "firstPage": 350,
+      "headerPage": 349
+    },
+    {
+      "number": 25,
+      "name": "الفرقان",
+      "firstPage": 359,
+      "headerPage": 359
+    },
+    {
+      "number": 26,
+      "name": "الشعراء",
+      "firstPage": 367,
+      "headerPage": 366
+    },
+    {
+      "number": 27,
+      "name": "النمل",
+      "firstPage": 377,
+      "headerPage": 376
+    },
+    {
+      "number": 28,
+      "name": "القصص",
+      "firstPage": 385,
+      "headerPage": 385
+    },
+    {
+      "number": 29,
+      "name": "العنكبوت",
+      "firstPage": 396,
+      "headerPage": 396
+    },
+    {
+      "number": 30,
+      "name": "الروم",
+      "firstPage": 404,
+      "headerPage": 404
+    },
+    {
+      "number": 31,
+      "name": "لقمان",
+      "firstPage": 411,
+      "headerPage": 411
+    },
+    {
+      "number": 32,
+      "name": "السجدة",
+      "firstPage": 415,
+      "headerPage": 414
+    },
+    {
+      "number": 33,
+      "name": "الأحزاب",
+      "firstPage": 418,
+      "headerPage": 417
+    },
+    {
+      "number": 34,
+      "name": "سبإ",
+      "firstPage": 428,
+      "headerPage": 428
+    },
+    {
+      "number": 35,
+      "name": "فاطر",
+      "firstPage": 434,
+      "headerPage": 434
+    },
+    {
+      "number": 36,
+      "name": "يس",
+      "firstPage": 440,
+      "headerPage": 440
+    },
+    {
+      "number": 37,
+      "name": "الصافات",
+      "firstPage": 446,
+      "headerPage": 445
+    },
+    {
+      "number": 38,
+      "name": "ص",
+      "firstPage": 453,
+      "headerPage": 452
+    },
+    {
+      "number": 39,
+      "name": "الزمر",
+      "firstPage": 458,
+      "headerPage": 458
+    },
+    {
+      "number": 40,
+      "name": "غافر",
+      "firstPage": 467,
+      "headerPage": 467
+    },
+    {
+      "number": 41,
+      "name": "فصلت",
+      "firstPage": 477,
+      "headerPage": 477
+    },
+    {
+      "number": 42,
+      "name": "الشورى",
+      "firstPage": 483,
+      "headerPage": 483
+    },
+    {
+      "number": 43,
+      "name": "الزخرف",
+      "firstPage": 489,
+      "headerPage": 489
+    },
+    {
+      "number": 44,
+      "name": "الدخان",
+      "firstPage": 496,
+      "headerPage": 496
+    },
+    {
+      "number": 45,
+      "name": "الجاثية",
+      "firstPage": 499,
+      "headerPage": 498
+    },
+    {
+      "number": 46,
+      "name": "الأحقاف",
+      "firstPage": 502,
+      "headerPage": 502
+    },
+    {
+      "number": 47,
+      "name": "محمد",
+      "firstPage": 507,
+      "headerPage": 506
+    },
+    {
+      "number": 48,
+      "name": "الفتح",
+      "firstPage": 511,
+      "headerPage": 511
+    },
+    {
+      "number": 49,
+      "name": "الحجرات",
+      "firstPage": 515,
+      "headerPage": 515
+    },
+    {
+      "number": 50,
+      "name": "ق",
+      "firstPage": 518,
+      "headerPage": 518
+    },
+    {
+      "number": 51,
+      "name": "الذاريات",
+      "firstPage": 520,
+      "headerPage": 520
+    },
+    {
+      "number": 52,
+      "name": "الطور",
+      "firstPage": 523,
+      "headerPage": 523
+    },
+    {
+      "number": 53,
+      "name": "النجم",
+      "firstPage": 526,
+      "headerPage": 525
+    },
+    {
+      "number": 54,
+      "name": "القمر",
+      "firstPage": 528,
+      "headerPage": 528
+    },
+    {
+      "number": 55,
+      "name": "الرحمن",
+      "firstPage": 531,
+      "headerPage": 531
+    },
+    {
+      "number": 56,
+      "name": "الواقعة",
+      "firstPage": 534,
+      "headerPage": 534
+    },
+    {
+      "number": 57,
+      "name": "الحديد",
+      "firstPage": 537,
+      "headerPage": 537
+    },
+    {
+      "number": 58,
+      "name": "المجادلة",
+      "firstPage": 542,
+      "headerPage": 542
+    },
+    {
+      "number": 59,
+      "name": "الحشر",
+      "firstPage": 545,
+      "headerPage": 545
+    },
+    {
+      "number": 60,
+      "name": "الممتحنة",
+      "firstPage": 549,
+      "headerPage": 548
+    },
+    {
+      "number": 61,
+      "name": "الصف",
+      "firstPage": 551,
+      "headerPage": 551
+    },
+    {
+      "number": 62,
+      "name": "الجمعة",
+      "firstPage": 553,
+      "headerPage": 553
+    },
+    {
+      "number": 63,
+      "name": "المنافقون",
+      "firstPage": 554,
+      "headerPage": 554
+    },
+    {
+      "number": 64,
+      "name": "التغابن",
+      "firstPage": 556,
+      "headerPage": 555
+    },
+    {
+      "number": 65,
+      "name": "الطلاق",
+      "firstPage": 558,
+      "headerPage": 557
+    },
+    {
+      "number": 66,
+      "name": "التحريم",
+      "firstPage": 560,
+      "headerPage": 560
+    },
+    {
+      "number": 67,
+      "name": "الملك",
+      "firstPage": 562,
+      "headerPage": 562
+    },
+    {
+      "number": 68,
+      "name": "القلم",
+      "firstPage": 564,
+      "headerPage": 564
+    },
+    {
+      "number": 69,
+      "name": "الحاقة",
+      "firstPage": 566,
+      "headerPage": 566
+    },
+    {
+      "number": 70,
+      "name": "المعارج",
+      "firstPage": 568,
+      "headerPage": 568
+    },
+    {
+      "number": 71,
+      "name": "نوح",
+      "firstPage": 570,
+      "headerPage": 570
+    },
+    {
+      "number": 72,
+      "name": "الجن",
+      "firstPage": 572,
+      "headerPage": 572
+    },
+    {
+      "number": 73,
+      "name": "المزمل",
+      "firstPage": 574,
+      "headerPage": 574
+    },
+    {
+      "number": 74,
+      "name": "المدثر",
+      "firstPage": 575,
+      "headerPage": 575
+    },
+    {
+      "number": 75,
+      "name": "القيامة",
+      "firstPage": 577,
+      "headerPage": 577
+    },
+    {
+      "number": 76,
+      "name": "الانسان",
+      "firstPage": 578,
+      "headerPage": 578
+    },
+    {
+      "number": 77,
+      "name": "المرسلات",
+      "firstPage": 580,
+      "headerPage": 580
+    },
+    {
+      "number": 78,
+      "name": "النبإ",
+      "firstPage": 582,
+      "headerPage": 582
+    },
+    {
+      "number": 79,
+      "name": "النازعات",
+      "firstPage": 583,
+      "headerPage": 583
+    },
+    {
+      "number": 80,
+      "name": "عبس",
+      "firstPage": 585,
+      "headerPage": 584
+    },
+    {
+      "number": 81,
+      "name": "التكوير",
+      "firstPage": 586,
+      "headerPage": 586
+    },
+    {
+      "number": 82,
+      "name": "الإنفطار",
+      "firstPage": 587,
+      "headerPage": 586
+    },
+    {
+      "number": 83,
+      "name": "المطففين",
+      "firstPage": 587,
+      "headerPage": 587
+    },
+    {
+      "number": 84,
+      "name": "الإنشقاق",
+      "firstPage": 589,
+      "headerPage": 589
+    },
+    {
+      "number": 85,
+      "name": "البروج",
+      "firstPage": 590,
+      "headerPage": 590
+    },
+    {
+      "number": 86,
+      "name": "الطارق",
+      "firstPage": 591,
+      "headerPage": 590
+    },
+    {
+      "number": 87,
+      "name": "الأعلى",
+      "firstPage": 591,
+      "headerPage": 591
+    },
+    {
+      "number": 88,
+      "name": "الغاشية",
+      "firstPage": 592,
+      "headerPage": 592
+    },
+    {
+      "number": 89,
+      "name": "الفجر",
+      "firstPage": 593,
+      "headerPage": 593
+    },
+    {
+      "number": 90,
+      "name": "البلد",
+      "firstPage": 594,
+      "headerPage": 594
+    },
+    {
+      "number": 91,
+      "name": "الشمس",
+      "firstPage": 595,
+      "headerPage": 594
+    },
+    {
+      "number": 92,
+      "name": "الليل",
+      "firstPage": 595,
+      "headerPage": 595
+    },
+    {
+      "number": 93,
+      "name": "الضحى",
+      "firstPage": 596,
+      "headerPage": 596
+    },
+    {
+      "number": 94,
+      "name": "الشرح",
+      "firstPage": 596,
+      "headerPage": 596
+    },
+    {
+      "number": 95,
+      "name": "التين",
+      "firstPage": 597,
+      "headerPage": 597
+    },
+    {
+      "number": 96,
+      "name": "العلق",
+      "firstPage": 597,
+      "headerPage": 597
+    },
+    {
+      "number": 97,
+      "name": "القدر",
+      "firstPage": 598,
+      "headerPage": 598
+    },
+    {
+      "number": 98,
+      "name": "البينة",
+      "firstPage": 598,
+      "headerPage": 598
+    },
+    {
+      "number": 99,
+      "name": "الزلزلة",
+      "firstPage": 599,
+      "headerPage": 599
+    },
+    {
+      "number": 100,
+      "name": "العاديات",
+      "firstPage": 599,
+      "headerPage": 599
+    },
+    {
+      "number": 101,
+      "name": "القارعة",
+      "firstPage": 600,
+      "headerPage": 600
+    },
+    {
+      "number": 102,
+      "name": "التكاثر",
+      "firstPage": 600,
+      "headerPage": 600
+    },
+    {
+      "number": 103,
+      "name": "العصر",
+      "firstPage": 601,
+      "headerPage": 601
+    },
+    {
+      "number": 104,
+      "name": "الهمزة",
+      "firstPage": 601,
+      "headerPage": 601
+    },
+    {
+      "number": 105,
+      "name": "الفيل",
+      "firstPage": 601,
+      "headerPage": 601
+    },
+    {
+      "number": 106,
+      "name": "قريش",
+      "firstPage": 602,
+      "headerPage": 602
+    },
+    {
+      "number": 107,
+      "name": "الماعون",
+      "firstPage": 602,
+      "headerPage": 602
+    },
+    {
+      "number": 108,
+      "name": "الكوثر",
+      "firstPage": 602,
+      "headerPage": 602
+    },
+    {
+      "number": 109,
+      "name": "الكافرون",
+      "firstPage": 603,
+      "headerPage": 603
+    },
+    {
+      "number": 110,
+      "name": "النصر",
+      "firstPage": 603,
+      "headerPage": 603
+    },
+    {
+      "number": 111,
+      "name": "المسد",
+      "firstPage": 603,
+      "headerPage": 603
+    },
+    {
+      "number": 112,
+      "name": "الإخلاص",
+      "firstPage": 604,
+      "headerPage": 604
+    },
+    {
+      "number": 113,
+      "name": "الفلق",
+      "firstPage": 604,
+      "headerPage": 604
+    },
+    {
+      "number": 114,
+      "name": "الناس",
+      "firstPage": 604,
+      "headerPage": 604
+    }
+  ],
+  "juz": [
+    {
+      "number": 1,
+      "firstPage": 1
+    },
+    {
+      "number": 2,
+      "firstPage": 22
+    },
+    {
+      "number": 3,
+      "firstPage": 42
+    },
+    {
+      "number": 4,
+      "firstPage": 62
+    },
+    {
+      "number": 5,
+      "firstPage": 82
+    },
+    {
+      "number": 6,
+      "firstPage": 102
+    },
+    {
+      "number": 7,
+      "firstPage": 121
+    },
+    {
+      "number": 8,
+      "firstPage": 142
+    },
+    {
+      "number": 9,
+      "firstPage": 162
+    },
+    {
+      "number": 10,
+      "firstPage": 182
+    },
+    {
+      "number": 11,
+      "firstPage": 201
+    },
+    {
+      "number": 12,
+      "firstPage": 222
+    },
+    {
+      "number": 13,
+      "firstPage": 242
+    },
+    {
+      "number": 14,
+      "firstPage": 262
+    },
+    {
+      "number": 15,
+      "firstPage": 282
+    },
+    {
+      "number": 16,
+      "firstPage": 302
+    },
+    {
+      "number": 17,
+      "firstPage": 322
+    },
+    {
+      "number": 18,
+      "firstPage": 342
+    },
+    {
+      "number": 19,
+      "firstPage": 362
+    },
+    {
+      "number": 20,
+      "firstPage": 382
+    },
+    {
+      "number": 21,
+      "firstPage": 402
+    },
+    {
+      "number": 22,
+      "firstPage": 422
+    },
+    {
+      "number": 23,
+      "firstPage": 442
+    },
+    {
+      "number": 24,
+      "firstPage": 462
+    },
+    {
+      "number": 25,
+      "firstPage": 482
+    },
+    {
+      "number": 26,
+      "firstPage": 502
+    },
+    {
+      "number": 27,
+      "firstPage": 522
+    },
+    {
+      "number": 28,
+      "firstPage": 542
+    },
+    {
+      "number": 29,
+      "firstPage": 562
+    },
+    {
+      "number": 30,
+      "firstPage": 582
+    }
+  ],
+  "pageCount": 604
+}

@@ -1,0 +1,202 @@
+// Frictionless accounts: guest-by-default, one-tap "save your progress",
+// login-by-code-only. Talks to the server contract in server/main.py:
+//   POST /account  {nickname?}         -> {code, code_raw, nickname}
+//   GET  /progress  (Bearer <digits>)  -> {key: value, ...}
+//   PUT  /progress  (Bearer <digits>)  -> body {key: value, ...}
+// No SERVER_URL configured => isEnabled() is false and the UI shows a
+// "coming soon" state; the app remains fully usable as guest either way.
+(function (global) {
+  'use strict';
+
+  // Mirrors server/accounts.py normalize_code(): Arabic-Indic (٠-٩) and
+  // Extended Arabic-Indic (۰-۹) digits -> Western, strip everything else.
+  var DIGIT_MAP = {};
+  for (var i = 0; i < 10; i++) {
+    DIGIT_MAP[String.fromCharCode(0x0660 + i)] = String(i);
+    DIGIT_MAP[String.fromCharCode(0x06F0 + i)] = String(i);
+  }
+  function normalizeCode(raw) {
+    if (!raw) return '';
+    var out = '';
+    for (var j = 0; j < raw.length; j++) {
+      var ch = raw[j];
+      if (DIGIT_MAP[ch]) out += DIGIT_MAP[ch];
+      else if (ch >= '0' && ch <= '9') out += ch;
+    }
+    return out;
+  }
+  // 3-3-4 space grouping, partial-safe for any digit-string length 0..10
+  // (e.g. "47285" -> "472 85"). formatCode() (full 10-digit display, e.g.
+  // the big post-creation code) and the live login-input formatter below
+  // both build on this so the grouping is defined in exactly one place.
+  function groupDigits(digits) {
+    var parts = [];
+    if (digits.length > 0) parts.push(digits.slice(0, 3));
+    if (digits.length > 3) parts.push(digits.slice(3, 6));
+    if (digits.length > 6) parts.push(digits.slice(6, 10));
+    return parts.join(' ');
+  }
+  function formatCode(digits) {
+    if (digits.length !== 10) return digits;
+    return groupDigits(digits);
+  }
+  function isDigitLikeChar(ch) {
+    return (ch >= '0' && ch <= '9') || !!DIGIT_MAP[ch];
+  }
+  // Index into `formatted` (a groupDigits() result: western digits + spaces
+  // only) right after the Nth digit character, for caret restoration.
+  function caretIndexForDigitCount(formatted, digitCount) {
+    if (digitCount <= 0) return 0;
+    var seen = 0;
+    for (var i = 0; i < formatted.length; i++) {
+      if (formatted[i] >= '0' && formatted[i] <= '9') {
+        seen++;
+        if (seen === digitCount) return i + 1;
+      }
+    }
+    return formatted.length;
+  }
+  // Live-formats a text <input> as digits are typed/pasted: accepts
+  // Arabic-Indic digits (displayed normalized to Western, per spec), strips
+  // any pasted spaces/dashes/other characters, caps at 10 digits, and
+  // re-groups 3-3-4 with spaces on every keystroke while keeping the caret
+  // in a sane spot (reformat-then-restore-by-digit-count, the standard
+  // approach for this kind of masked input). Submission-time normalization
+  // (normalizeCode on the field's raw value) is unrelated and unaffected --
+  // this only changes what's displayed while typing.
+  function attachGroupedInput(inputEl) {
+    inputEl.addEventListener('input', function () {
+      var raw = inputEl.value;
+      var caret = inputEl.selectionStart == null ? raw.length : inputEl.selectionStart;
+      var digitsBeforeCaret = 0;
+      for (var i = 0; i < caret && i < raw.length; i++) {
+        if (isDigitLikeChar(raw[i])) digitsBeforeCaret++;
+      }
+      var allDigits = normalizeCode(raw).slice(0, 10);
+      if (digitsBeforeCaret > allDigits.length) digitsBeforeCaret = allDigits.length;
+      var formatted = groupDigits(allDigits);
+      inputEl.value = formatted;
+      var newCaret = caretIndexForDigitCount(formatted, digitsBeforeCaret);
+      try { inputEl.setSelectionRange(newCaret, newCaret); } catch (_) {}
+    });
+  }
+
+  function serverUrl() {
+    var cfg = global.TASME3_CONFIG || {};
+    return (cfg.SERVER_URL || '').replace(/\/+$/, '');
+  }
+  function isEnabled() { return !!serverUrl(); }
+
+  function apiFetch(path, opts) {
+    opts = opts || {};
+    var url = serverUrl() + path;
+    return fetch(url, opts).then(function (r) {
+      if (!r.ok) {
+        var err = new Error('http_' + r.status);
+        err.status = r.status;
+        throw err;
+      }
+      return r.json();
+    });
+  }
+
+  function createAccount(nickname) {
+    if (!isEnabled()) return Promise.reject(new Error('server_disabled'));
+    return apiFetch('/account', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nickname: nickname || null })
+    });
+  }
+
+  function authHeaders(codeDigits) {
+    return { Authorization: 'Bearer ' + codeDigits };
+  }
+
+  function fetchProgress(codeDigits) {
+    if (!isEnabled()) return Promise.reject(new Error('server_disabled'));
+    return apiFetch('/progress', { headers: authHeaders(codeDigits) });
+  }
+
+  function putProgress(codeDigits, data) {
+    if (!isEnabled()) return Promise.reject(new Error('server_disabled'));
+    return apiFetch('/progress', {
+      method: 'PUT',
+      headers: Object.assign({ 'Content-Type': 'application/json' }, authHeaders(codeDigits)),
+      body: JSON.stringify(data)
+    });
+  }
+
+  // Merge server progress into local state: server wins per top-level key
+  // (progressByPage / streak / today / profile) when that key was returned,
+  // per the sync spec in docs/BUILD-PLAN.md. `name` is the one exception
+  // baked into `settings` (otherwise entirely local-only): if the server
+  // has a name from another device, adopt it; never erase a locally-set
+  // name just because an older/other device's payload omitted it.
+  function mergeServerIntoLocal(state, serverData) {
+    if (!serverData || typeof serverData !== 'object') return state;
+    var validate = global.Tasme3Storage.validate;
+    var mergedSettings = state.settings;
+    if (Object.prototype.hasOwnProperty.call(serverData, 'name') && serverData.name) {
+      mergedSettings = Object.assign({}, state.settings, { name: serverData.name });
+    }
+    var merged = {
+      v: 1,
+      profile: Object.prototype.hasOwnProperty.call(serverData, 'profile') ? serverData.profile : state.profile,
+      progressByPage: Object.prototype.hasOwnProperty.call(serverData, 'progressByPage') ? serverData.progressByPage : state.progressByPage,
+      streak: Object.prototype.hasOwnProperty.call(serverData, 'streak') ? serverData.streak : state.streak,
+      today: Object.prototype.hasOwnProperty.call(serverData, 'today') ? serverData.today : state.today,
+      settings: mergedSettings
+    };
+    // Re-validate after merge (a malformed server payload must not corrupt
+    // local storage either — same C5a discipline applies to remote data).
+    return validate(JSON.stringify(merged));
+  }
+
+  var syncTimer = null;
+  var SYNC_DEBOUNCE_MS = 1500;
+
+  // Debounced PUT of the syncable top-level keys. Call after each completed
+  // page (and after the name is set/changed). No-ops when logged out or
+  // server disabled. `name` rides along as its own top-level progress key
+  // (not nested in `profile`) per the founder's name/greeting feature spec.
+  function scheduleSync(getState) {
+    if (!isEnabled()) return;
+    var state = getState();
+    if (!state.profile.code) return;
+    if (syncTimer) clearTimeout(syncTimer);
+    syncTimer = setTimeout(function () {
+      syncTimer = null;
+      var s = getState();
+      if (!s.profile.code) return;
+      putProgress(s.profile.code, {
+        progressByPage: s.progressByPage,
+        streak: s.streak,
+        today: s.today,
+        profile: { nickname: s.profile.nickname },
+        name: s.settings.name
+      }).then(function () {
+        s.settings.lastSyncedAt = new Date().toISOString();
+        global.Tasme3Storage.save(s);
+      }).catch(function () { /* best-effort; next completed page retries */ });
+    }, SYNC_DEBOUNCE_MS);
+  }
+
+  function whatsAppUrl(text) {
+    return 'https://wa.me/?text=' + encodeURIComponent(text);
+  }
+
+  global.Tasme3Account = {
+    isEnabled: isEnabled,
+    normalizeCode: normalizeCode,
+    formatCode: formatCode,
+    groupDigits: groupDigits,
+    attachGroupedInput: attachGroupedInput,
+    createAccount: createAccount,
+    fetchProgress: fetchProgress,
+    putProgress: putProgress,
+    mergeServerIntoLocal: mergeServerIntoLocal,
+    scheduleSync: scheduleSync,
+    whatsAppUrl: whatsAppUrl
+  };
+})(window);

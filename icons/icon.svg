@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="32%" r="75%">
+      <stop offset="0%" stop-color="#14452a"/>
+      <stop offset="60%" stop-color="#0c2e1b"/>
+      <stop offset="100%" stop-color="#081f12"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#efe1b4"/>
+      <stop offset="30%" stop-color="#d4b96a"/>
+      <stop offset="55%" stop-color="#e9d9a5"/>
+      <stop offset="80%" stop-color="#c8a951"/>
+      <stop offset="100%" stop-color="#f0e3b8"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <circle cx="256" cy="256" r="182" fill="none" stroke="url(#gold)" stroke-width="14"/>
+  <!-- open book -->
+  <g transform="translate(256,266)">
+    <path d="M -132 -34 Q -70 -70 0 -34 L 0 92 Q -70 58 -132 92 Z" fill="#f6f1e4"/>
+    <path d="M 132 -34 Q 70 -70 0 -34 L 0 92 Q 70 58 132 92 Z" fill="#f6f1e4"/>
+    <path d="M -132 -34 Q -70 -70 0 -34 L 0 92 Q -70 58 -132 92 Z" fill="none" stroke="#a8862f" stroke-width="4"/>
+    <path d="M 132 -34 Q 70 -70 0 -34 L 0 92 Q 70 58 132 92 Z" fill="none" stroke="#a8862f" stroke-width="4"/>
+    <line x1="-104" y1="-8" x2="-30" y2="6" stroke="#a8862f" stroke-width="5" stroke-linecap="round"/>
+    <line x1="-104" y1="18" x2="-30" y2="32" stroke="#a8862f" stroke-width="5" stroke-linecap="round"/>
+    <line x1="-104" y1="44" x2="-30" y2="58" stroke="#a8862f" stroke-width="5" stroke-linecap="round"/>
+    <line x1="104" y1="-8" x2="30" y2="6" stroke="#a8862f" stroke-width="5" stroke-linecap="round"/>
+    <line x1="104" y1="18" x2="30" y2="32" stroke="#a8862f" stroke-width="5" stroke-linecap="round"/>
+    <line x1="104" y1="44" x2="30" y2="58" stroke="#a8862f" stroke-width="5" stroke-linecap="round"/>
+  </g>
+  <!-- small sound wave above the book, evoking recitation -->
+  <g transform="translate(256,130)" stroke="url(#gold)" stroke-width="10" stroke-linecap="round" fill="none">
+    <path d="M -48 10 Q -48 -26 -18 -26 Q 12 -26 12 10"/>
+    <circle cx="-18" cy="10" r="7" fill="url(#gold)" stroke="none"/>
+  </g>
+</svg>

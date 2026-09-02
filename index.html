@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#0c2e1b">
+<title>تسميع</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<!-- Wave-2 fix #4: fonts.css is a single @font-face rule carrying a ~122KB
+     base64 decorative Arabic display font (UthmanicHafs, used for the logo
+     and surah names) -- loading it as a plain blocking <link rel=stylesheet>
+     held up first paint on a slow connection for the sake of text that's
+     only ever a small fraction of the page. preload+swap fetches it at high
+     priority WITHOUT blocking rendering, then swaps it in as a real
+     stylesheet the moment it arrives (the onload handler); style.css (small,
+     and needed for basic layout) stays a normal blocking stylesheet. The
+     <noscript> fallback covers the (rare) no-JS case. Trade-off accepted per
+     spec: the logo/drawer surah names may render in the system font for a
+     brief moment before swapping to UthmanicHafs. -->
+<link rel="preload" href="fonts.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="fonts.css"></noscript>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="frame">
+  <div class="progressstrip"><div id="pbarTop"></div></div>
+  <div class="topbar goldbar" id="topBar">
+    <div class="topbar-left">
+      <button id="menuBtn" class="iconbtn" data-i18n-aria-label="nav.menu">☰</button>
+    </div>
+    <div class="pagenav">
+      <div class="chip" id="pageChip"></div>
+    </div>
+    <div class="topbar-right">
+      <button id="fsBtn" class="iconbtn">⛶</button>
+    </div>
+  </div>
+
+  <button class="chrome-handle" id="chromeHandle" type="button" data-i18n-aria-label="nav.showBar"></button>
+
+  <div class="zoomwarn" id="zoomWarn">⚠️ الصفحة مكبّرة من جلسة سابقة — أغلق هذا التبويب تمامًا وافتح الرابط في تبويب جديد</div>
+
+  <!-- Mic-blocked recovery: normally hidden (in-flow, like .zoomwarn above),
+       shown only via showMicHelp() in app.js -- auto on mic error, or
+       manually from the setup sheet's link. Sits above the page rather than
+       floating over it so the typed fallback stays fully usable the moment
+       the mic path fails, with no permanent footprint the rest of the time. -->
+  <div class="helpbox" id="helpBox">
+    <b data-i18n="mic.blockedTitle">الميكروفون محجوب — جرّب الآتي:</b>
+    <button id="openTab" data-i18n="mic.openNewWindow">↗ افتح الصفحة في نافذة مستقلة ثم اضغط الميكروفون</button>
+    <div>
+      <span data-i18n="mic.iosSteps"></span><br>
+      <span data-i18n="mic.androidSteps"></span>
+    </div>
+  </div>
+  <div class="fallback" id="fallback"><input id="typeInput" data-i18n-placeholder="mic.typeFallback" /></div>
+
+  <div class="pagebox" id="pagebox"><canvas id="pagecanvas" role="img"></canvas>
+    <div class="pagespinner" id="pageSpinner" aria-hidden="true"></div>
+    <div class="pageerror" id="pageError"><p data-i18n="error.pageLoad">تعذر تحميل الصفحة</p><button id="pageErrorRetry" data-i18n="common.retry">إعادة المحاولة</button></div>
+  </div>
+
+  <div class="donebanner" id="doneBanner" data-i18n="recite.pageComplete">ما شاء الله! أتممت الصفحة ✓</div>
+  <div class="sharebar" id="shareBar"><button id="shareBtn" data-i18n="share.button">شارك إنجازك</button></div>
+
+  <div class="surahcelebrate" id="surahCelebrate" hidden>
+    <div class="surahcelebrate-text" id="surahCelebrateText" data-i18n="recite.surahComplete">ماشاء الله! أكملت السورة</div>
+    <div class="surahcelebrate-actions">
+      <button id="viewCertBtn" class="bigbtn" data-i18n="cert.viewButton">عرض الشهادة</button>
+      <button class="iconbtn" id="surahCelebrateClose" data-i18n-aria-label="drawer.close">✕</button>
+    </div>
+  </div>
+
+  <div class="cert-modal" id="certModal" hidden>
+    <div class="cert-modal-inner">
+      <button class="iconbtn cert-close" id="certCloseBtn" data-i18n-aria-label="drawer.close">✕</button>
+      <div class="cert-canvas-wrap"><canvas id="certCanvas"></canvas></div>
+      <div class="cert-actions">
+        <button id="certShareBtn" class="ghostbtn" data-i18n="cert.share">مشاركة</button>
+        <button id="certDownloadBtn" class="ghostbtn" data-i18n="cert.download">تحميل</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="first-run-hint" id="firstRunHint" hidden>
+    <div class="first-run-hint-arrow" aria-hidden="true">↓</div>
+    <p data-i18n="hint.firstRun"></p>
+    <p data-i18n="hint.settings"></p>
+  </div>
+
+  <div class="floatbar">
+    <button class="iconbtn setupbtn" id="setupBtn" data-i18n-aria-label="nav.settings">⚙️</button>
+    <button class="recbtn" id="recBtn">🎙️</button>
+  </div>
+</div>
+
+<div class="sheet-backdrop" id="setupBackdrop"></div>
+<div class="sheet" id="setupSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-head">
+    <h2 data-i18n="nav.settings">الإعدادات</h2>
+    <button class="iconbtn" id="setupClose" data-i18n-aria-label="drawer.close">✕</button>
+  </div>
+  <div class="sheet-body">
+    <div class="greeting" id="greetingLine" hidden></div>
+
+    <div class="help-entry">
+      <details>
+        <summary data-i18n="help.title">كيف يعمل التطبيق؟</summary>
+        <p data-i18n="help.body"></p>
+      </details>
+    </div>
+
+    <section class="sheet-section">
+      <h3 data-i18n="focusLine.label">وضع السطر الكبير</h3>
+      <div class="levels focusline-toggle" id="focusLineToggle">
+        <button type="button" class="level-seg" data-mode="auto" aria-pressed="true" data-i18n="focusLine.auto">تلقائي</button>
+        <button type="button" class="level-seg" data-mode="on" aria-pressed="false" data-i18n="focusLine.on">مفعّل</button>
+        <button type="button" class="level-seg" data-mode="off" aria-pressed="false" data-i18n="focusLine.off">متوقف</button>
+      </div>
+    </section>
+
+    <section class="sheet-section">
+      <h3 data-i18n="level.label">مستوى الصعوبة</h3>
+      <div class="levels" id="levels">
+        <button type="button" class="level-seg" data-l="1" aria-pressed="false" data-i18n-title="level.beginner"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.beginner"></span></button>
+        <button type="button" class="level-seg active" data-l="2" aria-pressed="true" data-i18n-title="level.intermediate"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.intermediate"></span></button>
+        <button type="button" class="level-seg" data-l="3" aria-pressed="false" data-i18n-title="level.precise"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.precise"></span></button>
+        <button type="button" class="level-seg" data-l="4" aria-pressed="false" data-i18n-title="level.ijazah"><span class="level-seg-num"></span><span class="level-seg-name" data-i18n="level.ijazah"></span></button>
+      </div>
+    </section>
+
+    <section class="sheet-section">
+      <h3 data-i18n="listen.panelToggle">خيارات الاستماع</h3>
+      <div class="listenpanel" id="listenPanel">
+        <button id="listenBtn" data-i18n="listen.button">استمع</button>
+        <button id="repeatBtn" data-i18n="listen.repeat">تكرار</button>
+        <select id="reciterSelect">
+          <option value="murattal" data-i18n="listen.reciterMurattal">المرتل (الحصري)</option>
+          <option value="muallim" data-i18n="listen.reciterMuallim">المصحف المعلم (الحصري)</option>
+          <option value="minshawi" data-i18n="listen.reciterMinshawi">المنشاوي — مرتل</option>
+          <option value="abdulbasit" data-i18n="listen.reciterAbdulBasit">عبد الباسط عبد الصمد — مرتل</option>
+          <option value="alafasy" data-i18n="listen.reciterAlafasy">مشاري العفاسي</option>
+        </select>
+      </div>
+      <div class="listen-attribution" id="listenAttribution" data-i18n="listen.attribution">التلاوة: الشيخ محمود خليل الحصري — الصوت من everyayah.com</div>
+      <div class="michelp-toggle"><a id="micHelpLink" href="#" data-i18n="mic.helpLink">🎤 الميكروفون لا يعمل؟</a></div>
+    </section>
+
+    <section class="sheet-section">
+      <h3 data-i18n="progress.title">تقدمك</h3>
+      <div class="progressbar"><div id="pbar"></div></div>
+      <div class="panelrow"><span data-i18n="progress.pageProgress">تقدم الصفحة</span><span class="num"><span id="count">٠</span>/<span id="total">٠</span></span></div>
+      <div class="panelrow"><span data-i18n="home.streak">السلسلة اليومية</span><span class="num" id="streakNum">٠</span></div>
+      <div class="panelrow"><span id="wordsTodayLabel">٠ كلمة اليوم</span><span class="num" id="wordsTodayNum"></span></div>
+      <div class="panelrow"><span id="wordsTotalLabel">٠ كلمة إجمالًا</span><span class="num" id="wordsTotalNum"></span></div>
+    </section>
+
+    <section class="sheet-section">
+      <button class="bigbtn" id="shareProgressBtn" data-i18n="share.button">شارك إنجازك</button>
+    </section>
+
+    <section class="sheet-section" id="accountPanel">
+      <h3 data-i18n="account.title">حسابك</h3>
+      <div id="acctDisabled" class="comingsoon" data-i18n="account.comingSoon" hidden>متاح قريبًا</div>
+      <div id="acctGuest" hidden>
+        <button id="saveProgressBtn" class="bigbtn" data-i18n="account.saveProgress">احفظ تقدمك</button>
+        <button id="showLoginBtn" class="ghostbtn" data-i18n="account.loginTitle">لديك رمز؟ سجّل الدخول</button>
+        <div class="loginrow" id="loginRow" hidden>
+          <input id="loginInput" data-i18n-placeholder="account.loginPlaceholder" inputmode="numeric" maxlength="12" autocomplete="off">
+          <button id="loginBtn" data-i18n="account.loginButton">دخول</button>
+        </div>
+        <div class="msg" id="acctMsg"></div>
+      </div>
+      <div id="acctCodeShown" hidden>
+        <p data-i18n="account.codeHint">احتفظ بهذا الرمز لتسجيل الدخول من أي جهاز — لا يوجد كلمة مرور</p>
+        <div class="codebig" id="codeBig"></div>
+        <div class="codebtnrow">
+          <button id="sendWaBtn" class="ghostbtn" data-i18n="account.sendWhatsApp">أرسله لنفسك على واتساب</button>
+          <button id="copyCodeBtn" class="ghostbtn" data-i18n="account.copy">نسخ</button>
+        </div>
+      </div>
+      <div id="acctLoggedIn" hidden>
+        <div class="panelrow"><span data-i18n="account.loggedInAs">مسجّل الدخول برمز الحفظ</span><span class="num" id="acctSyncState"></span></div>
+        <button id="logoutBtn" class="ghostbtn" data-i18n="account.logout">تسجيل الخروج</button>
+      </div>
+      <div id="namePromptRow" class="namerow" hidden>
+        <p data-i18n="account.namePrompt">ما اسمك؟ (اختياري)</p>
+        <div class="namerow-inputs">
+          <input id="nameInput" data-i18n-placeholder="account.namePlaceholder" maxlength="40">
+          <button id="nameSaveBtn" class="ghostbtn" data-i18n="common.save">حفظ</button>
+        </div>
+        <button id="nameSkipBtn" class="ghostbtn" data-i18n="account.nameSkip">لاحقًا</button>
+      </div>
+    </section>
+
+    <section class="sheet-section" id="certListPanel">
+      <h3 data-i18n="cert.panelTitle">شهاداتي</h3>
+      <div id="certListEmpty" class="comingsoon" data-i18n="cert.empty" hidden>لا توجد شهادات بعد — أكمل حفظ سورة لتحصل على واحدة</div>
+      <div id="certList" class="cert-list"></div>
+    </section>
+
+    <div class="footer-privacy" id="privacyLine" data-i18n="server.privacyInterim">التعرف الصوتي حاليًا عبر متصفحك — لا يوجد خادم متصل</div>
+  </div>
+</div>
+
+<div class="drawer-backdrop" id="drawerBackdrop"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <h2 data-i18n="nav.menu">الفهرس</h2>
+    <div class="topbar-right">
+      <select id="langSelect" class="lang-select" aria-label="Language"></select>
+      <button class="iconbtn" id="drawerClose" data-i18n-aria-label="drawer.close">✕</button>
+    </div>
+  </div>
+  <div class="drawer-tabs">
+    <button class="active" data-tab="surah" aria-current="true" data-i18n="nav.surahs">السور</button>
+    <button data-tab="juz" data-i18n="nav.juzs">الأجزاء</button>
+    <button data-tab="page" data-i18n="nav.goToPage">صفحة</button>
+  </div>
+  <div class="drawer-jump" id="drawerJump" hidden>
+    <input id="drawerPageInput" data-i18n-placeholder="drawer.searchPage" inputmode="numeric">
+    <button id="drawerGoBtn" data-i18n="drawer.go">اذهب</button>
+  </div>
+  <div class="drawer-list" id="drawerList"></div>
+</div>
+
+<div class="install-promo" id="installPromo" hidden>
+  <button class="iconbtn install-promo-close" id="installPromoClose" data-i18n-aria-label="drawer.close">✕</button>
+  <div class="install-promo-title" data-i18n="install.title">للشاشة الكاملة بدون أشرطة المتصفح: أضف تسميع إلى الشاشة الرئيسية</div>
+  <div class="install-promo-ios" id="installPromoIos" hidden>
+    <div class="install-step">
+      <svg class="install-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l-4 4h2.5v7h3V6H16z" fill="currentColor"/><path d="M5 10v10a2 2 0 002 2h10a2 2 0 002-2V10h-2v10H7V10z" fill="currentColor"/></svg>
+      <span data-i18n="install.iosStep1">اضغط زر المشاركة</span>
+    </div>
+    <div class="install-step">
+      <svg class="install-icon" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M12 7v10M7 12h10" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span data-i18n="install.iosStep2">ثم اختر «إضافة إلى الشاشة الرئيسية»</span>
+    </div>
+  </div>
+  <button class="bigbtn" id="installPromoBtn" data-i18n="install.button" hidden>تثبيت التطبيق</button>
+  <button class="ghostbtn" id="installPromoDismiss" data-i18n="install.dismiss">ليس الآن</button>
+</div>
+
+<div class="toast" id="toast" aria-live="polite"></div>
+<div id="status" class="visually-hidden" role="status" aria-live="polite"></div>
+
+<!-- Wave-2 fix #4: `defer` on every one of these (all already at the very end
+     of body, so this changes nothing about the "run after the DOM is
+     parsed" timing) lets the browser fetch them all in PARALLEL instead of
+     one strictly blocking the next's download -- a meaningful first-load
+     win on a slow/flaky connection. `defer` preserves relative execution
+     order for external scripts per spec, so the dependency chain each file
+     relies on (config -> utils -> storage -> i18n -> matcher -> account ->
+     share -> certificate -> listen -> recorder -> app, verified against
+     each file's own top-of-file `window.Tasme3X` reads) is unaffected. -->
+<script src="config.js" defer></script>
+<script src="utils.js" defer></script>
+<script src="storage.js" defer></script>
+<script src="i18n.js" defer></script>
+<script src="vendor/matcher.js" defer></script>
+<script src="account.js" defer></script>
+<script src="share.js" defer></script>
+<script src="certificate.js" defer></script>
+<script src="listen.js" defer></script>
+<script src="recorder.js" defer></script>
+<script src="app.js" defer></script>
+</body>
+</html>
