@@ -395,6 +395,37 @@
     return lines.length;
   }
 
+  // F1 fix (certificate localized text in the Quran font): UthmanicHafs is
+  // a Quranic-text font -- it only covers the letters that appear in the
+  // Uthmani mushaf. It has no glyphs for the extra letters other
+  // Arabic-script languages add (Urdu/Farsi/Pashto: ک گ ی ے ٹ ڈ ڑ ں ہ ۃ پ
+  // ړ ې and more), so any LOCALIZED string in those languages rendered in
+  // "UthmanicHafs" falls back to dotted-circle placeholders instead of the
+  // actual letterforms. UthmanicHafs must stay reserved for text that is
+  // ACTUALLY Quranic/basic Arabic -- the basmala (always Uthmani script)
+  // and the fixed app name "تَسْمِيع" -- never for arbitrary localized UI
+  // strings, even when the current UI language is Arabic-script.
+  //
+  // fontStackFor only grants UthmanicHafs when BOTH:
+  //   1. the current UI language is Arabic ('ar') -- Urdu/Farsi/Pashto use
+  //      the Arabic script too but are different languages with different
+  //      letter inventories, so they never qualify even though they are
+  //      RTL/Arabic-script;
+  //   2. the text itself is restricted to basic Arabic letters/digits and
+  //      common punctuation (no Urdu/Farsi/Pashto-only letters) -- a second
+  //      guard in case an 'ar' catalog string ever picks up a loanword.
+  // Anything else gets a plain cross-script UI stack that includes
+  // Noto Nastaliq Urdu / Noto (Naskh) Sans/Naskh Arabic so Urdu, Farsi and
+  // Pashto letters actually render as letters, with system-ui/Segoe UI/
+  // DejaVu Sans covering Latin/CJK/etc.
+  var BASIC_ARABIC_RE = /^[ء-ي٠-٩ـ\s،.!؟:0-9-]+$/;
+  function fontStackFor(text, lang, weight, px) {
+    if (lang === 'ar' && BASIC_ARABIC_RE.test(String(text || ''))) {
+      return weight + ' ' + px + 'px "UthmanicHafs", serif';
+    }
+    return weight + ' ' + px + 'px system-ui, "Segoe UI", "Noto Naskh Arabic", "Noto Sans Arabic", "Noto Nastaliq Urdu", "DejaVu Sans", sans-serif';
+  }
+
   // Single-line text (title, name) must never overflow the panel, but a
   // 2-line wrap looks wrong for those roles -- shrink the font instead.
   // Title/name length varies a lot by language ("شهادة إتمام" vs
@@ -425,6 +456,10 @@
   //                                    already interpolated with surahName
   //   dateStr: string,              -- certificateDate(lang) result
   //   dir: 'rtl'|'ltr',             -- text direction for localized lines
+  //   lang: string,                 -- current UI language code (e.g. 'ar',
+  //                                    'ur'); gates UthmanicHafs vs the
+  //                                    cross-script font stack, see
+  //                                    fontStackFor() above (F1 fix)
   //   template: HTMLImageElement|null,
   //   appLink: string
   // }
@@ -470,6 +505,7 @@
       var textColor = '#123420';
       var goldColor = '#8a6d1f';
       var localDir = opts.dir === 'ltr' ? 'ltr' : 'rtl';
+      var certLang = opts.lang || 'ar';
 
       ctx.textAlign = 'center';
       var cx = box.x + box.w / 2;
@@ -494,7 +530,7 @@
       // language ("شهادة إتمام" vs "Certificate of Completion" vs
       // "Sertifikat Penyelesaian" are very different lengths).
       ctx.fillStyle = goldColor;
-      var titleFontOf = function (px) { return '700 ' + px + 'px "UthmanicHafs", serif'; };
+      var titleFontOf = function (px) { return fontStackFor(opts.titleText, certLang, '700', px); };
       var titlePx = fitSingleLineFontPx(ctx, opts.titleText, titleFontOf, box.w * 0.82, Math.round(box.w * 0.095), Math.round(box.w * 0.04));
       ctx.font = titleFontOf(titlePx);
       ctx.fillText(opts.titleText, cx, y);
@@ -520,7 +556,7 @@
       // Also shrunk to fit one line -- names are free text, up to 40 chars.
       if (opts.name) {
         ctx.fillStyle = textColor;
-        var nameFontOf = function (px) { return '700 ' + px + 'px "UthmanicHafs", serif'; };
+        var nameFontOf = function (px) { return fontStackFor(opts.name, certLang, '700', px); };
         var namePx = fitSingleLineFontPx(ctx, opts.name, nameFontOf, box.w * 0.82, Math.round(box.w * 0.065), Math.round(box.w * 0.03));
         ctx.font = nameFontOf(namePx);
         ctx.fillText(opts.name, cx, y);
@@ -530,7 +566,7 @@
       // 5. Completed-surah line (localized sentence, Arabic surah name
       // already interpolated into completedSurahText by the caller).
       ctx.fillStyle = textColor;
-      ctx.font = '600 ' + Math.round(box.w * 0.055) + 'px "UthmanicHafs", serif';
+      ctx.font = fontStackFor(opts.completedSurahText, certLang, '600', Math.round(box.w * 0.055));
       var surahLH = box.h * 0.062;
       var surahLines = wrapCenteredText(ctx, opts.completedSurahText, cx, y, box.w * 0.84, surahLH);
       y += surahLH * Math.max(1, surahLines) * 0.6 + box.h * 0.075;

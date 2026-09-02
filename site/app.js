@@ -1566,6 +1566,7 @@
         completedSurahText: t('cert.completedSurah', { surah: surah.name }),
         dateStr: window.Tasme3Certificate.certificateDate(lang),
         dir: dir,
+        lang: lang,
         template: template,
         appLink: certAppLink()
       });

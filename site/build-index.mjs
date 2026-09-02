@@ -7,7 +7,7 @@
 //
 // Output shape:
 //   {
-//     "surahs": [ { "number": 1, "name": "الفاتحة", "firstPage": 1 }, ... 114 ],
+//     "surahs": [ { "number": 1, "name": "الفاتحة", "firstPage": 1, "headerPage": 1 }, ... 114 ],
 //     "juz":    [ { "number": 1, "firstPage": 1 }, ... 30 ],
 //     "pageCount": 604
 //   }
@@ -16,6 +16,21 @@
 // marker in the token schema) so they are hardcoded here from the standard
 // Madinah Mushaf 604-page pagination — the same fixed page list every
 // print/app using this exact 604-page layout shares.
+//
+// firstPage vs headerPage (F2 fix): a surah's name-header line ('t':'s' in
+// the per-page JSON) is typeset wherever the previous surah's text runs out
+// -- for most surahs that's the top of a fresh page, but for 21 surahs
+// (4, 10, 22, 23, 24, 26, 27, 32, 33, 37, 38, 45, 47, 53, 60, 64, 65, 80,
+// 82, 86, 91) the header sits at the very BOTTOM of the previous surah's
+// last page, with ayah 1's actual words not starting until the page after
+// that. Using the header's page as "firstPage" landed the surah-start jump
+// (site/app.js) one page too early -- on the previous surah's last page,
+// which visually still shows the previous surah. firstPage is therefore
+// derived independently of the header line: it is the first page whose
+// word tokens actually contain ayah 1 of that surah (token key `k` ===
+// "<sura>:1"), searching forward from the header's page. headerPage is
+// kept as a separate field (the page the header LINE itself renders on)
+// for anyone who needs that instead.
 
 import fs from 'fs';
 import path from 'path';
@@ -58,13 +73,43 @@ function main() {
     process.exit(1);
   }
 
-  const surahsByNumber = new Map();
+  // Pass 1: for every page, record which surahs have an ayah-1 word token
+  // actually on that page (pageAyah1Suras[pageNum] = Set<suraNumber>), and
+  // parse each page's data once (reused in pass 2 below).
+  const pageData = new Map(); // pageNum -> parsed JSON
+  const pageAyah1Suras = new Map(); // pageNum -> Set<suraNumber>
   let pageCount = 0;
 
   for (const file of files) {
     const pageNum = parseInt(file.slice(5, 8), 10);
     pageCount = Math.max(pageCount, pageNum);
     const data = JSON.parse(fs.readFileSync(path.join(PAGES_DIR, file), 'utf8'));
+    pageData.set(pageNum, data);
+
+    const ayah1Suras = new Set();
+    const lines = Array.isArray(data.lines) ? data.lines : [];
+    for (const line of lines) {
+      const tokens = Array.isArray(line.tk) ? line.tk : [];
+      for (const tok of tokens) {
+        if (typeof tok.k !== 'string') continue;
+        const parts = tok.k.split(':');
+        if (parts.length !== 2 || parts[1] !== '1') continue;
+        const sura = parseInt(parts[0], 10);
+        if (Number.isFinite(sura)) ayah1Suras.add(sura);
+      }
+    }
+    pageAyah1Suras.set(pageNum, ayah1Suras);
+  }
+
+  // Pass 2: find each surah's header-marker line (as before), then derive
+  // firstPage by scanning forward from the header page for the first page
+  // whose ayah1Suras set actually contains this surah (see comment above
+  // main()). headerPage is kept alongside for reference.
+  const surahsByNumber = new Map();
+
+  for (const file of files) {
+    const pageNum = parseInt(file.slice(5, 8), 10);
+    const data = pageData.get(pageNum);
     const lines = Array.isArray(data.lines) ? data.lines : [];
     for (const line of lines) {
       if (line.t !== 's' || typeof line.sura !== 'number') continue;
@@ -73,9 +118,18 @@ function main() {
       const fixup = SURAH_MARKER_FIXUPS[`${pageNum}:${sura}`];
       if (fixup) { sura = fixup.sura; name = fixup.name; }
       if (sura < 1 || sura > 114) continue; // defensive: skip any other bad marker
-      if (!surahsByNumber.has(sura)) {
-        surahsByNumber.set(sura, { number: sura, name, firstPage: pageNum });
+      if (surahsByNumber.has(sura)) continue;
+
+      let firstPage = pageNum;
+      for (let p = pageNum; p <= pageCount; p++) {
+        const suras = pageAyah1Suras.get(p);
+        if (suras && suras.has(sura)) { firstPage = p; break; }
+        if (p === pageCount) {
+          console.error(`WARNING: could not find ayah 1 of surah ${sura} on or after header page ${pageNum}; falling back to header page`);
+        }
       }
+
+      surahsByNumber.set(sura, { number: sura, name, firstPage, headerPage: pageNum });
     }
   }
 
