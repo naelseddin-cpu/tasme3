@@ -844,16 +844,32 @@
     var top = topOverlay();
     if (top) setInertSiblings(top.el, top.backdrop, true);
   }
-  function registerOverlayOpen(elx, backdropEl, closeFn) {
+  // A caller whose gesture hides its OWN opener element as a side effect
+  // of opening the overlay (the surah-completion celebration banner's
+  // "View Certificate" button hides #surahCelebrate, and itself with it,
+  // before the certificate modal opens asynchronously) must capture
+  // `document.activeElement` itself, BEFORE that hide, and pass it here as
+  // `opener` -- otherwise this falls back to reading `document.activeElement`
+  // at call time, which by then has already reverted to `body`.
+  function registerOverlayOpen(elx, backdropEl, closeFn, opener) {
     var top = topOverlay();
     if (top && top.el === elx) return; // already the topmost open overlay -- never double-push
     var before = overlayStack.slice();
-    overlayStack.push({ el: elx, backdrop: backdropEl, opener: document.activeElement, close: closeFn });
+    overlayStack.push({ el: elx, backdrop: backdropEl, opener: opener || document.activeElement, close: closeFn });
     reconcileStackInert(before);
     setTimeout(function () {
       var f = elx.querySelector(FOCUSABLE_SEL);
       (f || elx).focus();
     }, 0);
+  }
+  // An opener is only safe to refocus if it's still actually visible --
+  // e.g. the certificate modal's opener can itself have been hidden (see
+  // registerOverlayOpen's comment above) by the time the modal closes.
+  // `offsetParent === null` is a cheap, reliable enough "not rendered"
+  // check for these plain-flow buttons (true for display:none itself and
+  // for any hidden ancestor, via style.css's `[hidden]{display:none}`).
+  function isFocusableAndVisible(elx) {
+    return !!(elx && document.contains(elx) && typeof elx.focus === 'function' && elx.offsetParent !== null);
   }
   function registerOverlayClose(elx) {
     var idx = -1;
@@ -863,8 +879,10 @@
     var before = overlayStack.slice();
     overlayStack.splice(idx, 1);
     reconcileStackInert(before);
-    if (entry.opener && document.contains(entry.opener) && typeof entry.opener.focus === 'function') {
+    if (isFocusableAndVisible(entry.opener)) {
       entry.opener.focus();
+    } else if (isFocusableAndVisible(el.setupBtn)) {
+      el.setupBtn.focus();
     }
   }
   // Residual audit A2: closes every currently-open overlay, topmost first --
@@ -1579,7 +1597,7 @@
 
   function certAppLink() { return window.Tasme3Share.APP_LINK; }
 
-  function openCertificateFor(surah) {
+  function openCertificateFor(surah, opener) {
     var lang = window.Tasme3I18n.currentLang();
     var dir = (window.Tasme3I18n.LANGS[lang] || {}).dir || 'rtl';
     certTemplatesPromise.then(function (templates) {
@@ -1605,7 +1623,7 @@
       ctx2d.drawImage(canvas, 0, 0);
       el.certModal.hidden = false;
       el.certModal.style.display = 'flex';
-      registerOverlayOpen(el.certModal, null, closeCertModal);
+      registerOverlayOpen(el.certModal, null, closeCertModal, opener);
     }).catch(function () { showToast(t('error.generic')); });
   }
 
@@ -1682,8 +1700,14 @@
       el.surahCelebrate.hidden = false;
       announceStatus(t('recite.surahComplete'));
       el.viewCertBtn.onclick = function () {
+        // Capture the opener (this button) BEFORE hiding #surahCelebrate --
+        // hiding it first would leave document.activeElement as `body` by
+        // the time openCertificateFor()'s promise chain gets around to
+        // calling registerOverlayOpen(), dropping focus on close (residual
+        // audit: "View Certificate" from the celebration banner).
+        var opener = document.activeElement;
         el.surahCelebrate.hidden = true;
-        openCertificateFor(surah);
+        openCertificateFor(surah, opener);
       };
     });
   }
