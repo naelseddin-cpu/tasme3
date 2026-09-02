@@ -534,3 +534,63 @@ def test_interior_vowel_edits_still_forgiving(level):
     assert fuzzy_equal("السموات", "السماوات", level)
     assert fuzzy_equal("الصلوه", "الصلاه", level)
     assert fuzzy_equal("ابرهيم", "ابراهيم", level)
+
+
+# ===================== M4: the "echo" attack (master audit 2026-09-02) =====
+#
+# A 2-letter vowel-class affix that repeats the word's own trailing/leading
+# bigram (كفروا + its own trailing "وا" -> كفرواوا; "يا" glued in front of
+# يايها -> يايايها) used to let weighted_edit_distance's DP delete the
+# INTERIOR copy of the echoed pair instead of the copy genuinely sitting at
+# the edge -- both alignments cost the same 2, but only the edge one is
+# real. fuzzy_equal no longer runs the generic DP at all; see its own
+# comment in server/matching.py for the full rationale. These parity tests
+# mirror app/tests/test-matcher.js / site/tests/test-boundary-echo.js's own
+# echo-attack coverage.
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_echo_trailing_kafaruwaa_rejected(level):
+    # كفروا with its own trailing "وا" glued back on -- must never be
+    # accepted as كفروا at any level.
+    assert not fuzzy_equal("كفرواوا", "كفروا", level)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+def test_echo_leading_yaayaayuha_rejected(level):
+    # "يا" glued in front of ياايها's own opening -- must never be accepted
+    # as ياايها at any level.
+    assert not fuzzy_equal("يايايها", "ياايها", level)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3])
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("السموات", "السماوات"),
+        ("الصلوه", "الصلاه"),
+        ("ابرهيم", "ابراهيم"),
+        ("داود", "داوود"),
+        ("يايها", "ياايها"),
+        ("مؤمنون", "مومنون"),
+    ],
+)
+def test_echo_fix_genuine_interior_vowel_edits_still_forgiving(level, a, b):
+    # The single-interior-indel path this fix narrows fuzzy_equal to must
+    # still accept every genuine "extra interior vowel letter" pair it was
+    # built for -- these are not echoes (the extra letter sits in the
+    # interior, not at an edge shared with a repeated affix).
+    assert fuzzy_equal(a, b, level)
+
+
+@pytest.mark.parametrize("level", [1, 2, 3, 4, None])
+@pytest.mark.parametrize(
+    "a,b",
+    [
+        ("كفوا", "كفو"),
+        ("عبد", "عبادي"),
+        ("والعصر", "والاصر"),
+    ],
+)
+def test_echo_fix_unrelated_pairs_rejected_at_every_level(level, a, b):
+    assert not fuzzy_equal(a, b, level)

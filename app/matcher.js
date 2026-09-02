@@ -237,15 +237,82 @@
     }
   }
 
-  // Tolerance grows with word length: short words must be near-exact.
-  // Distance is the weighted edit distance (see above), so a meaning-
-  // changing consonant swap needs a much larger allowance than a vowel slip.
+  // M4 fix -- the "echo" attack on weightedEditDistance (master audit
+  // 2026-09-02): a 2-letter vowel-class affix that happens to repeat the
+  // word's own trailing/leading bigram -- e.g. كفروا + its own trailing
+  // "وا" glued back on -> كفرواوا, or ءامنوا + "وا" -> ءامنواوا, or "يا"
+  // glued in front of يايها -> يايايها -- lets the DP align that echoed pair
+  // by deleting the INTERIOR copy instead of the copy actually sitting at
+  // the edge. Both copies are the very same vowel letters repeated, so
+  // either alignment costs the DP the same 2 (two VOWEL_EDIT_COST=1
+  // deletions) -- weightedEditDistance('كفرواوا', 'كفروا') === 2 either way
+  // -- but only ONE of those two alignments is the truth: the spoken word
+  // really is كفروا with a bogus extra "وا" TACKED ON AT THE EDGE (an edge
+  // edit, CONSONANT_EDIT_COST=3 under the edge rule, correctly rejected),
+  // never a genuine vowel slip sitting safely in the interior. Because plain
+  // Levenshtein-style DP has no way to prefer one alignment over an
+  // equal-cost other, it silently picks the interior one and falsely
+  // accepts at L1/L2 (and, depending on which pair of vowel letters, roughly
+  // half the time at L3 too) -- 242 trailing-echo + 196 leading-echo
+  // vulnerable words found across 23 mushaf pages.
+  //
+  // Fix: fuzzyEqual no longer runs a generic DP at all. Rather than hoping
+  // an edit-cost table happens to penalize the wrong alignment enough, it
+  // enumerates only the edit SHAPES the Iron Rule actually permits and
+  // checks each directly, so there is no alignment choice left for an echo
+  // to hide inside:
+  //   - equal length: substitutions only, no indels at all -- an indel pair
+  //     (one deletion + one insertion) is exactly the shape an echo needs to
+  //     smuggle itself through, so it is never on the table regardless of
+  //     cost. Edge positions (first/last) always cost CONSONANT_EDIT_COST;
+  //     interior positions cost VOWEL_EDIT_COST only when BOTH characters
+  //     are vowel-class, else CONSONANT_EDIT_COST -- summed and compared to
+  //     toleranceFor(level, len), same tolerances as before.
+  //   - length differs by exactly 1: accepted ONLY as a single INTERIOR
+  //     (never first, never last position) ا/و indel -- singleInteriorIndel()
+  //     below -- gated by toleranceFor(level, max length) >= 1 so it is still
+  //     unavailable at L4 and short words. This is the one genuine "extra
+  //     vowel letter in the middle of the word" case (e.g. يايها/ياايها,
+  //     السموات/السماوات, داود/داوود) the old DP was built to allow; an echo
+  //     never qualifies because the repeated letters -- by construction --
+  //     sit at the boundary between the real word and the echoed copy, i.e.
+  //     at position 0 or at the very end, exactly what singleInteriorIndel
+  //     rejects.
+  //   - length differs by 2+: rejected outright (an echo is always exactly a
+  //     2-letter affix duplicated, but this also simply matches the Iron
+  //     Rule's existing "too different to be an accent slip" boundary).
+  // weightedEditDistance/edgeRun/isEdgePos are kept (exported, still used by
+  // tests/tools and by nothing else in the matching path) but fuzzyEqual no
+  // longer calls weightedEditDistance.
+  function singleInteriorIndel(longer, shorter) {
+    // longer.length === shorter.length + 1: true only if removing ONE
+    // interior (not first/last) alif or waw from `longer` yields `shorter`.
+    var n = shorter.length, i = 0;
+    while (i < n && longer.charAt(i) === shorter.charAt(i)) i++;
+    if (i === 0 || i === n) return false; // the extra char sits at an edge -- never a genuine interior vowel slip
+    var ch = longer.charAt(i);
+    if (ch !== 'ا' && ch !== 'و') return false;
+    return longer.slice(i + 1) === shorter.slice(i);
+  }
   function fuzzyEqual(a, b, level) {
     if (a === b) return true;
-    var len = Math.max(a.length, b.length);
-    var maxDist = toleranceFor(level, len);
-    if (maxDist <= 0) return false;
-    return weightedEditDistance(a, b) <= maxDist;
+    var diff = a.length - b.length;
+    if (diff > 1 || diff < -1) return false;
+    if (diff !== 0) {
+      if (toleranceFor(level, Math.max(a.length, b.length)) < 1) return false;
+      return diff > 0 ? singleInteriorIndel(a, b) : singleInteriorIndel(b, a);
+    }
+    // Same length: substitutions only (no indel pairs that could re-attribute
+    // an echoed affix into the interior). Edge substitutions always cost 3.
+    var len = a.length, maxDist = toleranceFor(level, len), cost = 0;
+    for (var i = 0; i < len; i++) {
+      var ca = a.charAt(i), cb = b.charAt(i);
+      if (ca === cb) continue;
+      cost += (i === 0 || i === len - 1) ? CONSONANT_EDIT_COST
+        : ((isVowelLetter(ca) && isVowelLetter(cb)) ? VOWEL_EDIT_COST : CONSONANT_EDIT_COST);
+      if (cost > maxDist) return false;
+    }
+    return cost <= maxDist;
   }
 
   // An expected-word entry is either a plain normalized string (legacy) or

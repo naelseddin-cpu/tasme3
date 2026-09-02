@@ -277,18 +277,94 @@ def tolerance_for(level: Optional[int], length: int) -> int:
     return 1 if length <= 5 else 2
 
 
+# M4 fix -- the "echo" attack on weighted_edit_distance (master audit
+# 2026-09-02), ported from app/matcher.js's fuzzy_equal fix: a 2-letter
+# vowel-class affix that happens to repeat the word's own trailing/leading
+# bigram -- e.g. كفروا + its own trailing "وا" glued back on -> كفرواوا, or
+# ءامنوا + "وا" -> ءامنواوا, or "يا" glued in front of يايها -> يايايها --
+# lets the DP align that echoed pair by deleting the INTERIOR copy instead
+# of the copy actually sitting at the edge. Both copies are the very same
+# vowel letters repeated, so either alignment costs the DP the same 2 (two
+# VOWEL_EDIT_COST=1 deletions) -- weighted_edit_distance('كفرواوا', 'كفروا')
+# == 2 either way -- but only ONE of those two alignments is the truth: the
+# spoken word really is كفروا with a bogus extra "وا" TACKED ON AT THE EDGE
+# (an edge edit, CONSONANT_EDIT_COST=3 under the edge rule, correctly
+# rejected), never a genuine vowel slip sitting safely in the interior.
+# Because plain Levenshtein-style DP has no way to prefer one alignment over
+# an equal-cost other, it silently picks the interior one and falsely
+# accepts at L1/L2 (and, depending on which pair of vowel letters, roughly
+# half the time at L3 too).
+#
+# Fix: fuzzy_equal no longer runs a generic DP at all. Rather than hoping an
+# edit-cost table happens to penalize the wrong alignment enough, it
+# enumerates only the edit SHAPES the Iron Rule actually permits and checks
+# each directly, so there is no alignment choice left for an echo to hide
+# inside:
+#   - equal length: substitutions only, no indels at all -- an indel pair
+#     (one deletion + one insertion) is exactly the shape an echo needs to
+#     smuggle itself through, so it is never on the table regardless of
+#     cost. Edge positions (first/last) always cost CONSONANT_EDIT_COST;
+#     interior positions cost VOWEL_EDIT_COST only when BOTH characters are
+#     vowel-class, else CONSONANT_EDIT_COST -- summed and compared to
+#     tolerance_for(level, length), same tolerances as before.
+#   - length differs by exactly 1: accepted ONLY as a single INTERIOR
+#     (never first, never last position) ا/و indel -- _single_interior_indel
+#     below -- gated by tolerance_for(level, max length) >= 1 so it is still
+#     unavailable at L4 and short words. This is the one genuine "extra
+#     vowel letter in the middle of the word" case (e.g. يايها/ياايها,
+#     السموات/السماوات, داود/داوود) the old DP was built to allow; an echo
+#     never qualifies because the repeated letters -- by construction -- sit
+#     at the boundary between the real word and the echoed copy, i.e. at
+#     position 0 or at the very end, exactly what _single_interior_indel
+#     rejects.
+#   - length differs by 2+: rejected outright.
+# weighted_edit_distance/_edge_run/_is_edge_pos are kept unchanged (still
+# used by tests/tools) but fuzzy_equal no longer calls weighted_edit_distance.
+def _single_interior_indel(longer: str, shorter: str) -> bool:
+    """longer's length == shorter's length + 1: true only if removing ONE
+    interior (not first/last) alif or waw from `longer` yields `shorter`."""
+    n = len(shorter)
+    i = 0
+    while i < n and longer[i] == shorter[i]:
+        i += 1
+    if i == 0 or i == n:
+        return False  # the extra char sits at an edge -- never a genuine interior vowel slip
+    ch = longer[i]
+    if ch != "ا" and ch != "و":
+        return False
+    return longer[i + 1:] == shorter[i:]
+
+
 def fuzzy_equal(a: str, b: str, level: Optional[int] = None) -> bool:
     """Tolerance grows with word length: short words must be near-exact.
-    Distance is the weighted edit distance (see above), so a meaning-
-    changing consonant swap needs a much larger allowance than a vowel
-    slip."""
+    See the M4 fix comment above for why this no longer runs a generic
+    edit-distance DP."""
     if a == b:
         return True
-    length = max(len(a), len(b))
-    max_dist = tolerance_for(level, length)
-    if max_dist <= 0:
+    diff = len(a) - len(b)
+    if diff > 1 or diff < -1:
         return False
-    return weighted_edit_distance(a, b) <= max_dist
+    if diff != 0:
+        if tolerance_for(level, max(len(a), len(b))) < 1:
+            return False
+        return _single_interior_indel(a, b) if diff > 0 else _single_interior_indel(b, a)
+    # Same length: substitutions only (no indel pairs that could
+    # re-attribute an echoed affix into the interior). Edge substitutions
+    # always cost CONSONANT_EDIT_COST.
+    length = len(a)
+    max_dist = tolerance_for(level, length)
+    cost = 0
+    for i in range(length):
+        ca, cb = a[i], b[i]
+        if ca == cb:
+            continue
+        if i == 0 or i == length - 1:
+            cost += CONSONANT_EDIT_COST
+        else:
+            cost += VOWEL_EDIT_COST if (_is_vowel_letter(ca) and _is_vowel_letter(cb)) else CONSONANT_EDIT_COST
+        if cost > max_dist:
+            return False
+    return cost <= max_dist
 
 
 # ---------------------------------------------------------------------------
