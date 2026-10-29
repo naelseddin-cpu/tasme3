@@ -195,7 +195,14 @@ dialog .t { font-family: var(--f-quran); font-size: 1.45rem; line-height: 2.3; }
 #home { background: #05080f; color: #f3ead2; }
 .hero-track { height: 680vh; position: relative; }
 .hero-stage { position: sticky; top: 0; height: 100dvh; overflow: hidden; }
-.hero-scene { position: absolute; inset: -2%; background: center / cover no-repeat; opacity: 0; will-change: transform, opacity; }
+/* wide screens get the 16:9 scenes, phones (portrait) the 9:16 photographs made for them */
+.hs-kaaba { background-image: url(img/hd/journey-kaaba.jpg); } .hs-nabawi { background-image: url(img/hd/journey-nabawi.jpg); }
+.hs-aqsa { background-image: url(img/hd/journey-aqsa.jpg); } .hs-umayyad { background-image: url(img/hd/journey-umayyad.jpg); }
+@media (orientation: portrait) {
+  .hs-kaaba { background-image: url(img/hd/portrait-kaaba.jpg); } .hs-nabawi { background-image: url(img/hd/portrait-nabawi.jpg); }
+  .hs-aqsa { background-image: url(img/hd/portrait-aqsa.jpg); } .hs-umayyad { background-image: url(img/hd/portrait-umayyad.jpg); }
+}
+.hero-scene { position: absolute; inset: -2%; background-position: center; background-size: cover; background-repeat: no-repeat; opacity: 0; will-change: transform, opacity; }
 .hero-scene::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(3, 6, 14, .72) 100%), linear-gradient(to top, rgba(3, 6, 14, .85), transparent 45%); }
 .hero-cap { position: absolute; inset: auto 0 12vh; margin: 0 auto; max-width: 860px; padding: 0 24px; text-align: center; opacity: 0; transform: translateY(24px); will-change: transform, opacity; pointer-events: none; }
 .hero-cap.live { pointer-events: auto; }
@@ -269,10 +276,10 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
   <section id="home" class="view" aria-label="البداية">
     <div class="hero-track"><div class="hero-stage">
       <!-- the journey: Makkah → Madinah → Al-Quds → Damascus, then up through the dome's oculus into the space -->
-      <div class="hero-scene" style="background-image:url(img/hd/journey-kaaba.jpg)"></div>
-      <div class="hero-scene" style="background-image:url(img/hd/journey-nabawi.jpg)"></div>
-      <div class="hero-scene" style="background-image:url(img/hd/journey-aqsa.jpg)"></div>
-      <div class="hero-scene" style="background-image:url(img/hd/journey-umayyad.jpg)"></div>
+      <div class="hero-scene hs-kaaba"></div>
+      <div class="hero-scene hs-nabawi"></div>
+      <div class="hero-scene hs-aqsa"></div>
+      <div class="hero-scene hs-umayyad"></div>
       <div class="hero-scene" style="background-image:url(img/hd/hero-3-dome.jpg)"></div>
       <div class="hero-cap"><h1>مستكشف القرآن</h1><p>رحلة في كلمات المصحف: من أين تأتي، وكيف تتفرع، وبمَ ترتبط.</p></div>
       <div class="hero-cap"><div class="hero-nums"><div><b data-n="surahs">114</b><span>سورة</span></div><div><b data-n="verses">6,236</b><span>آية</span></div><div><b data-n="words">77,429</b><span>كلمة</span></div></div><p>نص مصحف المدينة كاملًا (رواية حفص)، مع تحليل صرفي لكل كلمة.</p></div>
