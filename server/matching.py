@@ -44,6 +44,7 @@ def normalize_arabic(s: str) -> str:
     Arabic letters ء-ي. Identical pipeline to JS normalizeArabic()."""
     s = _TASHKEEL_RE.sub("", s)
     s = _ALIF_RE.sub("ا", s)
+    s = s.replace("ءا", "ا")  # mushaf hamza+alif (ءَامَنُوا) = madd alif (آمنوا)
     s = s.replace("ة", "ه")
     s = s.replace("ى", "ي")
     s = _KEEP_ONLY_ARABIC_RE.sub("", s)
@@ -57,6 +58,7 @@ def normalize_arabic_alt(s: str) -> str:
     s = _DAGGER_ALIF_RE.sub("ا", s)
     s = _TASHKEEL_RE.sub("", s)
     s = _ALIF_RE.sub("ا", s)
+    s = s.replace("ءا", "ا")  # mushaf hamza+alif (ءَامَنُوا) = madd alif (آمنوا)
     s = s.replace("ة", "ه")
     s = s.replace("ى", "ي")
     s = _KEEP_ONLY_ARABIC_RE.sub("", s)
@@ -377,12 +379,17 @@ ExpectedItem = Union[str, dict]
 
 def word_forms(item: ExpectedItem) -> List[str]:
     """Returns the list of normalized forms a spoken token may match against."""
+    # Page data was generated before the ءا→ا rule; applying it here keeps the
+    # 604 page files valid (the rule is idempotent on already-folded forms).
     if isinstance(item, str):
-        return [item]
-    forms = [item["n"]]
+        return [item.replace("ءا", "ا")]
+    n = item["n"].replace("ءا", "ا")
+    forms = [n]
     alt = item.get("a")
-    if alt and alt != item["n"]:
-        forms.append(alt)
+    if alt:
+        alt = alt.replace("ءا", "ا")
+        if alt != n:
+            forms.append(alt)
     return forms
 
 

@@ -358,5 +358,16 @@ check('weightedEditDistance(السموات, السماوات) is 1 (interior ins
   check('كفو rejected for expected كفوا at level ' + level, !M.fuzzyEqual('كفو', 'كفوا', level));
 });
 
+// Regression: mushaf hamza+alif (ءامنوا, القرءان, ءالاء) must accept the madd-alif
+// spelling recognizers produce (آمنوا, القرآن, آلاء); before the ءا→ا rule a correct
+// recitation stalled on 1,096 such words. See server/tests/test_hamza_alif.py.
+[1, 2, 3].forEach(function (level) {
+  [['ءامنوا', 'آمنوا'], ['ءالاء', 'آلاء'], ['القرءان', 'القرآن'], ['ءايه', 'آية']].forEach(function (c) {
+    const r = M.matchTranscript([{ n: c[0] }, { n: 'كفروا' }], 0, c[1], level);
+    check(c[1] + ' accepted for mushaf ' + c[0] + ' at level ' + level, r.pointer === 1, r);
+  });
+  check('كفروا not accepted for ءامنوا at level ' + level, M.matchTranscript([{ n: 'ءامنوا' }], 0, 'كفروا', level).pointer === 0);
+});
+
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);

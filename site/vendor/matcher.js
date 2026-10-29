@@ -21,6 +21,7 @@
     return s
       .replace(/[ً-ٰٟۖ-ۭـؐ-ؚ]/g, '')
       .replace(/[آأإٱٲٳٵ]/g, 'ا') // آأإٱ… → ا
+      .replace(/ءا/g, 'ا') // mushaf hamza+alif (ءَامَنُوا) = madd alif (آمنوا)
       .replace(/ة/g, 'ه')  // ة → ه
       .replace(/ى/g, 'ي')  // ى → ي
       .replace(/[^ء-ي]/g, '');
@@ -35,6 +36,7 @@
       .replace(/ٰ/g, 'ا') // dagger alif → ا, applied before the strip below
       .replace(/[ً-ٰٟۖ-ۭـؐ-ؚ]/g, '')
       .replace(/[آأإٱٲٳٵ]/g, 'ا')
+      .replace(/ءا/g, 'ا')
       .replace(/ة/g, 'ه')
       .replace(/ى/g, 'ي')
       .replace(/[^ء-ي]/g, '');
@@ -324,9 +326,13 @@
   // {n, a} where `a` is an optional alternate normalized form. Returns the
   // list of forms a spoken token may match against.
   function wordForms(item) {
-    if (typeof item === 'string') return [item];
-    var forms = [item.n];
-    if (item.a && item.a !== item.n) forms.push(item.a);
+    // Page data predates the ءا→ا rule; folding here keeps the page files
+    // valid (idempotent on already-folded forms).
+    if (typeof item === 'string') return [item.replace(/ءا/g, 'ا')];
+    var n = item.n.replace(/ءا/g, 'ا');
+    var forms = [n];
+    var a = item.a ? item.a.replace(/ءا/g, 'ا') : '';
+    if (a && a !== n) forms.push(a);
     return forms;
   }
 
