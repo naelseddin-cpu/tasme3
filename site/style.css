@@ -8,9 +8,9 @@
    every current and future toggled-via-.hidden element alike. */
 [hidden] { display:none !important; }
 :root {
-  --velvet:#0c2e1b; --velvet2:#14452a;
+  --velvet:#0a1530; --velvet2:#16264d;
   --gold:#d4b96a; --gold-deep:#a8862f; --gold-line:#b8a24a;
-  --sheet:#fffdf5; --green:#1a5c38; --green-deep:#0e3d24; --ink:#2a2a20;
+  --sheet:#fffdf5; --green:#1d3f73; --green-deep:#0f2447; --ink:#2a2a20;
   --pearl:#f6f1e4; --muted:#6b6250; --danger:#b03a24;
 }
 html,body { height:100%; overflow-x:hidden; overscroll-behavior-x:none; }
@@ -21,7 +21,7 @@ html,body { height:100%; overflow-x:hidden; overscroll-behavior-x:none; }
   overflow:hidden; clip:rect(0,0,0,0); white-space:nowrap; border:0; }
 body {
   font-family:-apple-system,'Segoe UI',system-ui,sans-serif;
-  background:radial-gradient(120% 90% at 50% 0%, var(--velvet2) 0%, var(--velvet) 60%, #081f12 100%);
+  background:radial-gradient(120% 90% at 50% 0%, var(--velvet2) 0%, var(--velvet) 60%, #050a18 100%);
   color:var(--ink); display:flex; flex-direction:column; align-items:stretch;
   padding:0;
 }
@@ -118,7 +118,7 @@ body.chrome-visible .chrome-handle { display:none; }
   background:linear-gradient(180deg,#bfa14f,#e6d49a); }
 .progressstrip { background:rgba(255,255,255,.18); }
 .progressbar > div, .progressstrip > div { height:100%; width:0%;
-  background:linear-gradient(90deg,#0e3d24,#1a5c38 60%,#2e7d52); transition:width .4s; }
+  background:linear-gradient(90deg,#0f2447,#1d3f73 60%,#2e5d9c); transition:width .4s; }
 
 /* Floating controls: pinned to the inline-end corner (bottom-left in RTL,
    bottom-right in LTR) -- the corner opposite the drawer button, which sits
@@ -127,8 +127,8 @@ body.chrome-visible .chrome-handle { display:none; }
   display:flex; align-items:center; gap:10px; }
 .floatbar .setupbtn { width:44px; height:44px; font-size:1.2rem; border-radius:50%; }
 .recbtn { width:56px; height:56px; border-radius:50%; border:3px solid var(--gold-deep); flex-shrink:0;
-  background:radial-gradient(circle at 32% 28%, #3f9e6b 0%, #1a5c38 34%, #0e3d24 62%, #1f6b42 82%, #0a2c19 100%);
-  color:#eafff2; font-size:1.5rem; cursor:pointer;
+  background:radial-gradient(circle at 32% 28%, #4d7cc0 0%, #1d3f73 34%, #0f2447 62%, #24497f 82%, #081a36 100%);
+  color:#eef4ff; font-size:1.5rem; cursor:pointer;
   box-shadow:0 3px 10px rgba(0,0,0,.45), inset 0 2px 5px rgba(255,255,255,.28), 0 0 0 1px #8f7226;
   display:flex; align-items:center; justify-content:center; }
 .recbtn.listening { background:radial-gradient(circle at 32% 28%, #e57358 0%, #b03a24 40%, #7d2314 75%, #96341f 100%);
@@ -170,20 +170,20 @@ body.chrome-visible .chrome-handle { display:none; }
 .level-seg-name { font-size:14px; font-weight:600; }
 /* Darkened from the original #47a874 top stop -- audit found insufficient
    contrast for the white label text on the gradient's lightest pixels
-   (min ratio was under 3:1); #2f7d55 keeps the same green hue/feel while
-   clearing >=3:1 against #eafff2 at every point in the gradient. */
-.level-seg.active { background:linear-gradient(180deg,#2f7d55,#1a5c38 60%,#0e3d24); color:#eafff2; border-color:#0e3d24; }
+   (min ratio was under 3:1); #2f5a96 keeps the same green hue/feel while
+   clearing >=3:1 against #eef4ff at every point in the gradient. */
+.level-seg.active { background:linear-gradient(180deg,#2f5a96,#1d3f73 60%,#0f2447); color:#eef4ff; border-color:#0f2447; }
 
 .listenpanel { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; padding:2px 0 4px; }
 .listenpanel button { border:1px solid var(--gold-deep); background:linear-gradient(180deg,var(--pearl),#e4d9b8);
   color:var(--green-deep); border-radius:999px; padding:8px 16px; font-size:.85rem; cursor:pointer; font-weight:600;
   min-height:40px; }
-.listenpanel button.on { background:linear-gradient(180deg,#2f7d55,#1a5c38); color:#eafff2; }
+.listenpanel button.on { background:linear-gradient(180deg,#2f5a96,#1d3f73); color:#eef4ff; }
 .listenpanel select { border:1px solid var(--gold-deep); border-radius:999px; padding:8px 12px; font-size:.8rem;
   background:var(--pearl); color:var(--green-deep); min-height:40px; }
 
 .donebanner { display:none; position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 58px); left:12px; right:12px; z-index:21; color:#f3e6bb; text-align:center;
-  background:linear-gradient(180deg,#1f6b42,#0e3d24); border:1px solid var(--gold-deep);
+  background:linear-gradient(180deg,#24497f,#0f2447); border:1px solid var(--gold-deep);
   border-radius:10px; padding:8px 16px; margin:6px 12px 0; font-size:.95rem; }
 
 .sharebar { display:none; position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 10px);
@@ -203,7 +203,7 @@ body.chrome-visible .chrome-handle { display:none; }
 .helpbox { display:none; margin:0 12px 10px; padding:10px 12px; background:var(--sheet);
   border:1px solid var(--gold-deep); border-radius:10px; font-size:14px; line-height:1.9; }
 .helpbox button { display:block; width:100%; margin:8px 0; padding:9px;
-  background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb;
+  background:linear-gradient(180deg,#24497f,#0f2447); color:#f3e6bb;
   border:1px solid var(--gold-deep); border-radius:9px; font-size:.9rem; cursor:pointer; }
 .fallback { padding:0 12px 10px; display:none; }
 .fallback input { width:100%; padding:10px; border:1px solid var(--gold-deep); border-radius:10px;
@@ -211,7 +211,7 @@ body.chrome-visible .chrome-handle { display:none; }
 .pageerror { display:none; position:absolute; inset:0; background:var(--sheet); flex-direction:column;
   align-items:center; justify-content:center; gap:12px; padding:24px; text-align:center; z-index:5; }
 .pageerror p { color:var(--danger); font-size:1rem; font-weight:600; }
-.pageerror button { padding:9px 20px; background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb;
+.pageerror button { padding:9px 20px; background:linear-gradient(180deg,#24497f,#0f2447); color:#f3e6bb;
   border:1px solid var(--gold-deep); border-radius:9px; font-size:.95rem; cursor:pointer; }
 
 /* ---- page loading spinner (wave-2 fix #1): a subtle gold ring centered
@@ -244,7 +244,7 @@ body.chrome-visible .chrome-handle { display:none; }
   padding:3px 0; }
 .panelrow .num { font-weight:700; color:var(--green-deep); font-variant-numeric:tabular-nums; }
 .bigbtn { display:block; width:100%; padding:11px; margin-top:6px; border-radius:10px; border:1px solid var(--gold-deep);
-  background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb; font-size:.92rem; font-weight:600; cursor:pointer; }
+  background:linear-gradient(180deg,#24497f,#0f2447); color:#f3e6bb; font-size:.92rem; font-weight:600; cursor:pointer; }
 .ghostbtn { display:block; width:100%; padding:10px; margin-top:8px; border-radius:10px; border:1px solid var(--gold-deep);
   background:linear-gradient(180deg,var(--pearl),#ece1c2); color:var(--green-deep); font-size:.88rem; cursor:pointer; }
 .codebig { font-size:1.7rem; font-weight:800; letter-spacing:.06em; color:var(--green-deep); text-align:center;
@@ -256,7 +256,7 @@ body.chrome-visible .chrome-handle { display:none; }
 .loginrow input { flex:1; padding:9px; border:1px solid var(--gold-deep); border-radius:9px; font-size:.95rem;
   text-align:center; direction:ltr; }
 .loginrow button { padding:9px 16px; border-radius:9px; border:1px solid var(--gold-deep);
-  background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb; font-size:.85rem; cursor:pointer; }
+  background:linear-gradient(180deg,#24497f,#0f2447); color:#f3e6bb; font-size:.85rem; cursor:pointer; }
 .comingsoon { text-align:center; color:var(--muted); font-size:.85rem; padding:8px 0; }
 .msg { font-size:.8rem; margin-top:6px; text-align:center; min-height:1.1em; }
 .msg.err { color:var(--danger); }
@@ -334,7 +334,7 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
 .drawer-jump input { flex:1; padding:8px; border:1px solid var(--gold-deep); border-radius:8px; font-size:.9rem;
   text-align:center; }
 .drawer-jump button { padding:8px 14px; border-radius:8px; border:1px solid var(--gold-deep);
-  background:linear-gradient(180deg,#1f6b42,#0e3d24); color:#f3e6bb; font-size:.85rem; cursor:pointer; }
+  background:linear-gradient(180deg,#24497f,#0f2447); color:#f3e6bb; font-size:.85rem; cursor:pointer; }
 .drawer-list { overflow-y:auto; flex:1; }
 /* Real <button> elements (a11y F1 / power #1) -- reset the default button
    chrome so the row keeps looking exactly like the old plain <div>. */
@@ -378,7 +378,7 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
    specificity class rule). No explicit `display` here -- the div's UA
    default of `block` is exactly what's wanted once `hidden` is gone. */
 .surahcelebrate { position:fixed; bottom:calc(var(--fab-clear) + env(safe-area-inset-bottom) + 108px); left:12px; right:12px; z-index:22;
-  background:linear-gradient(180deg,#1f6b42,#0e3d24); border:1px solid var(--gold-deep); border-radius:12px;
+  background:linear-gradient(180deg,#24497f,#0f2447); border:1px solid var(--gold-deep); border-radius:12px;
   padding:12px 14px; text-align:center; color:#f3e6bb; box-shadow:0 6px 20px rgba(0,0,0,.35); }
 .surahcelebrate-text { font-weight:700; font-size:.95rem; margin-bottom:8px; }
 .surahcelebrate-actions { display:flex; align-items:center; justify-content:center; gap:10px; }
@@ -500,3 +500,26 @@ html[dir="rtl"] .drawer.open, html[dir="ltr"] .drawer.open { transform:translate
   .floatbar .setupbtn { width:38px; height:38px; font-size:1.05rem; }
   .recbtn { width:46px; height:46px; font-size:1.2rem; }
 }
+
+
+/* ---- Planet theme (founder decision 2026-10-29): the memorization page shares
+   the Quran explorer's space look. The printed mushaf page (.pagebox / canvas)
+   is untouched; only its surroundings change. Artwork is Nano Banana (assets/
+   space.webp = the explorer's nebula, planet-idle/-rec = its ice-giant and Mars
+   surfaces); every green shade above was swapped for a blue of the same
+   lightness so the audited text contrast is unchanged. */
+body { background:#050a18 url(assets/space.webp) center top / cover no-repeat; }
+.goldbar { background:rgba(5, 10, 24, .88); border-bottom:1px solid rgba(212, 185, 106, .55);
+  box-shadow:0 2px 14px rgba(0, 0, 0, .55); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.logo { color:var(--gold); }
+.goldbar .iconbtn, .goldbar .pagenav .chip, .pagenav .chip { background:rgba(255, 255, 255, .06); color:#f3e6bb;
+  border-color:rgba(212, 185, 106, .6); }
+.chrome-handle { background:rgba(5, 10, 24, .9); border-color:rgba(212, 185, 106, .7); }
+.pagebox { box-shadow:0 0 0 1px rgba(212, 185, 106, .35), 0 10px 40px rgba(0, 0, 0, .6); }
+/* the mic is a planet: an ice giant at rest, Mars while recording (red still means "listening") */
+.recbtn { background:radial-gradient(circle at 34% 30%, rgba(255,255,255,.28), rgba(0,0,0,0) 45%, rgba(0,0,0,.55) 100%),
+  url(assets/planet-idle.webp) center / cover; color:#fff; text-shadow:0 1px 4px rgba(0,0,0,.8);
+  box-shadow:0 0 18px rgba(110, 160, 255, .55), 0 3px 10px rgba(0,0,0,.45), 0 0 0 1px #8f7226; }
+.recbtn.listening { background:radial-gradient(circle at 34% 30%, rgba(255,255,255,.25), rgba(0,0,0,0) 45%, rgba(0,0,0,.5) 100%),
+  url(assets/planet-rec.webp) center / cover;
+  box-shadow:0 0 0 7px rgba(176, 58, 36, .28), 0 0 22px rgba(255, 120, 80, .6), 0 3px 10px rgba(0,0,0,.4); }
