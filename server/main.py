@@ -4,6 +4,8 @@ implements, and server/RUNBOOK.md for deployment.
 
 Privacy: uploaded audio is transcribed in memory / a briefly-lived temp
 file (see asr.py) and is never written to permanent storage or logged.
+Live listening (POST /stream) keeps the current take in memory only until
+it ends or idles for 2 minutes (see streams.py).
 By default /evaluate does not return the transcript either (the app
 "never writes the Quran, only reveals the print") — pass ?debug=1 to
 include it for local debugging.
@@ -28,7 +30,8 @@ from .accounts import (
     normalize_code,
 )
 from .asr import ASR, WhisperASR
-from .matching import match_transcript
+from .matching import fuzzy_equal, match_transcript, normalize_arabic, word_forms
+from .streams import StreamError, StreamStore
 from .pagedata import MAX_PAGE, MIN_PAGE, PageNotFoundError, expected_words
 from .ratelimit import SlidingWindowLimiter
 from .store import Store
@@ -38,7 +41,10 @@ MAX_PROGRESS_BYTES = 64 * 1024
 MAX_AUDIO_BYTES = 15 * 1024 * 1024  # generous cap for a short recitation clip
 
 ACCOUNT_RATE_LIMIT = 10  # attempts / minute / IP
-EVALUATE_RATE_LIMIT = 30  # requests / minute / IP
+# requests / minute / IP; live listening sends ~40/min per reciter, so a GPU host raises it
+EVALUATE_RATE_LIMIT = int(os.environ.get("EVALUATE_RATE_LIMIT", "30"))
+STREAM_WINDOW_SECONDS = 25.0  # Whisper never sees more than this (long clips truncate)
+ANCHOR_EARLY_SECONDS = 0.6
 
 
 class AccountCreate(BaseModel):
@@ -230,6 +236,78 @@ def create_app(
             "matched": result["matched"],
             "pointer": result["pointer"],
             "done": done,
+        }
+        if request.query_params.get("debug") == "1":
+            response["transcript"] = transcript
+        return response
+
+    streams = StreamStore()
+    app.state.streams = streams
+
+    def _pointer_time(expected, pointer, level, words):
+        """End time (seconds into the take) of the spoken word that matched
+        expected[pointer - 1]: the next window starts there, anchored at
+        `pointer`, so already-recited words are never re-matched."""
+        if pointer <= 0 or not words:
+            return None
+        forms = word_forms(expected[pointer - 1])
+        for w, _start, end in reversed(words):
+            n = normalize_arabic(w)
+            if n and any(n == f or fuzzy_equal(n, f, level) for f in forms):
+                # word ends are estimates: anchor a little EARLY. Re-hearing the end of
+                # a matched word is harmless (leading tokens are skipped); starting
+                # late could cut off the next word.
+                return round(max(0.0, end - ANCHOR_EARLY_SECONDS), 2)
+        return None
+
+    @app.post("/stream")
+    async def stream(
+        request: Request,
+        chunk: UploadFile = File(...),
+        sid: str = Form(...),
+        seq: int = Form(...),
+        page: int = Form(...),
+        pointer: int = Form(...),
+        level: int = Form(...),
+        start: float = Form(0.0),
+        final: int = Form(0),
+    ):
+        """Live listening. The client uploads one continuous take in ordered
+        pieces (seq 0, 1, 2, ...: only the new audio each time) and asks, each
+        time, which words were recited after `pointer`, listening only from
+        `start` seconds into the take (the end time of the last revealed word,
+        returned here as pointer_time). The take is held in memory only and is
+        dropped on final=1 or after 2 idle minutes."""
+        enforce_rate_limit(evaluate_limiter, request)
+        if not (MIN_PAGE <= page <= MAX_PAGE):
+            raise HTTPException(status_code=400, detail=f"page must be between {MIN_PAGE} and {MAX_PAGE}")
+        if pointer < 0 or seq < 0 or start < 0:
+            raise HTTPException(status_code=400, detail="pointer, seq and start must be >= 0")
+        if level not in (1, 2, 3, 4):
+            raise HTTPException(status_code=400, detail="level must be 1-4")
+        try:
+            expected = expected_words(page)
+        except PageNotFoundError:
+            raise HTTPException(status_code=404, detail="page not found")
+        data = await chunk.read()
+        if len(data) > MAX_AUDIO_BYTES:
+            raise HTTPException(status_code=413, detail="audio too large")
+        try:
+            take = streams.append(sid, seq, data)
+        except StreamError as e:
+            raise HTTPException(status_code=e.status, detail=e.detail)
+        try:
+            transcript, words = asr.transcribe_window(take, start, STREAM_WINDOW_SECONDS)
+        finally:
+            del take
+            if final:
+                streams.drop(sid)
+        result = match_transcript(expected, pointer, transcript, level)
+        response = {
+            "matched": result["matched"],
+            "pointer": result["pointer"],
+            "done": result["pointer"] >= len(expected),
+            "pointer_time": _pointer_time(expected, result["pointer"], level, words) if result["pointer"] > pointer else None,
         }
         if request.query_params.get("debug") == "1":
             response["transcript"] = transcript

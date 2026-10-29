@@ -37,8 +37,13 @@ you set that up by hand on your own VPS or read it as background while
 
 ## Privacy statement (put this in the app's UI copy too)
 
-**Audio is processed in memory for the duration of one request and is
-never stored.** `/evaluate` reads the uploaded clip into memory, hands it
+**Audio is processed in memory and is never stored.** With live listening
+(`POST /stream`) the current recitation take is held in the server's memory
+while the user recites -- only so each new second of audio can be checked
+without re-uploading the whole take -- and is dropped the moment the take
+ends (or after 2 idle minutes); it never touches the disk and is never
+logged (see `server/streams.py`). `/evaluate` (one clip per request) works
+as before: `/evaluate` reads the uploaded clip into memory, hands it
 to the transcriber (which itself deletes any temp file it created
 immediately after decoding — see `server/asr.py`), and nothing about the
 audio bytes is logged or written to disk. The transcript itself is not

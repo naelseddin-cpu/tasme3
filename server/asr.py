@@ -42,6 +42,12 @@ class ASR(Protocol):
     def transcribe(self, audio_bytes: bytes) -> str:
         ...
 
+    def transcribe_window(self, audio_bytes: bytes, start: float, max_seconds: float):
+        """Transcribe only the audio from `start` seconds (at most the last
+        `max_seconds`). Returns (text, [(word, start_sec, end_sec), ...]) with
+        times measured from the beginning of the whole take."""
+        ...
+
 
 class FakeASR:
     """Test double: returns a preset transcript regardless of audio input.
@@ -60,6 +66,13 @@ class FakeASR:
         # actually handed to the transcriber, without holding onto content.
         self.last_audio_len = len(audio_bytes)
         return self.preset_text
+
+    def transcribe_window(self, audio_bytes: bytes, start: float, max_seconds: float):
+        # Synthetic timings: half a second per word from `start`.
+        self.last_audio_len = len(audio_bytes)
+        self.last_window_start = start
+        words = self.preset_text.split()
+        return self.preset_text, [(w, start + 0.5 * i, start + 0.5 * (i + 1)) for i, w in enumerate(words)]
 
     def set_preset(self, text: str) -> None:
         self.preset_text = text
@@ -87,6 +100,11 @@ class WhisperASR:
         self.compute_type = compute_type or os.environ.get("WHISPER_COMPUTE_TYPE", "int8")
         self.device = os.environ.get("WHISPER_DEVICE", "auto")
         self.device_index = int(os.environ.get("WHISPER_DEVICE_INDEX", "0"))
+        # Decoding: unset = faster-whisper defaults (beam 5, conditioned on the
+        # previous window). server/bench/asr_bench.py found greedy (1) without
+        # conditioning both faster and more accurate for the Quran turbo model.
+        self.beam_size = int(os.environ.get("WHISPER_BEAM_SIZE", "5"))
+        self.condition_on_previous_text = os.environ.get("WHISPER_CONDITION_ON_PREVIOUS", "1") != "0"
         self.language = language
         self.vad_filter = vad_filter
         self._model = None
@@ -171,6 +189,8 @@ class WhisperASR:
                 tmp.name,
                 language=self.language,
                 vad_filter=self.vad_filter,
+                beam_size=self.beam_size,
+                condition_on_previous_text=self.condition_on_previous_text,
             )
             return "".join(seg.text for seg in segments).strip()
         finally:
@@ -178,3 +198,77 @@ class WhisperASR:
                 os.unlink(tmp.name)
             except OSError:
                 pass
+
+    def transcribe_window(self, audio_bytes: bytes, start: float, max_seconds: float):
+        """Live listening: decode the whole take in memory (no temp file), keep
+        only the audio from `start` (minus a small lead-in, at most the last
+        `max_seconds`) and return its text plus per-word end times measured
+        from the beginning of the take, so the client can anchor the next window."""
+        model = self._ensure_model()
+        if model is None:
+            return "", []
+        import io
+        from faster_whisper.audio import decode_audio
+
+        sr = 16000
+        try:
+            audio = decode_audio(io.BytesIO(audio_bytes), sampling_rate=sr)
+        except Exception:
+            # some containers need a real path for format sniffing (see transcribe());
+            # same short-lived temp file, deleted at once
+            tmp = tempfile.NamedTemporaryFile(suffix=".audio", delete=False)
+            try:
+                tmp.write(audio_bytes); tmp.close()
+                audio = decode_audio(tmp.name, sampling_rate=sr)
+            except Exception:  # a take cut mid-frame can fail; the next piece fixes it
+                return "", []
+            finally:
+                try:
+                    os.unlink(tmp.name)
+                except OSError:
+                    pass
+        first = int(max(0.0, start - 0.3) * sr)
+        first = max(first, len(audio) - int(max_seconds * sr))
+        window = audio[first:]
+        if len(window) < int(0.3 * sr):
+            return "", []
+        offset = first / sr
+        segments, _info = model.transcribe(
+            window,
+            language=self.language,
+            vad_filter=self.vad_filter,
+            beam_size=self.beam_size,
+            condition_on_previous_text=self.condition_on_previous_text,
+        )
+        # Word timestamps are NOT requested: with them the Quran turbo model
+        # decodes the trailing silence and hallucinates subtitle credits
+        # ("ترجمة نانسي قنقر", "اشتركوا في القناة"), ~40x slower -- and that
+        # fine-tune predicts no segment timestamps either (start == end).
+        # Instead the recognized words are spread over the SPEECH the voice-
+        # activity detector finds in the window (reciters pause between
+        # phrases), by letter count: an estimate that main._pointer_time
+        # anchors on with an early bias.
+        toks = [t for seg in segments for t in seg.text.split()]
+        from faster_whisper.vad import VadOptions, get_speech_timestamps
+
+        try:
+            speech = [(c["start"] / sr, c["end"] / sr) for c in get_speech_timestamps(window, VadOptions())]
+        except Exception:
+            speech = []
+        if not speech:
+            speech = [(0.0, len(window) / sr)]
+        span = sum(e - b for b, e in speech) or 1e-6
+        total = sum(len(t) for t in toks) or 1
+        words, done = [], 0
+        for t in toks:
+            done += len(t)
+            at = span * done / total  # seconds of speech up to the end of this word
+            for b, e in speech:
+                if at <= e - b:
+                    end = b + at
+                    break
+                at -= e - b
+            else:
+                end = speech[-1][1]
+            words.append((t, offset + end - (len(t) / total) * span, offset + end))
+        return " ".join(w[0] for w in words), words

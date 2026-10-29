@@ -749,6 +749,7 @@
     pageNum = p;
     showPageSpinnerSoon(); // covers this whole navigation's JSON+image fetch span
     recorder.abort();
+    stopLive(); recorder.bumpToken(); // a live request still in flight belongs to the old page
     listener.stop();
     stopListening();
     el.pageChip.textContent = pageLabel(p);
@@ -1133,6 +1134,7 @@
       announceStatus(t('recite.pageComplete'));
       stopListening();
       recorder.abort();
+      stopLive();
       showShareBar(streakBefore);
       window.Tasme3Account.scheduleSync(function () { return state; });
       celebrateNewlyCompletedSurahs(pageNum);
@@ -1241,34 +1243,107 @@
     el.recBtn.setAttribute('aria-label', t(active ? 'record.tapToStop' : 'record.tapToStart'));
   }
 
+  // Live listening (GPU server, POST /stream): one continuous take is uploaded
+  // in ~1 s pieces as it is recorded -- only the NEW audio each time, so weak
+  // connections send a few KB per request -- and newly recited words appear
+  // while the user is still reciting. Each request is anchored: the server
+  // listens only from anchorSec (where the last revealed word ended) and
+  // matches from anchorPtr, so already-recited words are never re-matched and
+  // nothing is lost between requests. A response only counts if it moves the
+  // pointer FORWARD. One request in flight at a time keeps pieces in order.
+  var TAKE_MAX_MS = 10 * 60 * 1000;
+  var take = null; // {sid, seq, pending[], anchorPtr, anchorSec, inFlight, finalWanted, token, startedAt, timer}
+
+  function newSid() {
+    var a = new Uint8Array(12); (window.crypto || window.msCrypto).getRandomValues(a);
+    return Array.prototype.map.call(a, function (x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+  }
+
+  function pump() {
+    var tk = take;
+    if (!tk || tk.inFlight) return;
+    if (!tk.pending.length && !tk.finalWanted) return;
+    var isFinal = tk.finalWanted;
+    var form = new FormData();
+    var mime = recorder.snapshot() ? recorder.snapshot().mimeType : (tk.mime || 'audio/webm');
+    tk.mime = mime;
+    form.append('chunk', new Blob(tk.pending, { type: mime }), 'piece.' + (mime.indexOf('mp4') !== -1 ? 'mp4' : 'webm'));
+    form.append('sid', tk.sid); form.append('seq', String(tk.seq));
+    form.append('page', String(pageNum)); form.append('pointer', String(tk.anchorPtr));
+    form.append('level', String(level)); form.append('start', String(tk.anchorSec));
+    form.append('final', isFinal ? '1' : '0');
+    var sentPieces = tk.pending; tk.pending = []; tk.inFlight = true;
+    fetch(SERVER_URL + '/stream', { method: 'POST', body: form })
+      .then(function (r) {
+        if (r.status === 409) { // server lost the take (restart): resend it whole under a new id
+          tk.sid = newSid(); tk.seq = 0; tk.pending = tk.all.slice(); return null;
+        }
+        if (!r.ok) throw new Error('http_' + r.status);
+        tk.seq += 1;
+        return r.json();
+      })
+      .then(function (data) {
+        if (!data || tk.token !== recorder.currentToken() || take !== tk) return;
+        if (data.pointer > pointer) {
+          var from = pointer;
+          applyMatches({ matched: (data.matched || []).filter(function (i) { return i >= from; }),
+            pointer: data.pointer, done: data.done });
+        }
+        // anchor the next window at the last word actually revealed
+        if (pointer === data.pointer && data.pointer_time != null && pointer > tk.anchorPtr) {
+          tk.anchorPtr = pointer; tk.anchorSec = data.pointer_time;
+        }
+        if (isFinal) finishTake(tk, data);
+      })
+      .catch(function () {
+        if (isFinal) { setStatus(t('record.error.network'), 'err'); finishTake(tk, null); }
+        else tk.pending = sentPieces.concat(tk.pending); // retry these pieces with the next one
+      })
+      .finally(function () {
+        tk.inFlight = false;
+        if (take === tk && !(isFinal && !tk.pending.length)) pump();
+      });
+  }
+
+  function finishTake(tk, data) {
+    if (take !== tk) return;
+    take = null;
+    evalInFlight = false;
+    el.recBtn.disabled = false;
+    el.recBtn.classList.remove('busy');
+    if (data && !(('done' in data) ? data.done : pointer >= expected.length)) renderStatusIdle();
+    updateRecBtnLabel();
+  }
+
+  function stopLive() { if (take && take.timer) { clearTimeout(take.timer); take.timer = null; } take = null; }
+
+  function startTake() {
+    stopLive();
+    var tk = take = { sid: newSid(), seq: 0, pending: [], all: [], anchorPtr: pointer, anchorSec: 0,
+      inFlight: false, finalWanted: false, token: -1, startedAt: Date.now(), timer: null };
+    recorder.start(onRecordDone, onRecordError, function (piece) {
+      if (take !== tk) return;
+      tk.token = recorder.currentToken();
+      tk.all.push(piece); tk.pending.push(piece); pump();
+    });
+    tk.timer = setTimeout(function () { if (take === tk && recorder.isRecording()) recorder.stop(); }, TAKE_MAX_MS);
+    el.recBtn.classList.add('listening');
+    setStatus(t('record.tapToStop'));
+  }
+
   function onRecordDone(blob, mimeType, token) {
+    var tk = take;
     el.recBtn.classList.remove('listening');
+    if (!tk) return;
+    if (tk.timer) { clearTimeout(tk.timer); tk.timer = null; }
+    tk.token = token; tk.mime = mimeType;
     el.recBtn.classList.add('busy');
     el.recBtn.disabled = true;
     evalInFlight = true;
     updateRecBtnLabel();
     setStatus(t('record.uploading'));
-    var form = new FormData();
-    var ext = mimeType.indexOf('mp4') !== -1 ? 'mp4' : 'webm';
-    form.append('audio', blob, 'clip.' + ext);
-    form.append('page', String(pageNum));
-    form.append('pointer', String(pointer));
-    form.append('level', String(level));
-    fetch(SERVER_URL + '/evaluate', { method: 'POST', body: form })
-      .then(function (r) { if (!r.ok) throw new Error('http_' + r.status); return r.json(); })
-      .then(function (data) {
-        if (token !== recorder.currentToken()) return; // stale response guard (M2)
-        applyMatches(data);
-        if (!(('done' in data) ? data.done : pointer >= expected.length)) renderStatusIdle();
-      })
-      .catch(function () {
-        setStatus(t('record.error.network'), 'err');
-      })
-      .finally(function () {
-        evalInFlight = false;
-        el.recBtn.disabled = false;
-        el.recBtn.classList.remove('busy');
-      });
+    tk.finalWanted = true;
+    pump();
   }
 
   function onRecordError(reason) {
@@ -1286,9 +1361,7 @@
         recorder.stop();
         setStatus(t('record.uploading'));
       } else if (!recorder.isBusy() && !evalInFlight) {
-        recorder.start(onRecordDone, onRecordError);
-        el.recBtn.classList.add('listening');
-        setStatus(t('record.tapToStop'));
+        startTake();
       }
       updateRecBtnLabel();
     } else {

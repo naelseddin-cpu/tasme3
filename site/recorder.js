@@ -63,7 +63,8 @@
   // onDone(blob, mimeType, token) is called once recording stops with data.
   // onError(reason) covers permission denial, unsupported format, and
   // MediaRecorder.onerror.
-  Recorder.prototype.start = function (onDone, onError) {
+  // onChunk(blob), optional, receives each ~1 s piece as it is recorded (live listening).
+  Recorder.prototype.start = function (onDone, onError, onChunk) {
     if (this.isBusy()) return; // busy-guard: ignore a second tap in flight
     var self = this;
     self._state = 'busy'; // busy from the first tap until getUserMedia resolves
@@ -99,7 +100,7 @@
       }
       self._mr = mr;
       mr.ondataavailable = function (ev) {
-        if (ev.data && ev.data.size > 0) self._chunks.push(ev.data);
+        if (ev.data && ev.data.size > 0) { self._chunks.push(ev.data); if (onChunk) onChunk(ev.data); }
       };
       mr.onerror = function () {
         self._release();
@@ -114,8 +115,11 @@
         onDone(blob, mt, token);
       };
       try {
-        mr.start();
+        // 1 s timeslices: the chunks so far are always a playable prefix, which
+        // live listening (snapshot()) sends while the user is still reciting.
+        mr.start(1000);
         self._state = 'recording';
+        self._mime = mr.mimeType || mimeType || 'audio/webm';
       } catch (e) {
         self._release();
         self._state = 'idle';
@@ -129,6 +133,13 @@
 
   // Stops the active recording; onDone fires from mr.onstop. Safe to call
   // when not recording (no-op).
+  // Everything recorded so far in this take (a valid file: the first chunk carries
+  // the container header), or null before the first timeslice arrives.
+  Recorder.prototype.snapshot = function () {
+    if (this._state !== 'recording' || !this._chunks.length) return null;
+    return { blob: new Blob(this._chunks, { type: this._mime }), mimeType: this._mime };
+  };
+
   Recorder.prototype.stop = function () {
     if (this._state !== 'recording' || !this._mr) return;
     try { this._mr.stop(); } catch (_) { this._release(); this._state = 'idle'; }

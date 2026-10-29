@@ -6,8 +6,15 @@ After=network-online.target
 
 [Service]
 WorkingDirectory=%h/tasme3
-Environment=WHISPER_MODEL=%h/tasme3/server/models/whisper-base-ar-quran-ct2
-# GPU 1 = RTX 5060 Ti (the 3090 is full with llama.cpp); RTX 50xx needs float16, not int8
+# Whisper large-v3-turbo fine-tuned on Quran (Apache-2.0); ~9.4% vs 13.7% word errors for base
+# as judged by the app's matcher (server/bench/asr_bench.py)
+Environment=WHISPER_MODEL=%h/tasme3/server/models/whisper-turbo-ar-quran-ct2
+Environment=WHISPER_BEAM_SIZE=1
+Environment=WHISPER_CONDITION_ON_PREVIOUS=0
+# live listening sends ~40 requests/min per reciter
+Environment=EVALUATE_RATE_LIMIT=120
+# GPU 1 = RTX 5060 Ti; budget agreed with Arch3 (ALRASSAI Gemma shares it): stay under 4.5 GB.
+# RTX 50xx needs float16, not int8
 Environment=WHISPER_DEVICE=cuda
 Environment=WHISPER_DEVICE_INDEX=1
 Environment=WHISPER_COMPUTE_TYPE=float16
