@@ -73,7 +73,20 @@ class Handler(SimpleHTTPRequestHandler):
             super().log_message(fmt, *args)
 
     def end_headers(self):
-        self.send_header('Cache-Control', 'no-cache')
+        # Let browsers and Cloudflare's edge keep the heavy, rarely-changing files
+        # (images, data, mushaf pages, engine files) so repeat visits and new visitors
+        # don't all pull them through this PC's home line. HTML, service workers and
+        # the API stay always-fresh.
+        path = self.path.split('?')[0]
+        if path.startswith(('/api/', '/hifz-api/')) or path.endswith(('.html', '/', 'sw.js', 'config.js', '.webmanifest')):
+            cache = 'no-cache'
+        elif path.endswith(('.jpg', '.webp', '.png', '.woff2', '.ttf', '.otf', '.onnx', '.wasm')):
+            cache = 'public, max-age=2592000'           # 30 days
+        elif path.endswith('.json'):
+            cache = 'public, max-age=86400, stale-while-revalidate=604800'
+        else:
+            cache = 'public, max-age=3600'
+        self.send_header('Cache-Control', cache)
         super().end_headers()
 
     def owner(self):

@@ -607,22 +607,40 @@ async function askInto(btn, out, prompt, withTools) {
   const steps = document.createElement('p'); steps.className = 'steps';
   const tools = withTools ? TOOLS.map(t => ({ ...t, execute: (inp) => { steps.textContent = `يبحث في المصحف: ${inp.query || inp.root || (inp.refs || []).join('، ')}`; return t.execute(inp); } })) : undefined;
   out.prepend(steps);
+  let last = '';
   try {
-    await SAMPLE(prompt, { signal: ctl.signal, tools, modelTier: 'default', onText: ({ text }) => { out.innerHTML = mdLite(text); } });
+    await SAMPLE(prompt, { signal: ctl.signal, tools, modelTier: 'default', onText: ({ text }) => { last = text; out.innerHTML = mdLite(text); } });
     out.insertAdjacentHTML('beforeend', '<p class="note">استنباط من الآيات المعروضة، وليس تفسيرًا معتمدًا. اضغط على أرقام الآيات لقراءة نصها.</p>');
+    out.dataset.answer = last; // read by pregen.js when it saves standard answers
   } catch (e) { out.innerHTML = (e.text ? mdLite(e.text) : '') + `<p class="note">${esc(errText(e))}</p>`; }
   finally { btn.disabled = false; }
 }
-function claudeBlock(el, buildPrompt, label) {
+// Standard answers (every root on the map, subject, story and surah) are generated once
+// by pregen.js on the server PC and saved as wisdom/<hash>.json, so pressing the button
+// costs no AI time; only questions without a saved answer reach the live assistant.
+const keyFile = k => { let h = 0x811c9dc5; for (const c of new TextEncoder().encode(k)) { h ^= c; h = Math.imul(h, 0x01000193) >>> 0; } return 'wisdom/' + h.toString(16).padStart(8, '0') + '.json'; };
+async function savedAnswer(key) {
+  if (!key) return null;
+  try { const r = await fetch(keyFile(key)); if (!r.ok) return null; const d = await r.json(); return d.key === key ? d : null; } catch { return null; }
+}
+function claudeBlock(el, buildPrompt, label, key) {
   const wrap = document.createElement('div'); wrap.className = 'sec';
   wrap.innerHTML = `<h4>الحكمة والروابط <small>بقراءة ${AI} للآيات</small></h4>`;
   const btn = document.createElement('button'); btn.className = 'ask'; btn.innerHTML = `<svg width="18" height="18" style="color:#e8c46e"><use href="#star"/></svg>${esc(label)}`;
   const out = document.createElement('div'); out.className = 'answer'; out.hidden = true;
   const na = document.createElement('div'); na.className = 'unavail'; na.textContent = 'المساعد غير متاح الآن. بقية الصفحة تعمل كاملة.';
   wrap.append(btn, out); el.append(wrap);
-  btn.hidden = true; wrap.append(na);
+  btn.hidden = true; wrap.append(na); btn.dataset.key = key || '';
   claudeReady.then(s => { if (s) { btn.hidden = false; na.remove(); } });
-  btn.onclick = () => askInto(btn, out, buildPrompt(), true);
+  savedAnswer(key).then(d => { if (d) { btn.hidden = false; na.remove(); btn.dataset.saved = '1'; } });
+  btn.onclick = async () => {
+    const d = !btn.dataset.fresh && await savedAnswer(key);
+    if (!d) return askInto(btn, out, buildPrompt(), true);
+    out.hidden = false;
+    out.innerHTML = mdLite(d.text) + '<p class="note">إجابة مُعدّة مسبقًا: استنباط من الآيات، وليس تفسيرًا معتمدًا. اضغط على أرقام الآيات لقراءة نصها.</p>';
+    if (SAMPLE) { const again = document.createElement('button'); again.className = 'tag'; again.textContent = 'اسأل من جديد';
+      again.onclick = () => { btn.dataset.fresh = '1'; askInto(btn, out, buildPrompt(), true); }; out.append(again); }
+  };
 }
 function versesForPrompt(vm, max = 90) {
   const keys = [...vm.keys()].sort((a, b) => a - b);
@@ -659,7 +677,7 @@ function showItem(spec) {
       ? `ورد العَلَم "${spec.title}" في ${st.n} موضعًا في ${st.v} آية. رتّب قصته كما تُروى في هذه الآيات:\n## من هو\n## أحداث القصة بالترتيب، مع موضع كل حدث\n## كيف تتوزع القصة على السور، وما الذي تبرزه كل سورة\n## الحكم والدروس\n## روابط مع قصص وأعلام آخرين`
       : `الموضوع: "${spec.title}" (${spec.kind}). ورد في ${st.n} موضعًا في ${st.v} آية و${st.s} سورة.\nاستخرج من هذه الآيات:\n## المعنى العام كما يظهر من الآيات\n## الحكم والدروس\n## التسلسل المنطقي للموضوع (من أين يبدأ وإلى أين ينتهي)\n## الروابط مع القضايا الأخرى (من الجذور المقترنة: ${rel.slice(0, 8).map(x => x[0]).join('، ')})\n## صيغ وتعبيرات متكررة لافتة`;
     return `${RULES}\n\n${ask}\n\n${v.partial ? `هذه ${90} آية موزعة بالتساوي من أصل ${v.total}؛ استخدم الأدوات إن احتجت غيرها.\n` : ''}الآيات:\n${v.text}`;
-  }, spec.prompt === 'story' ? 'رتّب القصة واستخرج حكمها' : 'استخرج الحكمة والروابط');
+  }, spec.prompt === 'story' ? 'رتّب القصة واستخرج حكمها' : 'استخرج الحكمة والروابط', `${spec.prompt === 'story' ? 'story' : 'wisdom'}:${spec.kind}:${spec.title}`);
   const d4 = sec('الآيات كاملة', `${ar(st.v)} آية، والكلمات المقصودة مظلّلة`);
   verseList(d4, st.vm);
   openPanel();
@@ -678,7 +696,7 @@ function showSurah(s) {
   claudeBlock(panel, () => {
     const v = versesForPrompt(vm, 120);
     return `${RULES}\n\nسورة ${name} (رقم ${s}، ${type === 'm' ? 'مكية' : 'مدنية'}، ${nv} آية). أبرز جذورها المميزة: ${dist.map(x => x[0]).join('، ')}.\nاستخرج:\n## محور السورة ومقصدها\n## أقسام السورة وتسلسلها المنطقي (بمدى الآيات)\n## القصص والأعلام فيها\n## الحكم والدروس\n## روابطها بالسور الأقرب إليها: ${sv.sim[i].slice(0, 3).map(([j]) => D.surahs[j][0]).join('، ')}\n\n${v.partial ? `هذه ${120} آية موزعة من أصل ${v.total}؛ استخدم get_verses لما تحتاجه.\n` : ''}الآيات:\n${v.text}`;
-  }, 'مقاصد السورة وحكمها');
+  }, 'مقاصد السورة وحكمها', `surah:${s}`);
   verseList(sec('نص السورة'), vm, 30);
   openPanel();
 }
@@ -1107,6 +1125,8 @@ function heroFrame() {
 addEventListener('scroll', () => requestAnimationFrame(heroFrame), { passive: true });
 addEventListener('resize', heroFrame);
 addEventListener('hashchange', route); route();
+// offline / repeat visits (not inside claude.ai, where the page is an artifact)
+if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !window.claude) navigator.serviceWorker.register('sw.js').catch(() => {});
 
 load().then(async () => {
   $('#boot').remove();
