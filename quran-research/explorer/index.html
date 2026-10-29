@@ -951,7 +951,6 @@ class Space {
     this.rot = { x: .25, y: 0 }; this.dist = 480; this.distT = 480; this.focus = new THREE.Vector3(); this.focusT = new THREE.Vector3();
     this.idle = 0; this.sel = -1; this.ray = new THREE.Raycaster(); this.ptrs = new Map();
     this.scene.background = this.bg;
-    this.kaaba();
     // Film look: bloom makes the sun, lit rims and atmospheres glow; the last pass applies
     // ACES tone mapping and sRGB (the composer renders in linear light). Glow can't be drawn
     // into transparent pixels, which is why the nebula is the scene background, not CSS.
@@ -974,29 +973,6 @@ class Space {
     const loop = t => { requestAnimationFrame(loop); if (!document.hidden && $('#space').classList.contains('on')) this.frame(t); }; requestAnimationFrame(loop);
   }
   // a Saturn-style ring: the Nano Banana band is laid radially (u = distance from the planet), tilted with the planet
-  // The Kaaba at the center of the space: a true cube (proportions of the real building,
-  // roughly 12 x 11 m and 13 m high) dressed in the Nano Banana kiswah (gold band as
-  // ornament only, no lettering), on a white marble base, with a ring of light circling
-  // it counter-clockwise as in tawaf. It sits in the scene, so it turns with the planets.
-  kaaba() {
-    const g = new THREE.Group(), S = 24, side = tex('kiswah'), door = tex('kiswah-door'); // door: ornament-only cartouches (checked)
-    const silk = t => new THREE.MeshStandardMaterial({ map: t, roughness: .55, metalness: .25, emissive: 0x1a1408, emissiveIntensity: .4 });
-    const top = new THREE.MeshStandardMaterial({ color: 0x0b0b0e, roughness: .6, metalness: .2 });
-    const cube = new THREE.Mesh(new THREE.BoxGeometry(S * 1.12, S * 1.3, S * 1.02), [silk(side), silk(side), top, top, silk(door), silk(side)]);
-    cube.position.y = S * .65 + .6; g.add(cube);
-    const base = new THREE.Mesh(new THREE.BoxGeometry(S * 1.22, 1.2, S * 1.12), new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: .35, metalness: .1 }));
-    base.position.y = .6; g.add(base);
-    const halo = sprite('glow', 0xffd890, .8); halo.scale.setScalar(S * 6); halo.position.y = S * .65; g.add(halo);
-    // warm light from above, so the black kiswah and its gold band read against space
-    const lamp = new THREE.PointLight(0xffd9a0, 2.2, S * 9, 1.6); lamp.position.set(S * .6, S * 2.4, S * 1.4); g.add(lamp);
-    const n = 2600, pos = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, r = S * (1.05 + Math.pow(Math.random(), .7) * 1.4); pos.set([Math.cos(a) * r, .6 + Math.random() * 2.2, Math.sin(a) * r], i * 3); }
-    const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-    this.tawaf = new THREE.Points(pg, new THREE.PointsMaterial({ map: tex('glow'), alphaMap: tex('glow'), color: 0xffe6b0, size: 4.2, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
-    g.add(this.tawaf);
-    g.position.y = -S * .5;
-    this.world.add(g); this.kaabaGroup = g;
-  }
   ring(R, tint = 0xf0e4c8) {
     const inner = 1.35, outer = 2.35, g = new THREE.RingGeometry(inner, outer, 128, 1), p = g.attributes.position, uv = g.attributes.uv, v = new THREE.Vector3();
     for (let k = 0; k < p.count; k++) { v.fromBufferAttribute(p, k); uv.setXY(k, (v.length() - inner) / (outer - inner), .5); }
@@ -1051,7 +1027,6 @@ class Space {
       for (let i = 0; i < N; i++) { V[i].addScaledVector(P[i], -.006); P[i].addScaledVector(V[i], .9 * k + .1); V[i].multiplyScalar(.55); }
     }
     let r = 0; P.forEach(p => r = Math.max(r, p.length())); P.forEach(p => p.multiplyScalar(240 / r));
-    P.forEach(p => { const l = p.length(); if (l < 95) p.multiplyScalar((95 + l * .35) / Math.max(l, 1e-3)); }); // room for the Kaaba
   }
   applyVis() {
     const s = this.sel, N = this.meshes.length;
@@ -1153,7 +1128,7 @@ class Space {
     if (lift !== this.lift) { this.lift = lift; const w = this.cv.clientWidth, h = this.cv.clientHeight; lift ? this.cam.setViewOffset(w, h, 0, lift, w, h) : this.cam.clearViewOffset(); }
     if (this.sel >= 0) { const m = this.meshes[this.sel]; m.userData.glow.scale.setScalar(m.userData.g * 1.25 * (1 + .08 * Math.sin(performance.now() / 400))); }
     const t = performance.now() / 1000;
-    if (!still) { for (const m of this.meshes) m.rotation.y += .0015; if (this.tawaf) this.tawaf.rotation.y += .004; } // tawaf: counter-clockwise seen from above
+    if (!still) for (const m of this.meshes) m.rotation.y += .0015;
     if (this.orbits) this.moveOrbits(still ? 0 : t * .25);
     if (this.composer) this.composer.render(); else this.r.render(this.scene, this.cam);
   }
@@ -1218,7 +1193,7 @@ if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !wind
 function preloadArt() {
   const portrait = matchMedia('(orientation: portrait)').matches;
   const hero = (portrait ? ['portrait-kaaba', 'portrait-nabawi', 'portrait-aqsa', 'portrait-umayyad'] : ['journey-kaaba', 'journey-nabawi', 'journey-aqsa', 'journey-umayyad']).concat('hero-3-dome');
-  const tx = ['nebula', 'sun', 'kiswah', 'kiswah-door', 'moon', 'amber', 'saturn', 'mars', 'ruby', 'lava', 'gold-turquoise', 'marble', 'ice', 'teal', 'earth', 'emerald', 'amethyst', 'teal-gold', 'sapphire'];
+  const tx = ['nebula', 'sun', 'moon', 'amber', 'saturn', 'mars', 'ruby', 'lava', 'gold-turquoise', 'marble', 'ice', 'teal', 'earth', 'emerald', 'amethyst', 'teal-gold', 'sapphire'];
   const urls = hero.map(n => `img/hd/${n}.jpg`).concat(tx.map(n => `img/hd/tx-${n}.jpg`), ['img/tx-ring.jpg', 'img/el-seed.jpg']);
   const got = {}, size = {};
   const ldr = $('#loader'), show = setTimeout(() => { ldr.hidden = false; }, 300);
