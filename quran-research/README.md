@@ -10,10 +10,36 @@ plus the word-by-word morphology of the Quranic Arabic Corpus.
 ## Explorer (3D interactive page)
 
     python3 build_data.py ../tools/data/quran.json morph.txt explorer   # writes data.json + text.json
-    cd explorer && python3 -m http.server   # open http://localhost:8000
+    python3 server.py   # open http://localhost:8000
 
-`explorer/index.html` is published as a claude.ai artifact; the "الحكمة" view
-asks Claude (artifact `sample` capability) and only works inside claude.ai.
+Arabic-native and mobile-first (most users are on phones). Home is a cinematic
+scroll hero; "الفضاء" shows every root as a planet (warm = mostly Meccan, cool =
+mostly Medinan, size = occurrences, rings = the 12 most frequent) whose moons are
+its lemmas, with the written forms as satellites. Reading pages use a parchment theme.
+
+`server.py` serves the site and the "الحكمة" chat: the owner (this PC, the home
+network, or the password in `.chat-password`) gets the Claude CLI; public visitors
+get the local llama.cpp Gemma server on port 8092. Inside claude.ai the page uses
+the artifact `sample` capability instead.
+
+## Running it permanently (public)
+
+`deploy/` has two systemd user services: the site, and a free Cloudflare quick
+tunnel that gives it a public HTTPS address (it changes on every restart):
+
+    cp deploy/quran-*.service ~/.config/systemd/user/
+    systemctl --user enable --now quran-explorer quran-tunnel
+    sudo loginctl enable-linger $USER     # start at boot without logging in
+    deploy/public-url.sh                  # print the current public address
+
+## Design (all artwork from Nano Banana)
+
+Every image in `explorer/img/` was generated with Nano Banana Pro through the
+Gemini web app (Google AI Pro plan, no paid API): `design/raw/` keeps the
+originals, `design/prompts/` the prompts, `design/gemini_web.py` the headless
+Firefox driver (it runs over a copy of a signed-in Firefox profile). Every image is
+checked for invented script: Quran text is never generated. The site's JPGs are
+made from the originals with PIL.
 
 ## Root report (رزق)
 

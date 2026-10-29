@@ -1,0 +1,6 @@
+Create an image. Wide 2:1 equirectangular texture map (for wrapping onto a 3D sphere), landscape.
+
+The full surface of a fantasy planet made of burnished gold and amber, covered with an intricate Islamic geometric pattern of interlocking eight-pointed stars and girih tiles in low relief, softly worn like an ancient astrolabe, with darker bronze channels between the stars and a few faint warm cloud-like swirls of golden mist drifting over it.
+Composition: an evenly distributed pattern across the ENTIRE frame, seamless where the left edge meets the right edge, no horizon, no sky, no space, no single focal point — only surface texture, as a planetary texture map.
+Style: high-detail planetary texture map, even flat lighting, no shadows from a light source.
+NO writing, NO letters, NO calligraphy, NO text.

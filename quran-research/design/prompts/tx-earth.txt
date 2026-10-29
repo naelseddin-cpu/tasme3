@@ -1,0 +1,4 @@
+Create an image. Wide 2:1 equirectangular texture map for wrapping onto a 3D sphere, landscape.
+
+The surface of an Earth-like ocean planet seen from orbit: deep blue oceans, a few green and ochre continents with mountain ranges, swirling white cloud systems and storms over the oceans, polar ice caps at the top and bottom edges.
+Composition: the surface texture covers the ENTIRE frame edge to edge, seamless where the left edge meets the right edge, no space, no stars, no black background, no planet outline, no lighting or shadow — a flat planetary texture map like NASA texture maps. Style: photorealistic, NASA/JPL planetary texture map. NO text, NO letters, NO labels.

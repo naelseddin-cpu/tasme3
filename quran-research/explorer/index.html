@@ -1,3 +1,6 @@
+<html lang="ar" dir="rtl">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>مستكشف القرآن</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Aref+Ruqaa:wght@700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
@@ -5,26 +8,20 @@
 /* Layout: sticky ornamented top bar with five views; the 3D "space" fills the screen like a night sky over a mosque courtyard;
    every item opens one shared side panel (bottom sheet on phones) with counts, distribution, linked roots, verses and Claude's reading. */
 :root {
-  --bg: #eef2f6; --surface: #ffffff; --surface-2: #f5f7fa; --ink: #12223a; --muted: #56657a;
-  --line: #d6dde7; --lapis: #1d4e89; --gold: #a87a22; --teal: #127a6d; --meccan: #c08a2a; --medinan: #1f8f80;
-  --hl: #f4e2a8; --hl-ink: #12223a; --shadow: 0 10px 30px rgba(18, 34, 58, .14);
+  /* one style for the whole site: night (top bar, home, space, section scenes) + illuminated-manuscript parchment (reading pages).
+     All artwork is Nano Banana (img/); CSS only composes it. */
+  --bg: #efe4cb; --surface: #fbf6ea; --surface-2: #f5ecd8; --ink: #2b2116; --muted: #6b5a43;
+  --line: #dbc8a2; --lapis: #1d3f73; --gold: #9a6b16; --teal: #1d6f63; --meccan: #b07a1f; --medinan: #1f7f72;
+  --hl: #f1d688; --hl-ink: #2b2116; --shadow: 0 10px 30px rgba(60, 40, 10, .16);
   --f-quran: "Amiri Quran", "Amiri", "Traditional Arabic", serif;
   --f-ui: "IBM Plex Sans Arabic", "Segoe UI", "Geeza Pro", system-ui, sans-serif;
   --f-title: "Aref Ruqaa", "Amiri", serif;
   --space-bg: #07101f; --space-ink: #eef2fa; --space-muted: #9fb0c8; --space-line: rgba(224, 184, 90, .28);
+  color-scheme: light;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0a1322; --surface: #111d31; --surface-2: #0e192b; --ink: #e6ecf5; --muted: #9aabc2;
-  --line: #24344f; --lapis: #8db6ee; --gold: #e0b85a; --teal: #5cc9b8; --meccan: #e0b85a; --medinan: #5cc9b8;
-  --hl: #5b4a17; --hl-ink: #fff4d6; --shadow: 0 10px 30px rgba(0, 0, 0, .45); color-scheme: dark } }
-:root[data-theme="dark"] {
-  --bg: #0a1322; --surface: #111d31; --surface-2: #0e192b; --ink: #e6ecf5; --muted: #9aabc2;
-  --line: #24344f; --lapis: #8db6ee; --gold: #e0b85a; --teal: #5cc9b8; --meccan: #e0b85a; --medinan: #5cc9b8;
-  --hl: #5b4a17; --hl-ink: #fff4d6; --shadow: 0 10px 30px rgba(0, 0, 0, .45); color-scheme: dark }
 
 html, body { height: 100%; }
-body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 15px; line-height: 1.7;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='88' viewBox='0 0 88 88'%3E%3Cg fill='none' stroke='%23b8862b' stroke-opacity='.13'%3E%3Crect x='26' y='26' width='36' height='36'/%3E%3Crect x='26' y='26' width='36' height='36' transform='rotate(45 44 44)'/%3E%3Ccircle cx='44' cy='44' r='9'/%3E%3Cpath d='M0 44h18M70 44h18M44 0v18M44 70v18'/%3E%3C/g%3E%3C/svg%3E"); }
+body { background: var(--bg) url(img/parchment.jpg) top left / 512px repeat; color: var(--ink); font-family: var(--f-ui); font-size: 15px; line-height: 1.7; overflow-x: clip; }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--space-bg); }
 * { box-sizing: border-box; }
 button { font: inherit; color: inherit; cursor: pointer; }
@@ -44,7 +41,11 @@ nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-inline-start: auto; 
 nav.tabs a { color: var(--space-muted); text-decoration: none; padding: 6px 12px; border-radius: 999px; font-weight: 500; border: 1px solid transparent; }
 nav.tabs a:hover { color: var(--space-ink); }
 nav.tabs a[aria-current="page"] { color: #0b1528; background: #e8c46e; }
-@media (max-width: 640px) { nav.tabs { margin-inline-start: 0; width: 100%; justify-content: space-between; } nav.tabs a { padding: 4px 9px; font-size: .9rem; } }
+nav.tabs .s { display: none; }
+.grab { display: none; }
+.chip.info { display: none; }
+
+
 
 .view { display: none; }
 .view.on { display: block; }
@@ -53,13 +54,38 @@ nav.tabs a[aria-current="page"] { color: #0b1528; background: #e8c46e; }
 .page-head { display: grid; gap: 6px; margin-bottom: 22px; }
 .page-head h2 { font-size: 1.7rem; }
 .page-head p { color: var(--muted); margin: 0; max-width: 70ch; }
-.eyebrow { font-size: .8rem; letter-spacing: .04em; color: var(--gold); font-weight: 600; }
+.eyebrow { font-size: .8rem; letter-spacing: 0; color: var(--gold); font-weight: 600; }
+/* each reading page opens on its own night scene, then an illuminated headpiece leads into the parchment */
+.view > .page { padding-top: 0; }
+.view > .page > .page-head { position: relative; margin: 0 calc(50% - 50vw) 92px; min-height: min(46vh, 440px); align-content: end; gap: 8px;
+  padding: 120px max(16px, calc(50vw - 574px)) 34px; color: #f3ead2; background: #05080f center / cover no-repeat; isolation: isolate; }
+.view > .page > .page-head::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(4, 7, 14, .92), rgba(4, 7, 14, .35) 55%, rgba(4, 7, 14, .15)); }
+.view > .page > .page-head::after { content: ""; position: absolute; inset-inline: 0; bottom: -66px; height: 58px; background: url(img/headpiece.jpg) center / auto 100% no-repeat; mix-blend-mode: multiply; }
+.view > .page > .page-head h2 { font-family: var(--f-title); font-size: clamp(2rem, 4.6vw, 3.2rem); color: #e8c46e; font-weight: 700; text-shadow: 0 3px 20px rgba(0, 0, 0, .7); }
+.view > .page > .page-head p { color: #e9dfc3; font-size: 1.05rem; text-shadow: 0 2px 10px rgba(0, 0, 0, .8); }
+.view > .page > .page-head .eyebrow { color: #e8c46e; font-size: .95rem; }
+#count .page-head { background-image: url(img/sec-count.jpg); }
+#subjects .page-head { background-image: url(img/sec-subjects.jpg); }
+#stories .page-head { background-image: url(img/sec-stories.jpg); background-position: center 75%; }
+#wisdom .page-head { background-image: url(img/sec-wisdom.jpg); }
+#about .page-head { background-image: url(img/sec-about.jpg); }
+.prose { max-width: 820px; font-size: 1.05rem; line-height: 2; }
+.prose h3 { font-family: var(--f-title); color: var(--gold); font-size: 1.6rem; margin: 30px 0 8px; }
+.prose ul { padding-inline-start: 22px; } .prose li { margin-bottom: 6px; }
+.prose a { color: var(--lapis); }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 14px 0; }
+.facts div { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; }
+.facts b { display: block; font-size: 1.5rem; color: var(--lapis); font-variant-numeric: tabular-nums; }
+.facts span { font-size: .85rem; color: var(--muted); }
 
 /* space */
-#space { position: relative; height: calc(100dvh - 56px - env(safe-area-inset-top, 0px)); min-height: 460px; background: radial-gradient(ellipse at 50% 40%, #13284a 0%, var(--space-bg) 70%); color: var(--space-ink); overflow: hidden; }
+#space { position: relative; height: calc(100dvh - 56px - env(safe-area-inset-top, 0px)); min-height: 460px; background: var(--space-bg) url(img/tx-nebula.jpg) center / cover no-repeat; color: var(--space-ink); overflow: hidden; }
 #space canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .hud { position: absolute; inset-inline-start: max(16px, env(safe-area-inset-right, 0px)); top: 16px; display: grid; gap: 10px; max-width: min(360px, calc(100% - 32px)); pointer-events: none; }
-.hud > * { pointer-events: auto; }
+.hud > * { pointer-events: auto; min-width: 0; }
+.hud { background: rgba(5, 9, 18, .62); backdrop-filter: blur(6px); border: 1px solid var(--space-line); border-radius: 16px; padding: 14px 16px; }
+.hud { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 640px) { .hud { inset-inline: 12px; max-width: none; top: 10px; gap: 8px; } .hud p { font-size: .82rem; } .hud h1 { font-size: 1.6rem; } }
 .hud h1 { font-family: var(--f-title); font-size: clamp(1.8rem, 4vw, 2.6rem); color: #e8c46e; font-weight: 700; }
 .hud p { margin: 0; color: var(--space-muted); font-size: .92rem; }
 .modes { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -78,7 +104,6 @@ nav.tabs a[aria-current="page"] { color: #0b1528; background: #e8c46e; }
 #panel { position: fixed; z-index: 40; top: calc(env(safe-area-inset-top, 0px) + 56px); bottom: 0; inset-inline-end: 0; width: min(480px, 100%);
   background: var(--surface); color: var(--ink); border-inline-start: 1px solid var(--line); box-shadow: var(--shadow); overflow-y: auto;
   padding-block: 18px 40px; padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: max(18px, env(safe-area-inset-right, 0px)); }
-@media (max-width: 720px) { #panel { top: auto; height: 72dvh; width: 100%; border-inline-start: 0; border-top: 1px solid var(--line); border-radius: 18px 18px 0 0; padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); } }
 .p-head { display: flex; gap: 12px; align-items: flex-start; }
 .p-head h3 { font-size: 1.6rem; font-family: var(--f-quran); font-weight: 400; line-height: 1.6; }
 .p-head .kind { color: var(--gold); font-size: .8rem; font-weight: 600; }
@@ -123,8 +148,6 @@ button.tag:hover { border-color: var(--gold); }
 .card:hover { border-color: var(--gold); box-shadow: var(--shadow); }
 .card b { font-size: 1.1rem; } .card .c { color: var(--lapis); font-weight: 700; font-variant-numeric: tabular-nums; }
 .card small { color: var(--muted); }
-.card::after { content: ""; position: absolute; inset-inline-end: -18px; top: -18px; width: 56px; height: 56px; opacity: .25;
-  background: conic-gradient(from 22.5deg, var(--gold) 0 12.5%, transparent 0 25%, var(--gold) 0 37.5%, transparent 0 50%, var(--gold) 0 62.5%, transparent 0 75%, var(--gold) 0 87.5%, transparent 0); border-radius: 50%; }
 .name-card { font-family: var(--f-quran); font-size: 1.35rem; }
 .group-h { margin: 26px 0 10px; font-size: 1.1rem; display: flex; gap: 10px; align-items: center; }
 .group-h::after { content: ""; flex: 1; height: 1px; background: var(--line); }
@@ -166,7 +189,60 @@ dialog .t { font-family: var(--f-quran); font-size: 1.45rem; line-height: 2.3; }
 .spin { width: 44px; height: 44px; animation: rot 6s linear infinite; }
 @keyframes rot { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+
+/* Home: a cinematic scroll "camera push" — courtyard → muqarnas portal → dome oculus → the star map.
+   The track is tall; the stage sticks to the screen and JS maps scroll progress to each scene's zoom and fade. */
+#home { background: #05080f; color: #f3ead2; }
+.hero-track { height: 520vh; position: relative; }
+.hero-stage { position: sticky; top: 0; height: 100dvh; overflow: hidden; }
+.hero-scene { position: absolute; inset: -2%; background: center / cover no-repeat; opacity: 0; will-change: transform, opacity; }
+.hero-scene::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(3, 6, 14, .72) 100%), linear-gradient(to top, rgba(3, 6, 14, .85), transparent 45%); }
+.hero-cap { position: absolute; inset: auto 0 12vh; margin: 0 auto; max-width: 860px; padding: 0 24px; text-align: center; opacity: 0; transform: translateY(24px); will-change: transform, opacity; pointer-events: none; }
+.hero-cap.live { pointer-events: auto; }
+.hero-cap::before { content: ""; position: absolute; inset: -40px -10%; z-index: -1; background: radial-gradient(closest-side, rgba(3, 6, 14, .78), rgba(3, 6, 14, 0)); }
+.hero-cap h1 { font-family: var(--f-title); font-size: clamp(2.6rem, 7vw, 5.4rem); color: #e8c46e; margin: 0 0 .2em; text-shadow: 0 4px 30px rgba(0, 0, 0, .8); letter-spacing: 0; }
+.hero-cap p { font-size: clamp(1.05rem, 2.2vw, 1.45rem); line-height: 1.9; margin: 0 auto; max-width: 40em; text-shadow: 0 2px 14px rgba(0, 0, 0, .9); }
+.hero-nums { display: flex; justify-content: center; gap: clamp(18px, 5vw, 64px); flex-wrap: wrap; margin-bottom: .6em; }
+.hero-nums b { display: block; font-size: clamp(2.2rem, 6vw, 4.2rem); color: #e8c46e; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; text-shadow: 0 4px 24px rgba(0, 0, 0, .8); }
+.hero-nums span { font-size: clamp(.95rem, 1.8vw, 1.2rem); color: #e9dfc3; }
+.hero-go { display: inline-flex; align-items: center; gap: 10px; margin-top: 1.1em; padding: 12px 28px; border-radius: 999px; background: #e8c46e; color: #0b1528; font-weight: 600; font-size: 1.1rem; text-decoration: none; box-shadow: 0 0 40px rgba(232, 196, 110, .45); }
+.hero-go:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.hero-cue { position: absolute; bottom: 3vh; inset-inline: 0; text-align: center; font-size: .95rem; color: #cfc4a6; letter-spacing: 0; }
+.hero-cue i { display: block; width: 2px; height: 34px; margin: 8px auto 0; background: linear-gradient(#e8c46e, transparent); animation: cue 1.8s ease-in-out infinite; }
+@keyframes cue { 0%, 100% { transform: translateY(0); opacity: 1 } 50% { transform: translateY(10px); opacity: .4 } }
+@media (prefers-reduced-motion: reduce) { .hero-cue i { animation: none; } }
 footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-top: 1px solid var(--line); padding-top: 14px; }
+
+/* Phones are the main audience: a slim title bar on top, the sections in a bottom tab bar under the thumb,
+   a half-height sheet that leaves the planet visible, 44px touch targets and a 16px Arabic base size. */
+@media (max-width: 720px) {
+  body { font-size: 16px; padding-bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+  .top-in { padding-block: 6px; }
+  .brand svg { width: 28px; height: 28px; } .brand b { font-size: 1.35rem; }
+  nav.tabs { position: fixed; z-index: 45; inset-inline: 0; bottom: 0; margin: 0; gap: 0; display: grid; grid-template-columns: repeat(6, 1fr);
+    background: rgba(5, 9, 18, .97); border-top: 1px solid var(--space-line); padding-bottom: env(safe-area-inset-bottom, 0px); backdrop-filter: blur(8px); }
+  nav.tabs a { min-height: 58px; display: grid; place-items: center; padding: 4px 2px; border-radius: 0; font-size: .82rem; text-align: center; line-height: 1.3; }
+  nav.tabs a[aria-current="page"] { background: transparent; color: #e8c46e; box-shadow: inset 0 3px 0 #e8c46e; font-weight: 600; }
+  nav.tabs .l { display: none; } nav.tabs .s { display: inline; }
+  #space { height: calc(100dvh - 48px - 58px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); min-height: 380px; }
+  .hud:not(.more) #modeDesc, .hud:not(.more) .legend { display: none; }
+  .chip.info { display: inline-block; justify-self: start; }
+  #space.picked .hud, #space.picked .hint { display: none; }
+  .chip, .seg button, .tag { min-height: 40px; }
+  .chip { padding: 6px 14px; font-size: .92rem; }
+  .find input { min-height: 44px; font-size: 1rem; }
+  .hint { bottom: 8px; font-size: .78rem; } .reset { bottom: 40px; }
+  #panel { top: auto; bottom: calc(58px + env(safe-area-inset-bottom, 0px)); height: 50dvh; width: 100%; border-inline-start: 0; border-top: 1px solid var(--line);
+    border-radius: 20px 20px 0 0; padding-top: 6px; padding-bottom: 28px; transition: height .25s ease; }
+  #panel.full { height: calc(100dvh - 120px); }
+  .grab { display: block; width: 100%; height: 26px; border: 0; background: transparent; margin-bottom: 4px; position: sticky; top: -6px; z-index: 2; }
+  .grab::after { content: ""; display: block; width: 46px; height: 5px; border-radius: 9px; background: var(--line); margin: 0 auto; }
+  .compose { bottom: calc(58px + env(safe-area-inset-bottom, 0px)); }
+  .view > .page > .page-head { min-height: 38vh; padding-top: 80px; }
+  .grab { background: var(--surface); }
+  .hero-cue { bottom: calc(66px + env(safe-area-inset-bottom, 0px)); }
+  .hero-cap { inset-block-end: calc(14vh + 58px); }
+}
 </style>
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -175,19 +251,32 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
 
 <div dir="rtl" lang="ar">
 <header class="top"><div class="top-in">
-  <a class="brand" href="#space"><svg style="color:#e8c46e"><use href="#star"/></svg><b>مستكشف القرآن</b></a>
+  <a class="brand" href="#home"><svg style="color:#e8c46e"><use href="#star"/></svg><b>مستكشف القرآن</b></a>
   <nav class="tabs" aria-label="الأقسام">
-    <a href="#space">الفضاء</a><a href="#count">الإحصاء</a><a href="#subjects">المواضيع</a><a href="#stories">القصص والأعلام</a><a href="#wisdom">الحكمة</a>
+    <a href="#space">الفضاء</a><a href="#count">الإحصاء</a><a href="#subjects">المواضيع</a><a href="#stories"><span class="l">القصص والأعلام</span><span class="s">القصص</span></a><a href="#wisdom">الحكمة</a><a href="#about"><span class="l">عن المنهج</span><span class="s">المنهج</span></a>
   </nav>
 </div></header>
 
 <main>
+  <section id="home" class="view" aria-label="البداية">
+    <div class="hero-track"><div class="hero-stage">
+      <div class="hero-scene" style="background-image:url(img/hero-1-courtyard.jpg)"></div>
+      <div class="hero-scene" style="background-image:url(img/hero-2-portal.jpg)"></div>
+      <div class="hero-scene" style="background-image:url(img/hero-3-dome.jpg)"></div>
+      <div class="hero-cap"><h1>مستكشف القرآن</h1><p>رحلة في كلمات المصحف: من أين تأتي، وكيف تتفرع، وبمَ ترتبط.</p></div>
+      <div class="hero-cap"><div class="hero-nums"><div><b data-n="surahs">114</b><span>سورة</span></div><div><b data-n="verses">6,236</b><span>آية</span></div><div><b data-n="words">77,429</b><span>كلمة</span></div></div><p>نص مصحف المدينة كاملًا (رواية حفص)، مع تحليل صرفي لكل كلمة.</p></div>
+      <div class="hero-cap"><div class="hero-nums"><div><b data-n="roots">1,651</b><span>جذرًا</span></div><div><b data-n="lemmas">4,763</b><span>كلمة معجمية</span></div></div><p>تعود الكلمات إلى جذور قليلة. من الجذر الواحد تتفرع كلمات كثيرة، وكل كلمة تَرِد بصيغ متعددة في الآيات.</p></div>
+      <div class="hero-cap"><p>في الفضاء: كل جذر كوكب، تدور حوله أقمار هي كلماته المشتقة. والخيوط الذهبية تصل الجذور التي تجتمع في الآيات أكثر من المعتاد.</p><a class="hero-go" href="#space"><svg width="18" height="18"><use href="#star"/></svg>ادخل الفضاء</a></div>
+      <div class="hero-cue">مرّر للأسفل<i></i></div>
+    </div></div>
+  </section>
+
   <section id="space" class="view" aria-label="الفضاء الثلاثي">
     <div class="loading" id="boot"><svg class="spin" style="color:#e8c46e"><use href="#star"/></svg><div>جارٍ تحميل نص المصحف وبيانات الجذور…</div></div>
     <canvas id="gl" hidden></canvas>
     <div class="hud" id="hud" hidden>
-      <h1>كل كلمة نجمة</h1>
-      <p id="modeDesc"></p>
+      <h1>كل جذر كوكب</h1>
+      <button class="chip info" id="hudInfo" aria-expanded="false">ما هذا؟</button><p id="modeDesc"></p>
       <div class="modes" role="group" aria-label="نوع الخريطة">
         <button class="chip" data-mode="roots" aria-pressed="true">الجذور والقضايا</button>
         <button class="chip" data-mode="names" aria-pressed="false">القصص والأعلام</button>
@@ -197,7 +286,7 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
       <div class="legend" id="legend"></div>
     </div>
     <div class="tip" id="tip" hidden></div>
-    <div class="hint" id="hint" hidden>اسحب للتدوير · مرّر أو اقرص للتقريب · اضغط على نجمة لفتح تفاصيلها</div>
+    <div class="hint" id="hint" hidden>اسحب للتدوير · قرّب بإصبعين · المس كوكبًا لترى أقماره</div>
     <button class="chip reset" id="resetBtn" hidden>عرض الكل</button>
   </section>
 
@@ -223,7 +312,7 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
 
   <section id="subjects" class="view"><div class="page">
     <div class="page-head"><span class="eyebrow">المواضيع</span><h2>القضايا الكبرى في القرآن</h2>
-      <p>كل موضوع هنا مجموعة من الجذور أو الكلمات المحددة. اضغط على موضوع لترى مواضعه، والقضايا المرتبطة به، واطلب من Claude استخراج حكمه من الآيات نفسها.</p></div>
+      <p>كل موضوع هنا مجموعة من الجذور أو الكلمات المحددة. اضغط على موضوع لترى مواضعه، والقضايا المرتبطة به، واطلب من <span class="ai-name">المساعد</span> استخراج حكمه من الآيات نفسها.</p></div>
     <div class="grid" id="subjGrid"></div>
   </div></section>
 
@@ -235,11 +324,42 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
 
   <section id="wisdom" class="view"><div class="page">
     <div class="page-head"><span class="eyebrow">الحكمة</span><h2>اسأل عن الروابط والحكم</h2>
-      <p>اكتب سؤالك، وسيبحث Claude في نص المصحف نفسه داخل هذه الصفحة قبل أن يجيب، ويستشهد بأرقام الآيات. اضغط على أي رقم آية لترى نصها الرسمي.</p></div>
+      <p>اكتب سؤالك، وسيبحث <span class="ai-name">المساعد</span> في نص المصحف نفسه داخل هذه الصفحة قبل أن يجيب، ويستشهد بأرقام الآيات. اضغط على أي رقم آية لترى نصها الرسمي.</p></div>
     <div class="chat" id="chat"></div>
     <div class="tags" id="starters" style="margin-top:12px"></div>
     <form class="compose" id="chatForm"><textarea id="chatIn" placeholder="مثال: ما العلاقة بين الصبر والصلاة في القرآن؟" aria-label="سؤالك"></textarea><button type="submit" id="chatSend">اسأل</button></form>
-    <p class="note">الإجابات استنباط وتحليل للآيات، وليست فتوى ولا تفسيرًا معتمدًا. النص القرآني يُعرض دائمًا من المصحف الرسمي، لا من ذاكرة Claude.</p>
+    <p class="note">الإجابات استنباط وتحليل للآيات، وليست فتوى ولا تفسيرًا معتمدًا. النص القرآني يُعرض دائمًا من المصحف الرسمي، لا من ذاكرة <span class="ai-name">المساعد</span>.</p>
+  </div></section>
+  <section id="about" class="view"><div class="page">
+    <div class="page-head"><span class="eyebrow">عن المنهج</span><h2>من أين تأتي الأرقام، وكيف نتحقق منها</h2>
+      <p>كل ما في الموقع مبني على مصدرين مفتوحين يمكن لأي أحد مراجعتهما، ولا يُكتب فيه نص قرآني من الذاكرة.</p></div>
+    <div class="prose">
+      <h3>المصادر</h3>
+      <ul>
+        <li><b>نص المصحف:</b> نص مصحف المدينة النبوية برسم العثماني (رواية حفص عن عاصم) من مجمع الملك فهد لطباعة المصحف الشريف. كل آية تظهر في الموقع تُعرض من هذا الملف كما هي.</li>
+        <li><b>التحليل الصرفي:</b> مدوّنة القرآن العربية (Quranic Arabic Corpus) التي تحدد لكل كلمة جذرها وأصلها المعجمي ونوعها.</li>
+      </ul>
+      <div class="facts"><div><b data-n="surahs">114</b><span>سورة</span></div><div><b data-n="verses">6,236</b><span>آية</span></div><div><b data-n="words">77,429</b><span>كلمة في التحليل الصرفي</span></div><div><b data-n="roots">1,651</b><span>جذرًا</span></div><div><b data-n="lemmas">4,763</b><span>كلمة معجمية</span></div></div>
+      <h3>كيف نعدّ</h3>
+      <ul>
+        <li><b>الجذر</b> أصل الكلمة الثلاثي غالبًا (مثل ر ز ق). <b>الكلمة المعجمية</b> صيغة مشتقة منه (رَزَقَ، رِزْق، رازِق…). <b>الصيغة</b> هي الكلمة كما كُتبت في الآية (رزقناهم، الرزاق…).</li>
+        <li>عدد <b>المواضع</b> هو عدد مرات ورود الكلمة، وعدد <b>الآيات</b> هو عدد الآيات التي وردت فيها ولو تكررت في الآية الواحدة.</li>
+        <li>نتحقق من الأعداد بطريقتين حيث أمكن: بالتحليل الصرفي، وبالبحث في نص المصحف نفسه. مثال: جذر رزق ورد في 123 موضعًا، في 109 آيات، في 44 سورة، بالطريقتين.</li>
+        <li>عدد الكلمات 77,429 بحسب التحليل الصرفي، و77,428 إذا عُدّت بالمسافات في النص. السبب أن التحليل والرسم يقسمان الكلمات بطريقة مختلفة في 10 آيات (مثل «بَعۡدَ مَا» كلمتان في الرسم وكلمة في التحليل، و«وَمَالِيَ» كلمة في الرسم وكلمتان في التحليل). في هذه الآيات تُحسب الآية، لكن لا تُظلَّل الكلمة بعينها.</li>
+      </ul>
+      <h3>كيف نربط</h3>
+      <ul>
+        <li>الخيط بين جذرين في الفضاء يعني أنهما يجتمعان في الآيات نفسها أكثر مما يُتوقع لو توزعا عشوائيًا. الرقم بجانب الجذر المرتبط (مثل ×8.7) يبيّن كم مرة يزيد اقترانهما على المعدل.</li>
+        <li>تصنيف السور إلى مكية ومدنية مأخوذ من بيانات المصحف المعتمدة.</li>
+      </ul>
+      <h3>الحكمة والتحليل</h3>
+      <ul>
+        <li>الأعداد والمواضع حقائق يمكن التحقق منها من النص. أما الحِكم والروابط التي يكتبها الذكاء الاصطناعي فهي <b>استنباط وتحليل</b>، وليست تفسيرًا معتمدًا ولا فتوى.</li>
+        <li>لا يكتب الذكاء الاصطناعي نص الآيات أبدًا، بل يشير إلى أرقامها، والموقع يعرض نصها من المصحف الرسمي.</li>
+      </ul>
+      <h3>التصميم</h3>
+      <p>صور الموقع وزخارفه مولّدة بالذكاء الاصطناعي (Nano Banana)، ولا تحتوي أي كتابة أو خط عربي، حتى لا يختلط بها نص يشبه القرآن.</p>
+    </div>
   </div></section>
 </main>
 
@@ -349,9 +469,63 @@ function verseList(el, vm, step = 20) {
 }
 
 /* ---------- Claude ---------- */
-let SAMPLE = null;
-const claudeReady = (async () => { try { SAMPLE = window.claude ? await window.claude.use('sample') : null; } catch { SAMPLE = null; } return SAMPLE; })();
-const ERR = { not_granted: 'لم يُسمح للصفحة بسؤال Claude. يمكنك السماح من قائمة أذونات الصفحة.', rate_limited: 'طلبات كثيرة في وقت قصير. انتظر قليلًا ثم حاول.', prompt_too_large: 'المادة أكبر من اللازم. جرّب موضوعًا أضيق.', cancelled: 'أُوقف الطلب.' };
+let SAMPLE = null, AI = 'المساعد', ENGINE = '', LOCAL_ENGINE = null;
+// server.py only: visitors get the local GPU model; the owner can switch this browser to Claude.
+async function ownerUnlock() {
+  const password = prompt('كلمة مرور المالك:'); if (!password) return;
+  const r = await fetch('api/unlock', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password }) });
+  if (r.ok) location.reload(); else alert('كلمة المرور غير صحيحة.');
+}
+const claudeReady = (async () => {
+  try { SAMPLE = window.claude ? await window.claude.use('sample') : null; } catch { SAMPLE = null; }
+  if (!SAMPLE) try {
+    const h = await (await fetch('api/health')).json();
+    if (h.ok) { SAMPLE = localSample; ENGINE = h.name; LOCAL_ENGINE = h.engine; }
+  } catch {}
+  document.querySelectorAll('.ai-name').forEach(e => { e.textContent = AI; });
+  return SAMPLE;
+})();
+// Served by quran-research/server.py: Claude runs on this PC through the CLI, and the page's
+// tools run here in the browser. Tool calls travel as <tool_call>{json}</tool_call> text.
+async function localSample(prompt, { signal, tools, onText } = {}) {
+  const fail = (code, text) => Object.assign(new Error(code), { code, text });
+  const system = !tools ? '' : `لديك أدوات تعمل داخل الصفحة. لاستدعاء أداة اكتب سطرًا واحدًا بالشكل:
+<tool_call>{"name": "اسم_الأداة", "input": {...}}</tool_call>
+ثم توقّف عن الكتابة تمامًا وانتظر النتيجة، وستصلك داخل <tool_result>. يمكنك استدعاء عدة أدوات في رد واحد. حين تكتمل لديك المادة اكتب الإجابة النهائية دون أي <tool_call>.
+الأدوات:
+${tools.map(t => `- ${t.name}: ${t.description}\n  input schema: ${JSON.stringify(t.inputSchema)}`).join('\n')}`;
+  let transcript = prompt, shown = '';
+  for (let round = 0; round < 8; round++) {
+    let res;
+    try { res = await fetch('api/sample', { method: 'POST', signal, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ system, prompt: transcript }) }); }
+    catch (e) { throw fail(signal && signal.aborted ? 'cancelled' : 'error', shown); }
+    if (!res.ok) throw fail({ 413: 'prompt_too_large', 429: 'rate_limited' }[res.status] || 'error', shown);
+    const reader = res.body.getReader(), dec = new TextDecoder(); let text = '';
+    try {
+      for (;;) {
+        const { value, done } = await reader.read(); if (done) break;
+        text += dec.decode(value, { stream: true });
+        const visible = text.replace(/<tool_call>[\s\S]*?(<\/tool_call>|$)/g, '').replace(/<<ERROR:[\s\S]*$/, '').trim();
+        if (visible) onText && onText({ text: (shown ? shown + '\n\n' : '') + visible });
+      }
+    } catch (e) { throw fail(signal && signal.aborted ? 'cancelled' : 'error', shown); }
+    if (/<<ERROR:/.test(text)) throw fail(/rate|limit/i.test(text) ? 'rate_limited' : 'error', shown);
+    const calls = [...text.matchAll(/<tool_call>([\s\S]*?)<\/tool_call>/g)];
+    const visible = text.replace(/<tool_call>[\s\S]*?<\/tool_call>/g, '').trim();
+    if (!calls.length || !tools) return (shown ? shown + '\n\n' : '') + visible;
+    if (visible) shown = (shown ? shown + '\n\n' : '') + visible;
+    let results = '';
+    for (const [, raw] of calls) {
+      let out;
+      try { const c = JSON.parse(raw); const t = tools.find(x => x.name === c.name); out = t ? await t.execute(c.input || {}) : { error: 'أداة غير معروفة' }; }
+      catch (e) { out = { error: 'تعذّر تنفيذ الاستدعاء: ' + e.message }; }
+      results += `<tool_result>${raw.trim()}\n${JSON.stringify(out)}</tool_result>\n`;
+    }
+    transcript += `\n\n[ردّك السابق]\n${text.trim()}\n\n[نتائج الأدوات]\n${results}`;
+  }
+  return shown;
+}
+const ERR = { not_granted: 'لم يُسمح للصفحة بسؤال Claude. يمكنك السماح من قائمة أذونات الصفحة.', rate_limited: 'الخادم مشغول بسؤال آخر الآن. انتظر قليلًا ثم حاول.', prompt_too_large: 'المادة أكبر من اللازم. جرّب موضوعًا أضيق.', cancelled: 'أُوقف الطلب.' };
 const errText = e => ERR[e && e.code] || 'تعذّر الحصول على إجابة الآن. حاول مرة أخرى.';
 function mdLite(s) {
   const lines = esc(s).split('\n'); let h = '', inList = false;
@@ -419,7 +593,7 @@ const TOOLS = [
 
 async function askInto(btn, out, prompt, withTools) {
   if (!SAMPLE) return;
-  btn.disabled = true; out.hidden = false; out.innerHTML = '<p class="steps">يفكّر Claude في الآيات… قد يستغرق ذلك دقيقة.</p>';
+  btn.disabled = true; out.hidden = false; out.innerHTML = `<p class="steps">يفكّر ${AI} في الآيات… قد يستغرق ذلك دقيقة.</p>`;
   const ctl = new AbortController(); const stop = document.createElement('button'); stop.className = 'tag'; stop.textContent = 'إيقاف'; stop.onclick = () => ctl.abort();
   out.append(stop);
   const steps = document.createElement('p'); steps.className = 'steps';
@@ -433,10 +607,10 @@ async function askInto(btn, out, prompt, withTools) {
 }
 function claudeBlock(el, buildPrompt, label) {
   const wrap = document.createElement('div'); wrap.className = 'sec';
-  wrap.innerHTML = `<h4>الحكمة والروابط <small>بقراءة Claude للآيات</small></h4>`;
+  wrap.innerHTML = `<h4>الحكمة والروابط <small>بقراءة ${AI} للآيات</small></h4>`;
   const btn = document.createElement('button'); btn.className = 'ask'; btn.innerHTML = `<svg width="18" height="18" style="color:#e8c46e"><use href="#star"/></svg>${esc(label)}`;
   const out = document.createElement('div'); out.className = 'answer'; out.hidden = true;
-  const na = document.createElement('div'); na.className = 'unavail'; na.textContent = 'سؤال Claude متاح عند فتح الصفحة داخل Claude (claude.ai أو التطبيق).';
+  const na = document.createElement('div'); na.className = 'unavail'; na.textContent = 'المساعد غير متاح الآن. بقية الصفحة تعمل كاملة.';
   wrap.append(btn, out); el.append(wrap);
   btn.hidden = true; wrap.append(na);
   claudeReady.then(s => { if (s) { btn.hidden = false; na.remove(); } });
@@ -450,7 +624,10 @@ function versesForPrompt(vm, max = 90) {
 
 /* ---------- the shared panel ---------- */
 const panel = $('#panel');
-function openPanel() { panel.hidden = false; panel.scrollTop = 0; }
+function openPanel() {
+  panel.hidden = false; panel.scrollTop = 0; panel.classList.remove('full');
+  if (!panel.querySelector('.grab')) { panel.insertAdjacentHTML('afterbegin', '<button class="grab" aria-label="توسيع اللوحة"></button>'); panel.querySelector('.grab').onclick = () => panel.classList.toggle('full'); }
+}
 function closePanel() { panel.hidden = true; space && space.clearSelection(); }
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !panel.hidden && !$('#verseDlg').open) closePanel(); });
 
@@ -608,14 +785,15 @@ function buildChat() {
   const chat = $('#chat'), starters = ['ما العلاقة بين الصبر والصلاة في القرآن؟', 'كيف تتوزع قصة موسى على السور، وما الذي تبرزه كل سورة؟', 'ما الآيات التي تجمع بين الرحمة والمغفرة، وما دلالة ذلك؟', 'ما الحكمة من تكرار قصة آدم وإبليس؟', 'ما الروابط بين الرزق والشكر؟'];
   $('#starters').innerHTML = starters.map(s => `<button class="tag">${esc(s)}</button>`).join('');
   $('#starters').onclick = e => { const b = e.target.closest('button'); if (b) { $('#chatIn').value = b.textContent; $('#chatForm').requestSubmit(); } };
-  chat.innerHTML = `<div class="msg a">أنا Claude. اسألني عن أي كلمة أو موضوع أو قصة، وسأبحث في نص المصحف المحمّل في هذه الصفحة، وأذكر أرقام الآيات التي أستند إليها.</div>`;
-  claudeReady.then(s => { if (!s) { chat.insertAdjacentHTML('beforeend', '<div class="unavail">سؤال Claude متاح عند فتح الصفحة داخل Claude (claude.ai أو التطبيق). بقية الصفحة تعمل في كل مكان.</div>'); $('#chatSend').disabled = true; } });
+  chat.innerHTML = `<div class="msg a">أنا <span class="ai-name">${AI}</span>. اسألني عن أي كلمة أو موضوع أو قصة، وسأبحث في نص المصحف المحمّل في هذه الصفحة، وأذكر أرقام الآيات التي أستند إليها.</div>`;
+  claudeReady.then(s => { if (s && LOCAL_ENGINE === 'local') { const k = document.createElement('button'); k.className = 'tag'; k.textContent = 'دخول المالك'; k.style.opacity = '.6'; k.onclick = ownerUnlock; chat.before(k); } });
+  claudeReady.then(s => { if (!s) { chat.insertAdjacentHTML('beforeend', '<div class="unavail">المساعد غير متاح الآن. بقية الصفحة تعمل كاملة.</div>'); $('#chatSend').disabled = true; } });
   let busy = false;
   $('#chatForm').onsubmit = async e => {
     e.preventDefault(); const q = $('#chatIn').value.trim(); if (!q || busy || !SAMPLE) return;
     busy = true; $('#chatSend').disabled = true; $('#chatIn').value = '';
     chat.insertAdjacentHTML('beforeend', `<div class="msg u">${esc(q)}</div>`);
-    const a = document.createElement('div'); a.className = 'msg a'; a.innerHTML = '<p class="steps">يفكّر Claude ويبحث في المصحف…</p>'; chat.append(a);
+    const a = document.createElement('div'); a.className = 'msg a'; a.innerHTML = `<p class="steps">يفكّر ${AI} ويبحث في المصحف…</p>`; chat.append(a);
     a.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     turns.push({ role: 'user', content: q });
     const steps = document.createElement('p'); steps.className = 'steps';
@@ -646,9 +824,17 @@ function graphRoots() {
   nb.forEach((l, i) => l.sort((x, y) => y[1] - x[1]).slice(0, 3).forEach(([j]) => links.add(i < j ? i + '|' + j : j + '|' + i)));
   const nodes = rs.map(r => { let mec = 0; for (const c of D.roots[r]) if (D.surahs[D.vs[c >> 8] - 1][2] === 'm') mec++; const t = mec / D.roots[r].length;
     const col = new THREE.Color(0x5cc9b8).lerp(new THREE.Color(0xe8c46e), t);
-    return { key: r, label: r, size: Math.sqrt(D.roots[r].length), color: col, open: () => openRoot(r) }; });
-  return { nodes, links: [...links].map(k => k.split('|').map(Number)), desc: 'أكثر 150 جذرًا ورودًا. كل خيط يصل جذرين يجتمعان في الآيات أكثر من المعتاد. اللون من الذهبي (مكي) إلى الفيروزي (مدني).',
-    legend: '<span><i style="background:#e8c46e"></i>أغلبه مكي</span><span><i style="background:#5cc9b8"></i>أغلبه مدني</span><span>الحجم = عدد المواضع</span>' };
+    return { key: r, label: r, size: Math.sqrt(D.roots[r].length), color: col, mec: t, open: () => openRoot(r), kids: (D.rootLem[r] || []).length, family: () => rootFamily(r) }; });
+  return { nodes, links: [...links].map(k => k.split('|').map(Number)), desc: 'كل كوكب جذر، وحجمه بعدد مواضعه. الكواكب الدافئة لما أغلبه مكي، والباردة لما أغلبه مدني، وذوات الحلقات أكثر الجذور ورودًا. المس كوكبًا لتدور حوله أقماره: كلماته المشتقة، ولكل قمر توابع هي صيغها في الآيات. الخيوط الذهبية تصل جذرين يجتمعان في الآيات أكثر من المعتاد.',
+    legend: '<span><i style="background:#e39a52"></i>دافئ: أغلبه مكي</span><span><i style="background:#5b9be8"></i>بارد: أغلبه مدني</span><span>الحجم = عدد المواضع</span><span>الحلقات = الأكثر ورودًا</span>' };
+}
+// root → its lemmas (with counts) → each lemma's written forms in the text (with counts)
+function rootFamily(r) {
+  return (D.rootLem[r] || []).slice(0, 14).map(([l, c]) => {
+    const L = D.lemmas[l.normalize('NFC')], forms = new Map();
+    if (L) for (const code of L.codes) { const w = bare(D.text[code >> 8].split(' ')[(code & 255) - 1] || ''); if (w) forms.set(w, (forms.get(w) || 0) + 1); }
+    return { lemma: l.normalize('NFC'), count: c, forms: [...forms].sort((a, b) => b[1] - a[1]) };
+  });
 }
 function graphNames() {
   const ns = Object.keys(NAMEKIND_OF).filter(n => D.lemmas[n] && D.lemmas[n].codes.length >= 2 && NAMEKIND_OF[n] !== 'idol');
@@ -672,45 +858,48 @@ function graphSurahs() {
     legend: '<span><i style="background:#e8c46e"></i>مكية</span><span><i style="background:#5cc9b8"></i>مدنية</span><span>الحجم = عدد الآيات</span>' };
 }
 
+// All artwork in the space is Nano Banana (design/raw → img/): photoreal planet surfaces wrapped on spheres,
+// a ring band, a sun and a glow made on pure black (their brightness is their alpha; the canvas is transparent over the nebula).
+const TEX = {};
+const tex = kind => TEX[kind] || (TEX[kind] = new THREE.TextureLoader().load(kind === 'glow' ? 'img/el-seed.jpg' : `img/tx-${kind}.jpg`));
+const sprite = (kind, color, opacity = 1) => new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(kind), alphaMap: tex(kind), color, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending }));
+const planetR = n => 2.2 + n.size * .55;
+// warm worlds for mostly-Meccan roots, cool worlds for mostly-Medinan; which one within the family is fixed by the name
+const WARM = ['amber', 'saturn', 'mars'], COOL = ['ice', 'teal', 'earth'];
+const ATMO = { amber: 0xffb070, saturn: 0xffe0a0, mars: 0xff8a60, ice: 0x6aa8ff, teal: 0x8ff0ff, earth: 0x7fc0ff };
+const hashOf = k => { let h = 0; for (const c of k) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
+
 class Space {
   constructor(canvas) {
     this.cv = canvas;
     this.r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.r.setPixelRatio(Math.min(2, devicePixelRatio));
-    this.scene = new THREE.Scene(); this.scene.fog = new THREE.FogExp2(0x07101f, 0.0016);
+    this.scene = new THREE.Scene(); this.scene.fog = new THREE.FogExp2(0x07101f, 0.0009);
     this.cam = new THREE.PerspectiveCamera(55, 1, 1, 4000);
     this.world = new THREE.Group(); this.scene.add(this.world);
-    this.scene.add(new THREE.AmbientLight(0xffffff, .55)); const dl = new THREE.DirectionalLight(0xfff1cf, .9); dl.position.set(200, 300, 400); this.scene.add(dl);
-    this.ornament(); this.stars();
-    this.rot = { x: .25, y: 0 }; this.dist = 430; this.distT = 430; this.focus = new THREE.Vector3(); this.focusT = new THREE.Vector3();
+    // one sun at the edge of space lights every world: a bright day side and a dark night side, as in a real system
+    this.scene.add(new THREE.AmbientLight(0x9fb4d8, .38));
+    const SUN = new THREE.Vector3(560, 110, -60), sl = new THREE.PointLight(0xfff0d8, 1.6); sl.position.copy(SUN); this.scene.add(sl);
+    const sun = sprite('sun', 0xffffff); sun.position.copy(SUN); sun.scale.setScalar(460); sun.material.fog = false; this.scene.add(sun);
+    this.rot = { x: .25, y: 0 }; this.dist = 480; this.distT = 480; this.focus = new THREE.Vector3(); this.focusT = new THREE.Vector3();
     this.idle = 0; this.sel = -1; this.ray = new THREE.Raycaster(); this.ptrs = new Map();
     this.bind(); new ResizeObserver(() => this.resize()).observe(canvas.parentElement); this.resize();
     const loop = t => { requestAnimationFrame(loop); if (!document.hidden && $('#space').classList.contains('on')) this.frame(t); }; requestAnimationFrame(loop);
   }
-  ornament() {
-    const gold = new THREE.LineBasicMaterial({ color: 0xe8c46e, transparent: true, opacity: .16 });
-    this.orn = new THREE.Group();
-    const poly = (n, r, rot) => { const pts = []; for (let i = 0; i <= n; i++) { const a = rot + i * 2 * Math.PI / n; pts.push(new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r, 0)); } return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gold); };
-    for (const [r, k] of [[260, 0], [200, 1], [140, 2]]) {
-      this.orn.add(poly(4, r, Math.PI / 4 + k * .2)); this.orn.add(poly(4, r, k * .2)); this.orn.add(poly(64, r * 1.08, 0));
-    }
-    const pts = []; for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8; pts.push(new THREE.Vector3(Math.cos(a) * 290, Math.sin(a) * 290, 0), new THREE.Vector3(Math.cos(a + Math.PI * 5 / 8) * 290, Math.sin(a + Math.PI * 5 / 8) * 290, 0)); }
-    this.orn.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xe8c46e, transparent: true, opacity: .07 })));
-    this.orn.position.z = -320; this.scene.add(this.orn);
+  // a Saturn-style ring: the Nano Banana band is laid radially (u = distance from the planet), tilted with the planet
+  ring(R) {
+    const inner = 1.35, outer = 2.35, g = new THREE.RingGeometry(inner, outer, 128, 1), p = g.attributes.position, uv = g.attributes.uv, v = new THREE.Vector3();
+    for (let k = 0; k < p.count; k++) { v.fromBufferAttribute(p, k); uv.setXY(k, (v.length() - inner) / (outer - inner), .5); }
+    const r = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex('ring'), alphaMap: tex('ring'), color: 0xd8c8a8, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+    r.rotation.x = Math.PI / 2 - .35; r.userData.ring = true; return r;
   }
-  stars() {
-    const n = 1400, p = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) { const r = 700 + Math.random() * 900, t = Math.random() * Math.PI * 2, f = Math.acos(2 * Math.random() - 1); p.set([r * Math.sin(f) * Math.cos(t), r * Math.cos(f), r * Math.sin(f) * Math.sin(t)], i * 3); }
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
-    this.scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xd9e4ff, size: 1.6, transparent: true, opacity: .7, fog: false })));
-  }
-  label(text, color) {
+  label(text, color, k = 1) {
     const c = document.createElement('canvas'), x = c.getContext('2d'), fs = 44;
     x.font = `600 ${fs}px "IBM Plex Sans Arabic", "Segoe UI", sans-serif`; const w = Math.ceil(x.measureText(text).width) + 24;
     c.width = w; c.height = fs + 22; x.font = `600 ${fs}px "IBM Plex Sans Arabic", "Segoe UI", sans-serif`; x.direction = 'rtl'; x.textAlign = 'center'; x.textBaseline = 'middle';
     x.shadowColor = 'rgba(0,0,0,.9)'; x.shadowBlur = 8; x.fillStyle = '#' + color.getHexString(); x.fillText(text, w / 2, c.height / 2 + 2);
     const tex = new THREE.CanvasTexture(c); tex.minFilter = THREE.LinearFilter;
-    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); s.scale.set(w / 9, c.height / 9, 1); return s;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); s.scale.set(w / 9 * k, c.height / 9 * k, 1); return s;
   }
   setGraph(G) {
     if (this.nodeGroup) { this.world.remove(this.nodeGroup); this.nodeGroup.traverse(o => { o.geometry && o.geometry.dispose(); o.material && (o.material.map && o.material.map.dispose(), o.material.dispose()); }); }
@@ -718,16 +907,22 @@ class Space {
     const N = G.nodes.length, P = G.nodes.map((n, i) => n.fixed ? n.fixed.clone() : new THREE.Vector3((Math.random() - .5) * 300, (Math.random() - .5) * 300, (Math.random() - .5) * 300));
     if (!G.nodes[0].fixed) this.layout(P, G.links);
     this.adj = G.nodes.map(() => new Set()); G.links.forEach(([a, b]) => { this.adj[a].add(b); this.adj[b].add(a); });
-    const geo = new THREE.IcosahedronGeometry(1, 2); this.meshes = []; this.labels = [];
+    const geo = this.sphereGeo || (this.sphereGeo = new THREE.SphereGeometry(1, 48, 32)); this.meshes = []; this.labels = [];
     const order = G.nodes.map((n, i) => [i, n.size]).sort((a, b) => b[1] - a[1]); this.rank = new Array(N); order.forEach(([i], k) => this.rank[i] = k);
     G.nodes.forEach((n, i) => {
-      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: n.color, emissive: n.color, emissiveIntensity: .45, roughness: .35, metalness: .4 }));
-      m.position.copy(P[i]); m.scale.setScalar(n.size * 1.25); m.userData.i = i; this.nodeGroup.add(m); this.meshes.push(m);
-      const l = this.label(n.label, n.color.clone().lerp(new THREE.Color(0xffffff), .45)); l.position.copy(P[i]).add(new THREE.Vector3(0, n.size * 1.25 + 6, 0)); this.nodeGroup.add(l); this.labels.push(l);
+      // a planet: a Nano Banana surface by family (warm = mostly Meccan, cool = mostly Medinan), an atmosphere, rings for the largest
+      const R = planetR(n), cool = n.mec !== undefined ? n.mec < .5 : n.color.g > n.color.r, kind = (cool ? COOL : WARM)[hashOf(n.key) % 3];
+      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex(kind), roughness: .85, metalness: 0, emissive: 0x111827, emissiveIntensity: .25, transparent: true }));
+      m.position.copy(P[i]); m.scale.setScalar(R); m.rotation.set(.2 * Math.sin(i), i, .25 * Math.cos(i * 1.3)); m.userData.i = i; m.userData.g = R * 2.7; this.nodeGroup.add(m); this.meshes.push(m);
+      const gl = sprite('glow', ATMO[kind], .28); gl.position.copy(P[i]); gl.scale.setScalar(R * 2.7); this.nodeGroup.add(gl); m.userData.glow = gl;
+      if (this.rank[i] < 12) m.add(this.ring(R));
+      const l = this.label(n.label, new THREE.Color(0xf3ead2), .9); l.position.copy(P[i]).add(new THREE.Vector3(0, R * (this.rank[i] < 12 ? 1.5 : 1) + 4, 0)); this.nodeGroup.add(l); this.labels.push(l);
     });
     const lp = []; G.links.forEach(([a, b]) => lp.push(P[a], P[b]));
-    this.lines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lp), new THREE.LineBasicMaterial({ color: 0xe8c46e, transparent: true, opacity: .22 }));
-    this.nodeGroup.add(this.lines); this.P = P; this.hl = null; this.applyVis();
+    this.lines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lp), new THREE.LineBasicMaterial({ color: 0xe8c46e, transparent: true, opacity: .22, depthWrite: false }));
+    this.nodeGroup.add(this.lines); this.P = P; this.hl = null; this.fam = null;
+    this.halo = null;
+    this.applyVis();
     this.focusT.set(0, 0, 0); this.distT = G.nodes[0].fixed ? 520 : 430;
   }
   layout(P, links) {
@@ -738,31 +933,73 @@ class Space {
       for (const [a, b] of links) { d.subVectors(P[b], P[a]); const l = d.length() || 1; d.multiplyScalar((l - 55) / l * .05); V[a].add(d); V[b].sub(d); }
       for (let i = 0; i < N; i++) { V[i].addScaledVector(P[i], -.006); P[i].addScaledVector(V[i], .9 * k + .1); V[i].multiplyScalar(.55); }
     }
-    let r = 0; P.forEach(p => r = Math.max(r, p.length())); P.forEach(p => p.multiplyScalar(200 / r));
+    let r = 0; P.forEach(p => r = Math.max(r, p.length())); P.forEach(p => p.multiplyScalar(240 / r));
   }
   applyVis() {
     const s = this.sel, N = this.meshes.length;
     for (let i = 0; i < N; i++) {
       const on = s < 0 ? true : (i === s || this.adj[s].has(i));
-      this.meshes[i].material.opacity = on ? 1 : .18; this.meshes[i].material.transparent = !on;
+      this.meshes[i].material.opacity = on ? 1 : .12; this.meshes[i].userData.glow.material.opacity = on ? .28 : .04; this.meshes[i].children.forEach(c => { c.material.opacity = on ? 1 : .1; });
       this.labels[i].material.opacity = s < 0 ? (this.rank[i] < 45 ? .95 : .4) : (on ? 1 : .08);
     }
     this.lines.material.opacity = s < 0 ? .22 : .06;
+    if (this.halo) this.halo.material.opacity = s < 0 ? .55 : .06;
     if (this.hl) { this.nodeGroup.remove(this.hl); this.hl.geometry.dispose(); this.hl = null; }
     if (s >= 0) { const lp = []; this.adj[s].forEach(j => lp.push(this.P[s], this.P[j])); this.hl = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lp), new THREE.LineBasicMaterial({ color: 0xffe7a8, transparent: true, opacity: .9 })); this.nodeGroup.add(this.hl); }
   }
   select(i, open = true) {
-    this.sel = i; this.applyVis(); $('#resetBtn').hidden = i < 0;
-    if (i >= 0) { this.focusT.copy(this.P[i]); this.distT = 190; if (open) this.G.nodes[i].open(); }
-    else { this.focusT.set(0, 0, 0); this.distT = this.G.nodes[0].fixed ? 520 : 430; }
+    this.sel = i; this.applyVis(); $('#resetBtn').hidden = i < 0; $('#space').classList.toggle('picked', i >= 0);
+    this.showFamily(i >= 0 && this.G.nodes[i].family ? i : -1);
+    if (i >= 0) { this.focusT.copy(this.P[i]); this.distT = (this.fam ? Math.min(300, Math.max(80, this.famR * 2.5)) : 190) * (innerWidth <= 720 ? 1.12 : 1); if (open) this.G.nodes[i].open(); }
+    else { this.focusT.set(0, 0, 0); this.distT = this.G.nodes[0].fixed ? 520 : 480; }
+  }
+  // The selected root's derived words (lemmas) become moons on tilted gold orbits around the planet,
+  // and each moon is circled by small satellites: the lemma's written forms in the text. Counts ride on the labels.
+  showFamily(i) {
+    if (this.fam) { this.nodeGroup.remove(this.fam); this.fam.traverse(o => { o.geometry && o.geometry !== this.sphereGeo && o.geometry.dispose(); o.material && (o.material.map && !Object.values(TEX).includes(o.material.map) && o.material.map.dispose(), o.material.dispose()); }); this.fam = null; this.famMeshes = []; this.orbits = null; }
+    if (i < 0) return;
+    const n = this.G.nodes[i], C = this.P[i], fam = n.family(), K = fam.length; if (!K) return;
+    const g = new THREE.Group(), gold = new THREE.Color(0xf2cf7a), pale = new THREE.Color(0xeaf3ff), R = planetR(n);
+    this.famMeshes = []; this.orbits = [];
+    fam.forEach((f, j) => {
+      const r = R + 9 + j * 5.5, e = new THREE.Euler(.35 * Math.sin(j * 1.3) + .15, j * .9, .3 * Math.cos(j * 1.7));
+      const u = new THREE.Vector3(1, 0, 0).applyEuler(e), v = new THREE.Vector3(0, 0, 1).applyEuler(e);
+      const ring = []; for (let k = 0; k <= 96; k++) { const a = k / 96 * Math.PI * 2; ring.push(C.clone().addScaledVector(u, Math.cos(a) * r).addScaledVector(v, Math.sin(a) * r)); }
+      g.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(ring), new THREE.LineBasicMaterial({ color: gold, transparent: true, opacity: .32, depthWrite: false })));
+      const mr = .9 + Math.sqrt(f.count) * .3;
+      const moon = new THREE.Mesh(this.sphereGeo, new THREE.MeshStandardMaterial({ map: tex('moon'), emissive: 0x8a8a96, emissiveIntensity: .3, roughness: .95, metalness: 0 }));
+      moon.scale.setScalar(mr); moon.userData = { lemma: f.lemma, tip: `${f.lemma} · ${ar(f.count)}` }; g.add(moon); this.famMeshes.push(moon);
+      const lb = this.label(`${f.lemma} · ${ar(f.count)}`, gold, .55); g.add(lb);
+      const sats = f.forms.slice(0, j < 6 ? 4 : 2).map(([w, c], q) => {
+        const sat = new THREE.Mesh(this.sphereGeo, new THREE.MeshBasicMaterial({ color: pale })); sat.scale.setScalar(.28 + Math.sqrt(c) * .05); g.add(sat);
+        const sl = j < 5 && q < 2 ? this.label(`${w} · ${ar(c)}`, pale, .36) : null; if (sl) g.add(sl);
+        return { sat, sl, r: mr + 2.2 + q * 1.6, a0: q * 2.6, sp: 1.6 - q * .2 };
+      });
+      this.orbits.push({ moon, lb, mr, u, v, r, a0: j * 2.39996, sp: 1.8 / Math.sqrt(r), sats });
+    });
+    this.famC = C; this.famR = R + 9 + K * 5.5; this.fam = g; this.nodeGroup.add(g); this.moveOrbits(0);
+  }
+  moveOrbits(t) {
+    const C = this.famC, w = new THREE.Vector3();
+    for (const o of this.orbits) {
+      const a = o.a0 + t * o.sp; o.moon.position.copy(C).addScaledVector(o.u, Math.cos(a) * o.r).addScaledVector(o.v, Math.sin(a) * o.r); o.moon.rotation.y = t * .3;
+      o.lb.position.copy(o.moon.position).add(w.set(0, o.mr + 2, 0));
+      for (const s of o.sats) { const b = s.a0 + t * s.sp; s.sat.position.copy(o.moon.position).addScaledVector(o.u, Math.cos(b) * s.r).add(w.set(0, Math.sin(b) * s.r * .6, 0)).addScaledVector(o.v, Math.sin(b) * s.r * .8);
+        if (s.sl) s.sl.position.copy(s.sat.position).add(w.set(0, 1.1, 0)); }
+    }
   }
   clearSelection() { if (this.sel >= 0) this.select(-1, false); }
   focusKey(k) { const i = this.G.nodes.findIndex(n => n.key === k); if (i >= 0 && $('#space').classList.contains('on')) this.select(i, false); }
   find(q) { const n = norm(q); if (!n) return false; let i = this.G.nodes.findIndex(x => norm(x.key) === n); if (i < 0) i = this.G.nodes.findIndex(x => norm(x.key).includes(n)); if (i >= 0) { this.select(i); return true; } return false; }
-  resize() { const p = this.cv.parentElement, w = p.clientWidth, h = p.clientHeight; this.r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); }
+  resize() { const p = this.cv.parentElement, w = p.clientWidth, h = p.clientHeight; this.r.setSize(w, h, false); this.cam.aspect = w / h; this.lift = -1; this.cam.updateProjectionMatrix(); }
   pick(ev) {
     const b = this.cv.getBoundingClientRect(); const v = new THREE.Vector2(((ev.clientX - b.left) / b.width) * 2 - 1, -((ev.clientY - b.top) / b.height) * 2 + 1);
     this.ray.setFromCamera(v, this.cam); const hit = this.ray.intersectObjects(this.meshes)[0]; return hit ? hit.object.userData.i : -1;
+  }
+  pickFam(ev) {
+    if (!this.fam) return null;
+    const b = this.cv.getBoundingClientRect(); this.ray.setFromCamera(new THREE.Vector2(((ev.clientX - b.left) / b.width) * 2 - 1, -((ev.clientY - b.top) / b.height) * 2 + 1), this.cam);
+    const hit = this.ray.intersectObjects(this.famMeshes)[0]; return hit ? hit.object : null;
   }
   bind() {
     const cv = this.cv, tip = $('#tip'); let down = null, moved = 0, pinch = 0;
@@ -773,10 +1010,10 @@ class Space {
         if (this.ptrs.size === 2) { const [a, b] = [...this.ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch) this.distT = Math.min(900, Math.max(80, this.distT * pinch / d)); pinch = d; return; }
         moved += Math.abs(dx) + Math.abs(dy); this.rot.y += dx * .006; this.rot.x = Math.max(-1.3, Math.min(1.3, this.rot.x + dy * .006)); this.idle = 0; tip.hidden = true; return;
       }
-      const i = this.pick(e); cv.style.cursor = i >= 0 ? 'pointer' : 'grab';
-      if (i >= 0) { const b = cv.getBoundingClientRect(), n = this.G.nodes[i]; tip.hidden = false; tip.style.left = (e.clientX - b.left) + 'px'; tip.style.top = (e.clientY - b.top) + 'px'; tip.textContent = n.label; } else tip.hidden = true;
+      const fm = this.pickFam(e), i = fm ? -1 : this.pick(e); cv.style.cursor = fm || i >= 0 ? 'pointer' : 'grab';
+      if (fm || i >= 0) { const b = cv.getBoundingClientRect(); tip.hidden = false; tip.style.left = (e.clientX - b.left) + 'px'; tip.style.top = (e.clientY - b.top) + 'px'; tip.textContent = fm ? fm.userData.tip : this.G.nodes[i].label; } else tip.hidden = true;
     });
-    const up = e => { this.ptrs.delete(e.pointerId); if (this.ptrs.size < 2) pinch = 0; if (down && moved < 6 && this.ptrs.size === 0) { const i = this.pick(e); if (i >= 0) this.select(i); } down = null; };
+    const up = e => { this.ptrs.delete(e.pointerId); if (this.ptrs.size < 2) pinch = 0; if (down && moved < 6 && this.ptrs.size === 0) { const fm = this.pickFam(e); if (fm) openLemma(fm.userData.lemma); else { const i = this.pick(e); if (i >= 0) this.select(i); } } down = null; };
     cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', e => { this.ptrs.delete(e.pointerId); pinch = 0; });
     cv.addEventListener('wheel', e => { e.preventDefault(); this.distT = Math.min(900, Math.max(80, this.distT * (1 + e.deltaY * .0012))); this.idle = 0; }, { passive: false });
   }
@@ -788,8 +1025,12 @@ class Space {
     this.focus.lerp(this.focusT, .08); this.dist += (this.distT - this.dist) * .08;
     const f = this.focus.clone().applyEuler(this.world.rotation);
     this.cam.position.set(f.x, f.y, f.z + this.dist); this.cam.lookAt(f);
-    this.orn.rotation.z += still ? 0 : .0007;
-    if (this.sel >= 0) { const m = this.meshes[this.sel], s = this.G.nodes[this.sel].size * 1.25 * (1 + .12 * Math.sin(performance.now() / 260)); m.scale.setScalar(s); }
+    const lift = !panel.hidden && innerWidth <= 720 ? Math.round(this.cv.clientHeight * (panel.classList.contains('full') ? .38 : .26)) : 0;
+    if (lift !== this.lift) { this.lift = lift; const w = this.cv.clientWidth, h = this.cv.clientHeight; lift ? this.cam.setViewOffset(w, h, 0, lift, w, h) : this.cam.clearViewOffset(); }
+    if (this.sel >= 0) { const m = this.meshes[this.sel]; m.userData.glow.scale.setScalar(m.userData.g * 1.25 * (1 + .08 * Math.sin(performance.now() / 400))); }
+    const t = performance.now() / 1000;
+    if (!still) for (const m of this.meshes) m.rotation.y += .0015;
+    if (this.orbits) this.moveOrbits(still ? 0 : t * .25);
     this.r.render(this.scene, this.cam);
   }
 }
@@ -807,22 +1048,49 @@ async function buildSpace() {
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { closePanel(); setMode(b.dataset.mode); });
   $('#findForm').onsubmit = e => { e.preventDefault(); const q = $('#findIn').value; if (!space.find(q)) { const r = findRoots(q)[0]; if (r) openRoot(r); } };
   $('#resetBtn').onclick = () => { closePanel(); space.select(-1, false); };
+  $('#hudInfo').onclick = () => { const on = $('#hud').classList.toggle('more'); $('#hudInfo').setAttribute('aria-expanded', on); };
   setMode('roots');
 }
 
 /* ---------- routing ---------- */
-const VIEWS = ['space', 'count', 'subjects', 'stories', 'wisdom'];
+const VIEWS = ['home', 'space', 'count', 'subjects', 'stories', 'wisdom', 'about'];
 function route() {
-  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'space';
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'home';
   VIEWS.forEach(x => $('#' + x).classList.toggle('on', x === v));
   document.querySelectorAll('nav.tabs a').forEach(a => a.getAttribute('href') === '#' + v ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
   if (v !== 'space') closePanel();
   if (v === 'space' && space) space.resize();
+  if (v === 'home') heroFrame(); else scrollTo(0, 0);
 }
+
+/* ---------- home: scroll hero ---------- */
+const heroScenes = [...document.querySelectorAll('.hero-scene')], heroCaps = [...document.querySelectorAll('.hero-cap')];
+function heroFrame() {
+  if (!$('#home').classList.contains('on')) return;
+  const tr = $('.hero-track'), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // p runs 0 → 3 over the track: scene k is in front around p = k, and the camera keeps pushing in
+  const p = Math.min(1, Math.max(0, -tr.getBoundingClientRect().top / (tr.offsetHeight - innerHeight))) * 3;
+  heroScenes.forEach((el, k) => {
+    const d = p - k, last = k === heroScenes.length - 1;
+    const op = d < -1 ? 0 : d < 0 ? 1 + d : last ? 1 : Math.max(0, 1 - d * 1.6);
+    el.style.opacity = op.toFixed(3);
+    el.style.transform = still ? 'none' : `scale(${(1 + Math.max(-1, d) * .12 + (d > 0 ? d * d * (last ? 3.2 : .5) : 0)).toFixed(4)})`;
+  });
+  heroCaps.forEach((el, k) => {
+    const d = Math.abs(p - k), op = Math.max(0, 1 - d * 2.4);
+    el.style.opacity = op.toFixed(3); el.style.transform = still ? 'none' : `translateY(${((p - k) * -60).toFixed(1)}px)`;
+    el.classList.toggle('live', op > .5);
+  });
+  $('.hero-cue').style.opacity = Math.max(0, 1 - p * 3).toFixed(2);
+}
+addEventListener('scroll', () => requestAnimationFrame(heroFrame), { passive: true });
+addEventListener('resize', heroFrame);
 addEventListener('hashchange', route); route();
 
 load().then(async () => {
   $('#boot').remove();
+  const HN = { words: 77429, surahs: D.surahs.length, verses: D.text.length, roots: Object.keys(D.roots).length, lemmas: Object.keys(D.lemmas).length };
+  document.querySelectorAll('[data-n]').forEach(b => { if (HN[b.dataset.n]) b.textContent = ar(HN[b.dataset.n]); });
   buildCount(); buildSubjects(); buildStories(); buildChat();
   try { await buildSpace(); }
   catch (e) { $('#gl').hidden = true; $('#space').insertAdjacentHTML('beforeend', '<div class="nogl"><div>لا يدعم هذا الجهاز العرض الثلاثي. بقية الأقسام تعمل كاملة: <a href="#count" style="color:#e8c46e">الإحصاء</a> · <a href="#stories" style="color:#e8c46e">القصص</a></div></div>'); console.error(e); }

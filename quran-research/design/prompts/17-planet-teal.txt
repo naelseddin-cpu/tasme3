@@ -1,0 +1,6 @@
+Create an image. Wide 2:1 equirectangular texture map (for wrapping onto a 3D sphere), landscape.
+
+The full surface of a fantasy planet made of deep turquoise and lapis-blue glazed ceramic, like Iznik tilework, covered with an intricate Islamic arabesque pattern of interlacing floral scrolls and small eight-pointed stars traced in thin gold lines, with soft swirling bands of pale teal mist like gentle clouds.
+Composition: an evenly distributed pattern across the ENTIRE frame, seamless where the left edge meets the right edge, no horizon, no sky, no space, no single focal point — only surface texture, as a planetary texture map.
+Style: high-detail planetary texture map, even flat lighting, no shadows from a light source.
+NO writing, NO letters, NO calligraphy, NO text.

@@ -1,0 +1,14 @@
+# Free public HTTPS address for the site via a Cloudflare quick tunnel (no account).
+# The address changes whenever this restarts; print it with ./public-url.sh
+[Unit]
+Description=Public tunnel for the Quran explorer (Cloudflare quick tunnel)
+After=quran-explorer.service network-online.target
+Wants=quran-explorer.service
+
+[Service]
+ExecStart=%h/.local/bin/cloudflared tunnel --no-autoupdate --url http://localhost:8000
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

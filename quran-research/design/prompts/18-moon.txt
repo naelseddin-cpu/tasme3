@@ -1,0 +1,6 @@
+Create an image. Wide 2:1 equirectangular texture map (for wrapping onto a 3D sphere), landscape.
+
+The full surface of a small pearl-white and silver moon, like polished mother-of-pearl inlay, with a delicate Islamic geometric lattice of six- and twelve-pointed stars engraved in fine lines, soft iridescent sheen, a few gentle craters.
+Composition: an evenly distributed pattern across the ENTIRE frame, seamless where the left edge meets the right edge, no horizon, no sky, no focal point — only surface texture, as a planetary texture map.
+Style: high-detail planetary texture map, even flat lighting.
+NO writing, NO letters, NO calligraphy, NO text.

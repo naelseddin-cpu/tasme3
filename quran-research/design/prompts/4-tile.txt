@@ -1,0 +1,6 @@
+Create an image. Square 1:1 seamless repeating tile.
+
+A flat, top-down Islamic geometric girih pattern of interlocking eight-pointed and sixteen-pointed stars, drawn as thin raised gold lines (#e8c46e) with a soft metallic sheen on a deep midnight lapis background (#0b1220), subtle low-relief depth with faint shadows under the gold strapwork, very slight stone texture.
+Composition: the pattern MUST tile seamlessly on all four edges, evenly distributed, no focal point, no border, no vignette.
+Style: precise geometric construction, elegant and quiet so it works as a dark website section background, flat even lighting.
+NO writing, NO letters, NO calligraphy, NO text.

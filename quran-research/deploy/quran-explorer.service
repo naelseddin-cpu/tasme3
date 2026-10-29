@@ -1,0 +1,16 @@
+# The Quran explorer site + chat API on port 8000 (see ../server.py).
+# Install: cp quran-*.service ~/.config/systemd/user/ && systemctl --user enable --now quran-explorer quran-tunnel
+[Unit]
+Description=Quran explorer site (quran-research/server.py)
+After=network-online.target
+
+[Service]
+# ~/.local/bin holds the claude CLI used for the owner's chat
+Environment=PATH=%h/.local/bin:/usr/local/bin:/usr/bin:/bin
+WorkingDirectory=%h/tasme3/quran-research
+ExecStart=/usr/bin/python3 %h/tasme3/quran-research/server.py --port 8000
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
