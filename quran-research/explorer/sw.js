@@ -4,9 +4,11 @@
 // the phone and makes no server requests except the live chat (/api/).
 // The memorization app (/hifz/) has its own worker and is left alone here.
 // Bump VERSION whenever a precached file changes.
-var VERSION = 'qx-v1';
+var VERSION = 'qx-v2';
 var CORE = ['./', 'index.html', 'data.json', 'text.json',
-  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'];
+  'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'].concat(
+  ['shaders/CopyShader.js', 'shaders/LuminosityHighPassShader.js', 'postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js',
+   'postprocessing/ShaderPass.js', 'postprocessing/UnrealBloomPass.js'].map(function (f) { return 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/' + f; }));
 
 self.addEventListener('install', function (e) {
   e.waitUntil(caches.open(VERSION).then(function (c) {
@@ -49,5 +51,5 @@ self.addEventListener('fetch', function (e) {
     e.respondWith(fromCacheThenNetwork(req));
     return;
   }
-  if (/cdnjs\.cloudflare\.com|fonts\.(googleapis|gstatic)\.com/.test(url.hostname)) e.respondWith(fromCacheThenNetwork(req));
+  if (/cdnjs\.cloudflare\.com|cdn\.jsdelivr\.net|fonts\.(googleapis|gstatic)\.com/.test(url.hostname)) e.respondWith(fromCacheThenNetwork(req));
 });

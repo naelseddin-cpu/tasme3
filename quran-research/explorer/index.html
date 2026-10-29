@@ -60,15 +60,15 @@ nav.tabs .s { display: none; }
 .view > .page > .page-head { position: relative; margin: 0 calc(50% - 50vw) 92px; min-height: min(46vh, 440px); align-content: end; gap: 8px;
   padding: 120px max(16px, calc(50vw - 574px)) 34px; color: #f3ead2; background: #05080f center / cover no-repeat; isolation: isolate; }
 .view > .page > .page-head::before { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(to top, rgba(4, 7, 14, .92), rgba(4, 7, 14, .35) 55%, rgba(4, 7, 14, .15)); }
-.view > .page > .page-head::after { content: ""; position: absolute; inset-inline: 0; bottom: -66px; height: 58px; background: url(img/headpiece.jpg) center / auto 100% no-repeat; mix-blend-mode: multiply; }
+.view > .page > .page-head::after { content: ""; position: absolute; inset-inline: 0; bottom: -66px; height: 58px; background: url(img/hd/headpiece.jpg) center / auto 100% no-repeat; mix-blend-mode: multiply; }
 .view > .page > .page-head h2 { font-family: var(--f-title); font-size: clamp(2rem, 4.6vw, 3.2rem); color: #e8c46e; font-weight: 700; text-shadow: 0 3px 20px rgba(0, 0, 0, .7); }
 .view > .page > .page-head p { color: #e9dfc3; font-size: 1.05rem; text-shadow: 0 2px 10px rgba(0, 0, 0, .8); }
 .view > .page > .page-head .eyebrow { color: #e8c46e; font-size: .95rem; }
-#count .page-head { background-image: url(img/sec-count.jpg); }
-#subjects .page-head { background-image: url(img/sec-subjects.jpg); }
-#stories .page-head { background-image: url(img/sec-stories.jpg); background-position: center 75%; }
-#wisdom .page-head { background-image: url(img/sec-wisdom.jpg); }
-#about .page-head { background-image: url(img/sec-about.jpg); }
+#count .page-head { background-image: url(img/hd/sec-count.jpg); }
+#subjects .page-head { background-image: url(img/hd/sec-subjects.jpg); }
+#stories .page-head { background-image: url(img/hd/sec-stories.jpg); background-position: center 75%; }
+#wisdom .page-head { background-image: url(img/hd/sec-wisdom.jpg); }
+#about .page-head { background-image: url(img/hd/sec-about.jpg); }
 .prose { max-width: 820px; font-size: 1.05rem; line-height: 2; }
 .prose h3 { font-family: var(--f-title); color: var(--gold); font-size: 1.6rem; margin: 30px 0 8px; }
 .prose ul { padding-inline-start: 22px; } .prose li { margin-bottom: 6px; }
@@ -79,7 +79,7 @@ nav.tabs .s { display: none; }
 .facts span { font-size: .85rem; color: var(--muted); }
 
 /* space */
-#space { position: relative; height: calc(100dvh - 56px - env(safe-area-inset-top, 0px)); min-height: 460px; background: var(--space-bg) url(img/tx-nebula.jpg) center / cover no-repeat; color: var(--space-ink); overflow: hidden; }
+#space { position: relative; height: calc(100dvh - 56px - env(safe-area-inset-top, 0px)); min-height: 460px; background: var(--space-bg) url(img/hd/tx-nebula.jpg) center / cover no-repeat; color: var(--space-ink); overflow: hidden; }
 #space canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
 .hud { position: absolute; inset-inline-start: max(16px, env(safe-area-inset-right, 0px)); top: 16px; display: grid; gap: 10px; max-width: min(360px, calc(100% - 32px)); pointer-events: none; }
 .hud > * { pointer-events: auto; min-width: 0; }
@@ -268,9 +268,9 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
 <main>
   <section id="home" class="view" aria-label="البداية">
     <div class="hero-track"><div class="hero-stage">
-      <div class="hero-scene" style="background-image:url(img/hero-1-courtyard.jpg)"></div>
-      <div class="hero-scene" style="background-image:url(img/hero-2-portal.jpg)"></div>
-      <div class="hero-scene" style="background-image:url(img/hero-3-dome.jpg)"></div>
+      <div class="hero-scene" style="background-image:url(img/hd/hero-1-courtyard.jpg)"></div>
+      <div class="hero-scene" style="background-image:url(img/hd/hero-2-portal.jpg)"></div>
+      <div class="hero-scene" style="background-image:url(img/hd/hero-3-dome.jpg)"></div>
       <div class="hero-cap"><h1>مستكشف القرآن</h1><p>رحلة في كلمات المصحف: من أين تأتي، وكيف تتفرع، وبمَ ترتبط.</p></div>
       <div class="hero-cap"><div class="hero-nums"><div><b data-n="surahs">114</b><span>سورة</span></div><div><b data-n="verses">6,236</b><span>آية</span></div><div><b data-n="words">77,429</b><span>كلمة</span></div></div><p>نص مصحف المدينة كاملًا (رواية حفص)، مع تحليل صرفي لكل كلمة.</p></div>
       <div class="hero-cap"><div class="hero-nums"><div><b data-n="roots">1,651</b><span>جذرًا</span></div><div><b data-n="lemmas">4,763</b><span>كلمة معجمية</span></div></div><p>تعود الكلمات إلى جذور قليلة. من الجذر الواحد تتفرع كلمات كثيرة، وكل كلمة تَرِد بصيغ متعددة في الآيات.</p></div>
@@ -376,6 +376,12 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/CopyShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/EffectComposer.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/RenderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/ShaderPass.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/postprocessing/UnrealBloomPass.js"></script>
 <script>
 "use strict";
 const AR = new Intl.NumberFormat('en-US');
@@ -888,7 +894,7 @@ function graphSurahs() {
 // a ring band, a sun and a glow made on pure black (their brightness is their alpha; the canvas is transparent over the nebula).
 const TEX = {};
 const tex = kind => TEX[kind] || (TEX[kind] = (() => {
-  const t = new THREE.TextureLoader().load(kind === 'glow' ? 'img/el-seed.jpg' : `img/tx-${kind}.jpg`);
+  const t = new THREE.TextureLoader().load(kind === 'glow' ? 'img/el-seed.jpg' : kind === 'ring' ? 'img/tx-ring.jpg' : `img/hd/tx-${kind}.jpg`);
   t.encoding = THREE.sRGBEncoding; t.anisotropy = 8; return t; })());
 // a thin atmosphere: a fresnel rim around the planet's edge, brightest on the side facing the sun
 const ATMO_VS = 'varying vec3 vN; varying vec3 vW; void main() { vec4 w = modelMatrix * vec4(position, 1.0); vW = w.xyz; vN = normalize(mat3(modelMatrix) * normal); gl_Position = projectionMatrix * viewMatrix * w; }';
@@ -906,15 +912,35 @@ class Space {
     this.r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     this.r.setPixelRatio(Math.min(2, devicePixelRatio));
     this.r.outputEncoding = THREE.sRGBEncoding; this.r.toneMapping = THREE.ACESFilmicToneMapping; this.r.toneMappingExposure = 1.05;
+    this.bg = tex('nebula'); this.bg.matrixAutoUpdate = false;
     this.scene = new THREE.Scene(); this.scene.fog = new THREE.FogExp2(0x07101f, 0.0009);
     this.cam = new THREE.PerspectiveCamera(55, 1, 1, 4000);
     this.world = new THREE.Group(); this.scene.add(this.world);
     // one sun at the edge of space lights every world: a bright day side and a dark night side, as in a real system
     this.scene.add(new THREE.AmbientLight(0x9fb4d8, .38));
-    const SUN = new THREE.Vector3(560, 110, -60), sl = new THREE.PointLight(0xfff0d8, 1.8); this.SUN = SUN; sl.position.copy(SUN); this.scene.add(sl);
-    const sun = sprite('sun', 0xffffff); sun.position.copy(SUN); sun.scale.setScalar(460); sun.material.fog = false; this.scene.add(sun);
+    const SUN = new THREE.Vector3(-430, 150, -240), sl = new THREE.PointLight(0xfff0d8, 1.8); this.SUN = SUN; sl.position.copy(SUN); this.scene.add(sl);
+    const sun = sprite('sun', 0xffffff); sun.position.copy(SUN); sun.scale.setScalar(560); sun.material.fog = false; this.scene.add(sun);
     this.rot = { x: .25, y: 0 }; this.dist = 480; this.distT = 480; this.focus = new THREE.Vector3(); this.focusT = new THREE.Vector3();
     this.idle = 0; this.sel = -1; this.ray = new THREE.Raycaster(); this.ptrs = new Map();
+    this.scene.background = this.bg;
+    // Film look: bloom makes the sun, lit rims and atmospheres glow; the last pass applies
+    // ACES tone mapping and sRGB (the composer renders in linear light). Glow can't be drawn
+    // into transparent pixels, which is why the nebula is the scene background, not CSS.
+    if (THREE.EffectComposer && THREE.UnrealBloomPass) {
+      this.r.toneMapping = THREE.NoToneMapping; this.r.outputEncoding = THREE.LinearEncoding;
+      this.composer = new THREE.EffectComposer(this.r);
+      this.composer.addPass(new THREE.RenderPass(this.scene, this.cam));
+      this.bloom = new THREE.UnrealBloomPass(new THREE.Vector2(256, 256), .95, .6, .78);
+      this.composer.addPass(this.bloom);
+      this.composer.addPass(new THREE.ShaderPass({
+        uniforms: { tDiffuse: { value: null }, exposure: { value: 1.05 } },
+        vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+        fragmentShader: `uniform sampler2D tDiffuse; uniform float exposure; varying vec2 vUv;
+          vec3 aces(vec3 x) { x *= exposure * 0.6; return clamp((x * (2.51 * x + 0.03)) / (x * (2.43 * x + 0.59) + 0.14), 0.0, 1.0); }
+          vec3 srgb(vec3 c) { return mix(c * 12.92, 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055, step(0.0031308, c)); }
+          void main() { vec4 c = texture2D(tDiffuse, vUv); gl_FragColor = vec4(srgb(aces(c.rgb)), 1.0); }`
+      }));
+    }
     this.bind(); new ResizeObserver(() => this.resize()).observe(canvas.parentElement); this.resize();
     const loop = t => { requestAnimationFrame(loop); if (!document.hidden && $('#space').classList.contains('on')) this.frame(t); }; requestAnimationFrame(loop);
   }
@@ -1030,7 +1056,13 @@ class Space {
   clearSelection() { if (this.sel >= 0) this.select(-1, false); }
   focusKey(k) { const i = this.G.nodes.findIndex(n => n.key === k); if (i >= 0 && $('#space').classList.contains('on')) this.select(i, false); }
   find(q) { const n = norm(q); if (!n) return false; let i = this.G.nodes.findIndex(x => norm(x.key) === n); if (i < 0) i = this.G.nodes.findIndex(x => norm(x.key).includes(n)); if (i >= 0) { this.select(i); return true; } return false; }
-  resize() { const p = this.cv.parentElement, w = p.clientWidth, h = p.clientHeight; this.r.setSize(w, h, false); this.cam.aspect = w / h; this.lift = -1; this.cam.updateProjectionMatrix(); }
+  resize() {
+    const p = this.cv.parentElement, w = p.clientWidth, h = p.clientHeight; this.r.setSize(w, h, false); this.cam.aspect = w / h; this.lift = -1; this.cam.updateProjectionMatrix();
+    if (this.composer) { this.composer.setSize(w, h); this.bloom.resolution.set(w, h); }
+    // nebula covers the view like CSS background-size: cover
+    const ia = 3840 / 2143, va = w / Math.max(1, h), m = this.bg.matrix;
+    if (va > ia) m.setUvTransform(0, (1 - ia / va) / 2, 1, ia / va, 0, 0, 0); else m.setUvTransform((1 - va / ia) / 2, 0, va / ia, 1, 0, 0, 0);
+  }
   pick(ev) {
     const b = this.cv.getBoundingClientRect(); const v = new THREE.Vector2(((ev.clientX - b.left) / b.width) * 2 - 1, -((ev.clientY - b.top) / b.height) * 2 + 1);
     this.ray.setFromCamera(v, this.cam); const hit = this.ray.intersectObjects(this.meshes)[0]; return hit ? hit.object.userData.i : -1;
@@ -1070,7 +1102,7 @@ class Space {
     const t = performance.now() / 1000;
     if (!still) for (const m of this.meshes) m.rotation.y += .0015;
     if (this.orbits) this.moveOrbits(still ? 0 : t * .25);
-    this.r.render(this.scene, this.cam);
+    if (this.composer) this.composer.render(); else this.r.render(this.scene, this.cam);
   }
 }
 let MODES = {};
