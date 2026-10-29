@@ -194,6 +194,13 @@ dialog .t { font-family: var(--f-quran); font-size: 1.45rem; line-height: 2.3; }
    The track is tall; the stage sticks to the screen and JS maps scroll progress to each scene's zoom and fade. */
 #home { background: #05080f; color: #f3ead2; }
 .hero-track { height: 680vh; position: relative; }
+.loader { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: radial-gradient(ellipse at 50% 40%, #13284a, #05080f 70%); color: #f3ead2; transition: opacity .6s; }
+.loader[hidden] { display: none; } .loader.out { opacity: 0; pointer-events: none; }
+.ld-in { text-align: center; width: min(320px, 80vw); display: grid; gap: 10px; justify-items: center; }
+.ld-in .spin { width: 56px; height: 56px; } .ld-in b { font-family: var(--f-title); font-size: 2.2rem; color: #e8c46e; }
+.ld-in p { margin: 0; font-size: 1.05rem; font-variant-numeric: tabular-nums; } .ld-in small { color: #b9ae92; }
+.ld-bar { width: 100%; height: 8px; border-radius: 999px; background: rgba(255,255,255,.12); overflow: hidden; }
+.ld-bar span { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #a8862f, #e8c46e); transition: width .3s; }
 .hero-stage { position: sticky; top: 0; height: 100dvh; overflow: hidden; }
 /* wide screens get the 16:9 scenes, phones (portrait) the 9:16 photographs made for them */
 .hs-kaaba { background-image: url(img/hd/journey-kaaba.jpg); } .hs-nabawi { background-image: url(img/hd/journey-nabawi.jpg); }
@@ -264,6 +271,12 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
 </svg>
 
 <div dir="rtl" lang="ar">
+<!-- First open: download all the HD art for this screen first, then show the experience complete -->
+<div id="loader" class="loader" hidden role="status" aria-live="polite">
+  <div class="ld-in"><svg class="spin" style="color:#e8c46e"><use href="#star"/></svg>
+  <b>مستكشف القرآن</b><p id="ldText">جارٍ تجهيز التجربة…</p><div class="ld-bar"><span id="ldFill"></span></div>
+  <small>تُحمَّل الصور مرة واحدة، ثم يعمل الموقع من جهازك</small></div>
+</div>
 <header class="top"><div class="top-in">
   <a class="top-about" href="#about">عن المنهج</a>
   <a class="brand" href="#home"><svg style="color:#e8c46e"><use href="#star"/></svg><b>مستكشف القرآن</b></a>
@@ -1200,7 +1213,33 @@ addEventListener('hashchange', route); route();
 // offline / repeat visits (not inside claude.ai, where the page is an artifact)
 if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol) && !window.claude) navigator.serviceWorker.register('sw.js').catch(() => {});
 
-load().then(async () => {
+// Everything this screen shape shows, fetched up front (4 at a time) with byte progress;
+// the service worker keeps it, so later visits finish at once.
+function preloadArt() {
+  const portrait = matchMedia('(orientation: portrait)').matches;
+  const hero = (portrait ? ['portrait-kaaba', 'portrait-nabawi', 'portrait-aqsa', 'portrait-umayyad'] : ['journey-kaaba', 'journey-nabawi', 'journey-aqsa', 'journey-umayyad']).concat('hero-3-dome');
+  const tx = ['nebula', 'sun', 'kiswah', 'moon', 'amber', 'saturn', 'mars', 'ruby', 'lava', 'gold-turquoise', 'marble', 'ice', 'teal', 'earth', 'emerald', 'amethyst', 'teal-gold', 'sapphire'];
+  const urls = hero.map(n => `img/hd/${n}.jpg`).concat(tx.map(n => `img/hd/tx-${n}.jpg`), ['img/tx-ring.jpg', 'img/el-seed.jpg']);
+  const got = {}, size = {};
+  const ldr = $('#loader'), show = setTimeout(() => { ldr.hidden = false; }, 300);
+  const tick = () => {
+    const a = Object.values(got).reduce((x, y) => x + y, 0), t = Object.values(size).reduce((x, y) => x + y, 0) || 1;
+    const pct = Math.min(100, Math.floor(100 * a / t));
+    $('#ldFill').style.width = pct + '%'; $('#ldText').textContent = `جارٍ تجهيز التجربة… ${pct}% (${(a / 1e6).toFixed(1)} ميغابايت)`;
+  };
+  const one = async u => {
+    try {
+      const r = await fetch(u); size[u] = +r.headers.get('content-length') || 0;
+      const rd = r.body.getReader(); got[u] = 0;
+      for (;;) { const { done, value } = await rd.read(); if (done) break; got[u] += value.length; tick(); }
+    } catch { got[u] = size[u] = size[u] || 0; }
+  };
+  const queue = urls.slice();
+  const workers = Array.from({ length: 4 }, async () => { while (queue.length) await one(queue.shift()); });
+  return Promise.all(workers).then(() => { clearTimeout(show); if (!ldr.hidden) { ldr.classList.add('out'); setTimeout(() => { ldr.hidden = true; }, 650); } });
+}
+
+Promise.all([load(), preloadArt()]).then(async () => {
   $('#boot').remove();
   const HN = { words: 77429, surahs: D.surahs.length, verses: D.text.length, roots: Object.keys(D.roots).length, lemmas: Object.keys(D.lemmas).length };
   document.querySelectorAll('[data-n]').forEach(b => { if (HN[b.dataset.n]) b.textContent = ar(HN[b.dataset.n]); });
