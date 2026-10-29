@@ -9,3 +9,5 @@ __pycache__/
 *.pyc
 .pytest_cache/
 node_modules/
+quran-research/morph.txt
+quran-research/explorer/*.json

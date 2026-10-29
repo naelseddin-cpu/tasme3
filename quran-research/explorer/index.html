@@ -1,0 +1,830 @@
+<title>مستكشف القرآن</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Aref+Ruqaa:wght@700&family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: sticky ornamented top bar with five views; the 3D "space" fills the screen like a night sky over a mosque courtyard;
+   every item opens one shared side panel (bottom sheet on phones) with counts, distribution, linked roots, verses and Claude's reading. */
+:root {
+  --bg: #eef2f6; --surface: #ffffff; --surface-2: #f5f7fa; --ink: #12223a; --muted: #56657a;
+  --line: #d6dde7; --lapis: #1d4e89; --gold: #a87a22; --teal: #127a6d; --meccan: #c08a2a; --medinan: #1f8f80;
+  --hl: #f4e2a8; --hl-ink: #12223a; --shadow: 0 10px 30px rgba(18, 34, 58, .14);
+  --f-quran: "Amiri Quran", "Amiri", "Traditional Arabic", serif;
+  --f-ui: "IBM Plex Sans Arabic", "Segoe UI", "Geeza Pro", system-ui, sans-serif;
+  --f-title: "Aref Ruqaa", "Amiri", serif;
+  --space-bg: #07101f; --space-ink: #eef2fa; --space-muted: #9fb0c8; --space-line: rgba(224, 184, 90, .28);
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0a1322; --surface: #111d31; --surface-2: #0e192b; --ink: #e6ecf5; --muted: #9aabc2;
+  --line: #24344f; --lapis: #8db6ee; --gold: #e0b85a; --teal: #5cc9b8; --meccan: #e0b85a; --medinan: #5cc9b8;
+  --hl: #5b4a17; --hl-ink: #fff4d6; --shadow: 0 10px 30px rgba(0, 0, 0, .45); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0a1322; --surface: #111d31; --surface-2: #0e192b; --ink: #e6ecf5; --muted: #9aabc2;
+  --line: #24344f; --lapis: #8db6ee; --gold: #e0b85a; --teal: #5cc9b8; --meccan: #e0b85a; --medinan: #5cc9b8;
+  --hl: #5b4a17; --hl-ink: #fff4d6; --shadow: 0 10px 30px rgba(0, 0, 0, .45); color-scheme: dark }
+
+html, body { height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-ui); font-size: 15px; line-height: 1.7;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='88' height='88' viewBox='0 0 88 88'%3E%3Cg fill='none' stroke='%23b8862b' stroke-opacity='.13'%3E%3Crect x='26' y='26' width='36' height='36'/%3E%3Crect x='26' y='26' width='36' height='36' transform='rotate(45 44 44)'/%3E%3Ccircle cx='44' cy='44' r='9'/%3E%3Cpath d='M0 44h18M70 44h18M44 0v18M44 70v18'/%3E%3C/g%3E%3C/svg%3E"); }
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--space-bg); }
+* { box-sizing: border-box; }
+button { font: inherit; color: inherit; cursor: pointer; }
+button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+h1, h2, h3, h4 { margin: 0; line-height: 1.35; text-wrap: balance; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* top bar */
+.top { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; background: var(--space-bg); color: var(--space-ink);
+  border-bottom: 1px solid var(--space-line);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.top-in { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; padding-block: 8px; max-width: 1400px; margin: 0 auto; }
+.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+.brand svg { width: 34px; height: 34px; flex: none; }
+.brand b { font-family: var(--f-title); font-size: 1.6rem; color: #e8c46e; font-weight: 700; letter-spacing: 0; }
+nav.tabs { display: flex; gap: 4px; flex-wrap: wrap; margin-inline-start: auto; }
+nav.tabs a { color: var(--space-muted); text-decoration: none; padding: 6px 12px; border-radius: 999px; font-weight: 500; border: 1px solid transparent; }
+nav.tabs a:hover { color: var(--space-ink); }
+nav.tabs a[aria-current="page"] { color: #0b1528; background: #e8c46e; }
+@media (max-width: 640px) { nav.tabs { margin-inline-start: 0; width: 100%; justify-content: space-between; } nav.tabs a { padding: 4px 9px; font-size: .9rem; } }
+
+.view { display: none; }
+.view.on { display: block; }
+.page { max-width: 1180px; margin: 0 auto; padding-block: 28px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.page-head { display: grid; gap: 6px; margin-bottom: 22px; }
+.page-head h2 { font-size: 1.7rem; }
+.page-head p { color: var(--muted); margin: 0; max-width: 70ch; }
+.eyebrow { font-size: .8rem; letter-spacing: .04em; color: var(--gold); font-weight: 600; }
+
+/* space */
+#space { position: relative; height: calc(100dvh - 56px - env(safe-area-inset-top, 0px)); min-height: 460px; background: radial-gradient(ellipse at 50% 40%, #13284a 0%, var(--space-bg) 70%); color: var(--space-ink); overflow: hidden; }
+#space canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+.hud { position: absolute; inset-inline-start: max(16px, env(safe-area-inset-right, 0px)); top: 16px; display: grid; gap: 10px; max-width: min(360px, calc(100% - 32px)); pointer-events: none; }
+.hud > * { pointer-events: auto; }
+.hud h1 { font-family: var(--f-title); font-size: clamp(1.8rem, 4vw, 2.6rem); color: #e8c46e; font-weight: 700; }
+.hud p { margin: 0; color: var(--space-muted); font-size: .92rem; }
+.modes { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { border: 1px solid var(--space-line); background: rgba(10, 20, 38, .7); color: var(--space-ink); border-radius: 999px; padding: 4px 12px; font-size: .88rem; }
+.chip[aria-pressed="true"] { background: #e8c46e; color: #0b1528; border-color: #e8c46e; font-weight: 600; }
+.find { display: flex; gap: 6px; }
+.find input { flex: 1; min-width: 0; background: rgba(10, 20, 38, .75); color: var(--space-ink); border: 1px solid var(--space-line); border-radius: 10px; padding: 6px 10px; font: inherit; }
+.legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: .8rem; color: var(--space-muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 4px; vertical-align: middle; }
+.hint { position: absolute; bottom: 14px; inset-inline-start: max(16px, env(safe-area-inset-right, 0px)); color: var(--space-muted); font-size: .8rem; pointer-events: none; }
+.tip { position: absolute; pointer-events: none; background: rgba(8, 16, 31, .92); border: 1px solid var(--space-line); color: var(--space-ink); padding: 4px 10px; border-radius: 8px; font-size: .85rem; transform: translate(-50%, -130%); white-space: nowrap; }
+.reset { position: absolute; bottom: 12px; inset-inline-end: max(16px, env(safe-area-inset-left, 0px)); }
+.nogl { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--space-muted); }
+
+/* panel */
+#panel { position: fixed; z-index: 40; top: calc(env(safe-area-inset-top, 0px) + 56px); bottom: 0; inset-inline-end: 0; width: min(480px, 100%);
+  background: var(--surface); color: var(--ink); border-inline-start: 1px solid var(--line); box-shadow: var(--shadow); overflow-y: auto;
+  padding-block: 18px 40px; padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: max(18px, env(safe-area-inset-right, 0px)); }
+@media (max-width: 720px) { #panel { top: auto; height: 72dvh; width: 100%; border-inline-start: 0; border-top: 1px solid var(--line); border-radius: 18px 18px 0 0; padding-bottom: max(40px, env(safe-area-inset-bottom, 0px)); } }
+.p-head { display: flex; gap: 12px; align-items: flex-start; }
+.p-head h3 { font-size: 1.6rem; font-family: var(--f-quran); font-weight: 400; line-height: 1.6; }
+.p-head .kind { color: var(--gold); font-size: .8rem; font-weight: 600; }
+.x { margin-inline-start: auto; border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; width: 36px; height: 36px; flex: none; font-size: 1.1rem; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 14px; }
+.stats div { background: var(--surface-2); padding: 8px 6px; text-align: center; }
+.stats b { display: block; font-size: 1.3rem; color: var(--lapis); font-variant-numeric: tabular-nums; }
+.stats span { font-size: .75rem; color: var(--muted); }
+.sec { margin-top: 20px; }
+.sec h4 { font-size: .95rem; color: var(--gold); margin-bottom: 8px; display: flex; gap: 8px; align-items: baseline; }
+.sec h4 small { color: var(--muted); font-weight: 400; }
+.dist { overflow-x: auto; }
+.dist svg { width: 100%; min-width: 360px; height: auto; display: block; }
+.dist .ax { fill: var(--muted); font-size: 22px; font-family: var(--f-ui); }
+.split { display: flex; height: 10px; border-radius: 999px; overflow: hidden; margin-top: 8px; background: var(--line); }
+.split span:first-child { background: var(--meccan); } .split span:last-child { background: var(--medinan); }
+.split-l { display: flex; justify-content: space-between; font-size: .8rem; color: var(--muted); margin-top: 4px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { border: 1px solid var(--line); background: var(--surface-2); border-radius: 999px; padding: 2px 10px; font-size: .88rem; }
+button.tag:hover { border-color: var(--gold); }
+.tag em { font-style: normal; color: var(--muted); font-size: .78rem; margin-inline-start: 4px; font-variant-numeric: tabular-nums; }
+.verse { border-top: 1px solid var(--line); padding-block: 10px; }
+.verse .t { font-family: var(--f-quran); font-size: 1.32rem; line-height: 2.25; }
+.verse .r { font-size: .8rem; color: var(--muted); }
+.hlw { background: var(--hl); color: var(--hl-ink); border-radius: 4px; padding: 0 2px; }
+.more { margin-top: 10px; width: 100%; border: 1px dashed var(--line); background: transparent; border-radius: 10px; padding: 8px; color: var(--lapis); }
+
+/* claude */
+.ask { width: 100%; border: 0; border-radius: 12px; padding: 10px 14px; background: linear-gradient(90deg, #1d4e89, #127a6d); color: #fff; font-weight: 600; display: flex; gap: 8px; align-items: center; justify-content: center; }
+.ask:disabled { opacity: .6; cursor: progress; }
+.answer { margin-top: 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.answer h5 { font-size: 1rem; color: var(--lapis); margin: 12px 0 4px; }
+.answer h5:first-child { margin-top: 0; }
+.answer p { margin: 6px 0; } .answer ul { margin: 6px 0; padding-inline-start: 20px; }
+.ref { border: 1px solid var(--gold); color: var(--gold); background: transparent; border-radius: 6px; padding: 0 6px; font-size: .82rem; margin: 0 2px; font-variant-numeric: tabular-nums; }
+.note { font-size: .8rem; color: var(--muted); margin-top: 6px; }
+.unavail { font-size: .85rem; color: var(--muted); border: 1px dashed var(--line); border-radius: 10px; padding: 8px 12px; }
+
+/* cards */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.card { text-align: start; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 14px; display: grid; gap: 4px; position: relative; overflow: hidden; }
+.card:hover { border-color: var(--gold); box-shadow: var(--shadow); }
+.card b { font-size: 1.1rem; } .card .c { color: var(--lapis); font-weight: 700; font-variant-numeric: tabular-nums; }
+.card small { color: var(--muted); }
+.card::after { content: ""; position: absolute; inset-inline-end: -18px; top: -18px; width: 56px; height: 56px; opacity: .25;
+  background: conic-gradient(from 22.5deg, var(--gold) 0 12.5%, transparent 0 25%, var(--gold) 0 37.5%, transparent 0 50%, var(--gold) 0 62.5%, transparent 0 75%, var(--gold) 0 87.5%, transparent 0); border-radius: 50%; }
+.name-card { font-family: var(--f-quran); font-size: 1.35rem; }
+.group-h { margin: 26px 0 10px; font-size: 1.1rem; display: flex; gap: 10px; align-items: center; }
+.group-h::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+
+/* count view */
+.search { display: flex; gap: 8px; flex-wrap: wrap; }
+.search input { flex: 1 1 260px; min-width: 0; font: inherit; font-size: 1.1rem; padding: 10px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--surface); }
+.seg button { border: 0; background: transparent; padding: 8px 12px; }
+.seg button[aria-pressed="true"] { background: var(--lapis); color: var(--surface); }
+.sugg { margin-top: 10px; }
+.big { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 18px; }
+.big div { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 14px; }
+.big b { display: block; font-size: 1.8rem; color: var(--lapis); font-variant-numeric: tabular-nums; line-height: 1.3; }
+.big span { color: var(--muted); font-size: .85rem; }
+.toplist { display: grid; gap: 4px; margin-top: 10px; }
+.toplist button { display: grid; grid-template-columns: 3.2em 1fr 3.5em; align-items: center; gap: 8px; border: 0; background: transparent; padding: 3px 0; text-align: start; }
+.toplist .bar { height: 10px; border-radius: 999px; background: linear-gradient(90deg, var(--gold), var(--lapis)); }
+.toplist .bw { background: var(--line); border-radius: 999px; }
+.toplist button:hover .k { color: var(--gold); }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 26px; }
+@media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+.box { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-width: 0; }
+
+/* chat */
+.chat { display: grid; gap: 12px; max-width: 820px; }
+.msg { border-radius: 14px; padding: 12px 14px; }
+.msg.u { background: var(--lapis); color: var(--surface); justify-self: start; max-width: 85%; }
+.msg.a { background: var(--surface); border: 1px solid var(--line); }
+.compose { display: flex; gap: 8px; position: sticky; bottom: 0; padding-block: 10px; background: var(--bg); }
+.compose textarea { flex: 1; min-width: 0; font: inherit; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); resize: vertical; min-height: 48px; }
+.compose button { border: 0; border-radius: 12px; padding: 0 18px; background: var(--gold); color: #10131a; font-weight: 700; }
+.steps { font-size: .8rem; color: var(--muted); }
+
+dialog { border: 1px solid var(--line); border-radius: 16px; background: var(--surface); color: var(--ink); max-width: min(620px, calc(100% - 32px)); padding: 18px; box-shadow: var(--shadow); }
+dialog::backdrop { background: rgba(5, 10, 20, .55); }
+dialog .t { font-family: var(--f-quran); font-size: 1.45rem; line-height: 2.3; }
+.loading { display: grid; place-items: center; min-height: 50vh; color: var(--space-muted); gap: 10px; text-align: center; }
+.spin { width: 44px; height: 44px; animation: rot 6s linear infinite; }
+@keyframes rot { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spin { animation: none; } }
+footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-top: 1px solid var(--line); padding-top: 14px; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="star" viewBox="0 0 100 100"><g fill="none" stroke="currentColor" stroke-width="4"><rect x="22" y="22" width="56" height="56"/><rect x="22" y="22" width="56" height="56" transform="rotate(45 50 50)"/><circle cx="50" cy="50" r="13"/></g></symbol>
+</svg>
+
+<div dir="rtl" lang="ar">
+<header class="top"><div class="top-in">
+  <a class="brand" href="#space"><svg style="color:#e8c46e"><use href="#star"/></svg><b>مستكشف القرآن</b></a>
+  <nav class="tabs" aria-label="الأقسام">
+    <a href="#space">الفضاء</a><a href="#count">الإحصاء</a><a href="#subjects">المواضيع</a><a href="#stories">القصص والأعلام</a><a href="#wisdom">الحكمة</a>
+  </nav>
+</div></header>
+
+<main>
+  <section id="space" class="view" aria-label="الفضاء الثلاثي">
+    <div class="loading" id="boot"><svg class="spin" style="color:#e8c46e"><use href="#star"/></svg><div>جارٍ تحميل نص المصحف وبيانات الجذور…</div></div>
+    <canvas id="gl" hidden></canvas>
+    <div class="hud" id="hud" hidden>
+      <h1>كل كلمة نجمة</h1>
+      <p id="modeDesc"></p>
+      <div class="modes" role="group" aria-label="نوع الخريطة">
+        <button class="chip" data-mode="roots" aria-pressed="true">الجذور والقضايا</button>
+        <button class="chip" data-mode="names" aria-pressed="false">القصص والأعلام</button>
+        <button class="chip" data-mode="surahs" aria-pressed="false">السور</button>
+      </div>
+      <form class="find" id="findForm"><input id="findIn" placeholder="ابحث في الخريطة… مثل: صبر، موسى، يوسف" aria-label="ابحث في الخريطة"><button class="chip" type="submit">اذهب</button></form>
+      <div class="legend" id="legend"></div>
+    </div>
+    <div class="tip" id="tip" hidden></div>
+    <div class="hint" id="hint" hidden>اسحب للتدوير · مرّر أو اقرص للتقريب · اضغط على نجمة لفتح تفاصيلها</div>
+    <button class="chip reset" id="resetBtn" hidden>عرض الكل</button>
+  </section>
+
+  <section id="count" class="view"><div class="page">
+    <div class="page-head"><span class="eyebrow">الإحصاء</span><h2>عدّ أي جذر أو كلمة في القرآن كله</h2>
+      <p>اكتب جذرًا ثلاثيًا (مثل: رحم، صبر، رزق) أو أي كلمة. يظهر عدد المواضع، وتوزيعها على السور الـ114، وصيغها، وكل الآيات كاملة.</p></div>
+    <form class="search" id="countForm">
+      <input id="countIn" placeholder="مثال: رحم" aria-label="جذر أو كلمة" autocomplete="off">
+      <div class="seg" role="group" aria-label="طريقة البحث">
+        <button type="button" data-cm="root" aria-pressed="true">جذر</button>
+        <button type="button" data-cm="contains" aria-pressed="false">كلمة تحتوي</button>
+        <button type="button" data-cm="exact" aria-pressed="false">كلمة مطابقة</button>
+      </div>
+      <button class="chip" style="background:var(--gold);color:#10131a;border:0;padding:8px 18px" type="submit">احسب</button>
+    </form>
+    <div class="sugg tags" id="sugg"></div>
+    <div class="big" id="globalStats"></div>
+    <div class="two">
+      <div class="box"><h4 style="color:var(--gold)">أكثر الجذور ورودًا</h4><div class="toplist" id="topRoots"></div></div>
+      <div class="box"><h4 style="color:var(--gold)">السور حسب عدد الكلمات</h4><div class="toplist" id="topSurahs"></div></div>
+    </div>
+  </div></section>
+
+  <section id="subjects" class="view"><div class="page">
+    <div class="page-head"><span class="eyebrow">المواضيع</span><h2>القضايا الكبرى في القرآن</h2>
+      <p>كل موضوع هنا مجموعة من الجذور أو الكلمات المحددة. اضغط على موضوع لترى مواضعه، والقضايا المرتبطة به، واطلب من Claude استخراج حكمه من الآيات نفسها.</p></div>
+    <div class="grid" id="subjGrid"></div>
+  </div></section>
+
+  <section id="stories" class="view"><div class="page">
+    <div class="page-head"><span class="eyebrow">القصص والأعلام</span><h2>الأنبياء والأقوام والأماكن</h2>
+      <p>كل الأعلام الواردة في القرآن حسب التحليل الصرفي، مع عدد مرات ذكرها. اضغط على اسم لترى أين تُروى قصته، ومن يُذكر معه، واطلب ترتيب القصة من آياتها.</p></div>
+    <div id="storyGroups"></div>
+  </div></section>
+
+  <section id="wisdom" class="view"><div class="page">
+    <div class="page-head"><span class="eyebrow">الحكمة</span><h2>اسأل عن الروابط والحكم</h2>
+      <p>اكتب سؤالك، وسيبحث Claude في نص المصحف نفسه داخل هذه الصفحة قبل أن يجيب، ويستشهد بأرقام الآيات. اضغط على أي رقم آية لترى نصها الرسمي.</p></div>
+    <div class="chat" id="chat"></div>
+    <div class="tags" id="starters" style="margin-top:12px"></div>
+    <form class="compose" id="chatForm"><textarea id="chatIn" placeholder="مثال: ما العلاقة بين الصبر والصلاة في القرآن؟" aria-label="سؤالك"></textarea><button type="submit" id="chatSend">اسأل</button></form>
+    <p class="note">الإجابات استنباط وتحليل للآيات، وليست فتوى ولا تفسيرًا معتمدًا. النص القرآني يُعرض دائمًا من المصحف الرسمي، لا من ذاكرة Claude.</p>
+  </div></section>
+</main>
+
+<aside id="panel" hidden aria-label="التفاصيل"></aside>
+<dialog id="verseDlg"><div class="r" id="dlgRef" style="color:var(--gold);font-weight:600"></div><div class="t" id="dlgText"></div><form method="dialog" style="text-align:end"><button class="tag">إغلاق</button></form></dialog>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+"use strict";
+const AR = new Intl.NumberFormat('en-US');
+const ar = n => AR.format(n);
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const DIAC = /[ً-ٰٟۖ-ۭـ۞]/g;
+const norm = w => w.replace(DIAC, '').replace(/[ٱأإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[اءؤئ]/g, '');
+const bare = w => w.replace(DIAC, '');
+
+const D = { surahs: [], text: [], start: [], vs: [], va: [], roots: {}, lemmas: {}, rootLem: {}, pn: [], rootDf: {}, verseRoots: null, wordsNorm: null };
+const decode = a => { const o = new Array(a.length); let p = 0; for (let i = 0; i < a.length; i++) { p += a[i]; o[i] = p; } return o; };
+const refOf = g => `${D.vs[g]}:${D.va[g]}`;
+const refName = g => `${D.surahs[D.vs[g] - 1][0]} ${ar(D.va[g])}`;
+const gOf = (s, a) => (s >= 1 && s <= 114 && a >= 1 && a <= D.surahs[s - 1][3]) ? D.start[s - 1] + a - 1 : -1;
+const parseRef = r => { const m = String(r).match(/(\d{1,3})\s*[:：]\s*(\d{1,3})/); return m ? gOf(+m[1], +m[2]) : -1; };
+
+async function load() {
+  const [d, t] = await Promise.all([fetch('data.json').then(r => r.json()), fetch('text.json').then(r => r.json())]);
+  D.text = t; D.surahs = d.surahs; D.rootLem = d.rootLem; D.pn = d.pn.map(n => n.normalize('NFC'));
+  let g = 0;
+  d.surahs.forEach((s, i) => { D.start.push(g); for (let a = 1; a <= s[3]; a++) { D.vs[g] = i + 1; D.va[g] = a; g++; } });
+  for (const k in d.roots) D.roots[k] = decode(d.roots[k]);
+  for (const k in d.lemmas) { const v = d.lemmas[k]; D.lemmas[k.normalize('NFC')] = { root: v[0], pos: v[1], codes: decode(v[2]) }; }
+  D.verseRoots = Array.from({ length: D.text.length }, () => []);
+  for (const r in D.roots) {
+    let last = -1, df = 0;
+    for (const c of D.roots[r]) { const v = c >> 8; if (v !== last) { D.verseRoots[v].push(r); df++; last = v; } }
+    D.rootDf[r] = df;
+  }
+}
+function wordsNorm() {
+  if (!D.wordsNorm) D.wordsNorm = D.text.map(t => t.split(' ').map(norm));
+  return D.wordsNorm;
+}
+
+/* ---------- analysis helpers ---------- */
+function versesOf(codes) { const m = new Map(); for (const c of codes) { const g = c >> 8, w = c & 255; if (!m.has(g)) m.set(g, new Set()); if (w) m.get(g).add(w); } return m; }
+function stats(codes) {
+  const vm = versesOf(codes), per = new Array(114).fill(0); let mec = 0;
+  for (const c of codes) { const s = D.vs[c >> 8]; per[s - 1]++; if (D.surahs[s - 1][2] === 'm') mec++; }
+  return { n: codes.length, v: vm.size, s: per.filter(x => x).length, per, mec, vm };
+}
+function related(vm, exclude, k = 14) {
+  const cnt = new Map(), V = vm.size, N = D.text.length;
+  for (const g of vm.keys()) for (const r of D.verseRoots[g]) cnt.set(r, (cnt.get(r) || 0) + 1);
+  const out = [];
+  for (const [r, c] of cnt) {
+    if (exclude.has(r) || c < Math.max(2, Math.min(4, V * .03))) continue;
+    out.push([r, c, (c / V) / (D.rootDf[r] / N)]);
+  }
+  out.sort((a, b) => b[2] * Math.log(1 + b[1]) - a[2] * Math.log(1 + a[1]));
+  return out.slice(0, k);
+}
+function wordSearch(q, mode) {
+  const nq = norm(q.trim()); if (nq.length < 2) return [];
+  const W = wordsNorm(), out = [];
+  for (let g = 0; g < W.length; g++) { const ws = W[g]; for (let i = 0; i < ws.length; i++) if (mode === 'exact' ? ws[i] === nq : ws[i].includes(nq)) out.push(g * 256 + i + 1); }
+  return out;
+}
+function findRoots(q) {
+  const b = bare(q.trim()), n = norm(q.trim()); if (!b) return [];
+  if (D.roots[b]) return [b];
+  return Object.keys(D.roots).filter(r => norm(r) === n).sort((x, y) => D.roots[y].length - D.roots[x].length);
+}
+function findLemmas(q, k = 12) {
+  const n = norm(q.trim()); if (n.length < 2) return [];
+  return Object.keys(D.lemmas).filter(l => norm(l).startsWith(n)).sort((x, y) => D.lemmas[y].codes.length - D.lemmas[x].codes.length).slice(0, k);
+}
+
+/* ---------- rendering pieces ---------- */
+function distSVG(per) {
+  const max = Math.max(1, ...per), W = 1140, H = 170, bw = 10;
+  let bars = '';
+  per.forEach((c, i) => {
+    if (!c) return;
+    const h = Math.max(2, (c / max) * (H - 40)), x = W - (i + 1) * bw, col = D.surahs[i][2] === 'm' ? 'var(--meccan)' : 'var(--medinan)';
+    bars += `<rect x="${x + 1}" y="${H - 28 - h}" width="${bw - 2}" height="${h}" rx="2" fill="${col}"><title>${esc(D.surahs[i][0])} (${i + 1}): ${ar(c)}</title></rect>`;
+  });
+  let ax = '';
+  for (const s of [1, 20, 40, 60, 80, 100, 114]) ax += `<text class="ax" x="${W - (s - .5) * bw}" y="${H - 4}" text-anchor="middle">${ar(s)}</text>`;
+  return `<div class="dist"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="التوزيع على السور">${bars}<line x1="0" x2="${W}" y1="${H - 27}" y2="${H - 27}" stroke="var(--line)"/>${ax}</svg></div>`;
+}
+function verseHTML(g, ws) {
+  const words = D.text[g].split(' ');
+  const t = words.map((w, i) => ws && ws.has(i + 1) ? `<span class="hlw">${esc(w)}</span>` : esc(w)).join(' ');
+  return `<div class="verse"><div class="r">${esc(refName(g))} · [${refOf(g)}]</div><div class="t">${t}</div></div>`;
+}
+function verseList(el, vm, step = 20) {
+  const keys = [...vm.keys()].sort((a, b) => a - b); let shown = 0;
+  const box = document.createElement('div'); el.append(box);
+  const btn = document.createElement('button'); btn.className = 'more';
+  const more = () => {
+    box.insertAdjacentHTML('beforeend', keys.slice(shown, shown + step).map(g => verseHTML(g, vm.get(g))).join(''));
+    shown = Math.min(keys.length, shown + step);
+    btn.textContent = `عرض المزيد (${ar(keys.length - shown)} آية متبقية)`; btn.hidden = shown >= keys.length;
+  };
+  btn.onclick = more; el.append(btn); more();
+}
+
+/* ---------- Claude ---------- */
+let SAMPLE = null;
+const claudeReady = (async () => { try { SAMPLE = window.claude ? await window.claude.use('sample') : null; } catch { SAMPLE = null; } return SAMPLE; })();
+const ERR = { not_granted: 'لم يُسمح للصفحة بسؤال Claude. يمكنك السماح من قائمة أذونات الصفحة.', rate_limited: 'طلبات كثيرة في وقت قصير. انتظر قليلًا ثم حاول.', prompt_too_large: 'المادة أكبر من اللازم. جرّب موضوعًا أضيق.', cancelled: 'أُوقف الطلب.' };
+const errText = e => ERR[e && e.code] || 'تعذّر الحصول على إجابة الآن. حاول مرة أخرى.';
+function mdLite(s) {
+  const lines = esc(s).split('\n'); let h = '', inList = false;
+  const inline = t => t.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\[(\d{1,3})\s*:\s*(\d{1,3})(?:\s*[-–]\s*(\d{1,3}))?\]/g, (m, s, a, b) => {
+    const g = gOf(+s, +a); if (g < 0) return m;
+    return `<button class="ref" data-g="${g}"${b ? ` data-to="${b}"` : ''}>${D.surahs[+s - 1][0]} ${ar(+a)}${b ? '–' + ar(+b) : ''}</button>`; });
+  for (let l of lines) {
+    l = l.trim();
+    const li = l.match(/^[-*•]\s+(.*)/) || l.match(/^\d+[.)]\s+(.*)/);
+    if (li) { if (!inList) { h += '<ul>'; inList = true; } h += `<li>${inline(li[1])}</li>`; continue; }
+    if (inList) { h += '</ul>'; inList = false; }
+    if (!l) continue;
+    const hd = l.match(/^#{1,6}\s+(.*)/);
+    h += hd ? `<h5>${inline(hd[1])}</h5>` : `<p>${inline(l)}</p>`;
+  }
+  return h + (inList ? '</ul>' : '');
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('.ref'); if (!b) return;
+  const g = +b.dataset.g, to = b.dataset.to ? +b.dataset.to : D.va[g];
+  let gs = [g]; for (let a = D.va[g] + 1; a <= to && gs.length < 12; a++) gs.push(g + (a - D.va[g]));
+  $('#dlgRef').textContent = gs.length > 1 ? `${D.surahs[D.vs[g] - 1][0]} ${ar(D.va[g])}–${ar(D.va[gs[gs.length - 1]])}` : refName(g);
+  $('#dlgText').innerHTML = gs.map(x => `﴿${esc(D.text[x])}﴾ <span style="font-size:.8em;color:var(--gold)">(${ar(D.va[x])})</span>`).join(' ');
+  $('#verseDlg').showModal();
+});
+
+const RULES = `أنت باحث متخصص في دراسة القرآن الكريم، تعمل داخل صفحة "مستكشف القرآن" التي تحمل نص مصحف المدينة كاملًا (رواية حفص) وبيانات التحليل الصرفي لكل كلمة.
+قواعد صارمة:
+1. لا تكتب نص أي آية من ذاكرتك أبدًا. أشر إلى الآيات بأرقامها فقط بالصيغة [رقم السورة:رقم الآية] مثل [2:255] أو مدى مثل [12:4-6]. الصفحة تعرض النص الرسمي عند الضغط على الرقم.
+2. اعتمد على الآيات التي تصلك أو تجلبها بالأدوات. إن احتجت آيات أو أعدادًا فاستخدم الأدوات، ولا تخمّن الأعداد.
+3. ميّز بين ما يدل عليه النص مباشرة وما هو استنباط منك، وابدأ الاستنباط بكلمة "تأمّل:".
+4. لا تُفتِ، ولا تنسب قولًا لمفسر معيّن إلا إن كنت متأكدًا، ولا تخترع ترتيب نزول أو أسبابًا.
+5. اكتب بالعربية الفصحى الواضحة، بعناوين قصيرة تبدأ بـ ## ونقاط قصيرة. كن مركّزًا ومنظّمًا منطقيًا.`;
+
+const TOOLS = [
+  { name: 'search_quran', description: 'يبحث في المصحف كله. mode: root (جذر ثلاثي مثل رحم) أو word (كلمة يحتويها النص). يعيد عدد المواضع وعدد الآيات وأكثر السور ورودًا وأمثلة من الآيات بنصها الرسمي.',
+    inputSchema: { type: 'object', properties: { query: { type: 'string' }, mode: { type: 'string', enum: ['root', 'word'] }, limit: { type: 'number', description: 'عدد الآيات المعادة، حتى 40' } }, required: ['query', 'mode'] },
+    execute: ({ query, mode, limit }) => {
+      let codes, label = query;
+      if (mode === 'root') { const r = findRoots(query)[0]; if (!r) return { error: 'لا يوجد جذر بهذا الرسم. جرّب word.' }; codes = D.roots[r]; label = r; }
+      else codes = wordSearch(query, 'contains');
+      const st = stats(codes), keys = [...st.vm.keys()].sort((a, b) => a - b), n = Math.min(40, limit || 20);
+      const pick = keys.length <= n ? keys : Array.from({ length: n }, (_, i) => keys[Math.floor(i * keys.length / n)]);
+      const top = st.per.map((c, i) => [i, c]).filter(x => x[1]).sort((a, b) => b[1] - a[1]).slice(0, 8).map(([i, c]) => `${D.surahs[i][0]} (${i + 1}): ${c}`);
+      return { query: label, occurrences: st.n, verses: st.v, surahs: st.s, meccan_occurrences: st.mec, top_surahs: top, sample_verses: pick.map(g => ({ ref: refOf(g), text: D.text[g] })) };
+    } },
+  { name: 'get_verses', description: 'يجلب النص الرسمي لآيات بأرقامها، مثل ["2:255","12:4-10"]. حتى 40 آية.',
+    inputSchema: { type: 'object', properties: { refs: { type: 'array', items: { type: 'string' } } }, required: ['refs'] },
+    execute: ({ refs }) => {
+      const out = [];
+      for (const r of refs || []) {
+        const m = String(r).match(/(\d{1,3})\s*:\s*(\d{1,3})(?:\s*-\s*(\d{1,3}))?/); if (!m) continue;
+        const s = +m[1]; for (let a = +m[2]; a <= (+m[3] || +m[2]) && out.length < 40; a++) { const g = gOf(s, a); if (g >= 0) out.push({ ref: refOf(g), text: D.text[g] }); }
+      }
+      return out.length ? out : { error: 'لم أجد آيات بهذه الأرقام.' };
+    } },
+  { name: 'root_links', description: 'يعيد صيغ جذر ما (الكلمات المشتقة منه وعددها) والجذور التي تقترن به في الآيات أكثر من المعتاد (قضايا مرتبطة).',
+    inputSchema: { type: 'object', properties: { root: { type: 'string' } }, required: ['root'] },
+    execute: ({ root }) => {
+      const r = findRoots(root)[0]; if (!r) return { error: 'جذر غير موجود' };
+      const st = stats(D.roots[r]);
+      return { root: r, occurrences: st.n, verses: st.v, forms: (D.rootLem[r] || []).slice(0, 15), linked_roots: related(st.vm, new Set([r]), 15).map(([x, c, l]) => ({ root: x, shared_verses: c, lift: +l.toFixed(1) })) };
+    } },
+];
+
+async function askInto(btn, out, prompt, withTools) {
+  if (!SAMPLE) return;
+  btn.disabled = true; out.hidden = false; out.innerHTML = '<p class="steps">يفكّر Claude في الآيات… قد يستغرق ذلك دقيقة.</p>';
+  const ctl = new AbortController(); const stop = document.createElement('button'); stop.className = 'tag'; stop.textContent = 'إيقاف'; stop.onclick = () => ctl.abort();
+  out.append(stop);
+  const steps = document.createElement('p'); steps.className = 'steps';
+  const tools = withTools ? TOOLS.map(t => ({ ...t, execute: (inp) => { steps.textContent = `يبحث في المصحف: ${inp.query || inp.root || (inp.refs || []).join('، ')}`; return t.execute(inp); } })) : undefined;
+  out.prepend(steps);
+  try {
+    await SAMPLE(prompt, { signal: ctl.signal, tools, modelTier: 'default', onText: ({ text }) => { out.innerHTML = mdLite(text); } });
+    out.insertAdjacentHTML('beforeend', '<p class="note">استنباط من الآيات المعروضة، وليس تفسيرًا معتمدًا. اضغط على أرقام الآيات لقراءة نصها.</p>');
+  } catch (e) { out.innerHTML = (e.text ? mdLite(e.text) : '') + `<p class="note">${esc(errText(e))}</p>`; }
+  finally { btn.disabled = false; }
+}
+function claudeBlock(el, buildPrompt, label) {
+  const wrap = document.createElement('div'); wrap.className = 'sec';
+  wrap.innerHTML = `<h4>الحكمة والروابط <small>بقراءة Claude للآيات</small></h4>`;
+  const btn = document.createElement('button'); btn.className = 'ask'; btn.innerHTML = `<svg width="18" height="18" style="color:#e8c46e"><use href="#star"/></svg>${esc(label)}`;
+  const out = document.createElement('div'); out.className = 'answer'; out.hidden = true;
+  const na = document.createElement('div'); na.className = 'unavail'; na.textContent = 'سؤال Claude متاح عند فتح الصفحة داخل Claude (claude.ai أو التطبيق).';
+  wrap.append(btn, out); el.append(wrap);
+  btn.hidden = true; wrap.append(na);
+  claudeReady.then(s => { if (s) { btn.hidden = false; na.remove(); } });
+  btn.onclick = () => askInto(btn, out, buildPrompt(), true);
+}
+function versesForPrompt(vm, max = 90) {
+  const keys = [...vm.keys()].sort((a, b) => a - b);
+  const pick = keys.length <= max ? keys : Array.from({ length: max }, (_, i) => keys[Math.floor(i * keys.length / max)]);
+  return { text: pick.map(g => `[${refOf(g)}] ${D.text[g]}`).join('\n'), partial: keys.length > max, total: keys.length };
+}
+
+/* ---------- the shared panel ---------- */
+const panel = $('#panel');
+function openPanel() { panel.hidden = false; panel.scrollTop = 0; }
+function closePanel() { panel.hidden = true; space && space.clearSelection(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !panel.hidden && !$('#verseDlg').open) closePanel(); });
+
+function showItem(spec) {
+  // spec: {title, kind, codes, roots:Set, forms:[[k,c]], prompt:'wisdom'|'story', key}
+  const st = stats(spec.codes);
+  panel.innerHTML = `<div class="p-head"><div><div class="kind">${esc(spec.kind)}</div><h3>${esc(spec.title)}</h3></div><button class="x" aria-label="إغلاق">✕</button></div>
+  <div class="stats"><div><b>${ar(st.n)}</b><span>موضعًا</span></div><div><b>${ar(st.v)}</b><span>آية</span></div><div><b>${ar(st.s)}</b><span>سورة</span></div><div><b>${ar(Math.round(100 * st.mec / Math.max(1, st.n)))}%</b><span>في السور المكية</span></div></div>`;
+  panel.querySelector('.x').onclick = closePanel;
+  const sec = (h, sub) => { const d = document.createElement('div'); d.className = 'sec'; d.innerHTML = `<h4>${h}${sub ? ` <small>${sub}</small>` : ''}</h4>`; panel.append(d); return d; };
+  const d1 = sec('التوزيع على السور', 'من الفاتحة (يمين) إلى الناس (يسار)');
+  d1.insertAdjacentHTML('beforeend', distSVG(st.per) + `<div class="split"><span style="width:${100 * st.mec / Math.max(1, st.n)}%"></span><span style="flex:1"></span></div><div class="split-l"><span>مكي ${ar(st.mec)}</span><span>مدني ${ar(st.n - st.mec)}</span></div>`);
+  const top = st.per.map((c, i) => [i, c]).filter(x => x[1]).sort((a, b) => b[1] - a[1]).slice(0, 8);
+  const d1b = sec('أكثر السور ذكرًا له'); d1b.insertAdjacentHTML('beforeend', `<div class="tags">${top.map(([i, c]) => `<button class="tag" data-surah="${i + 1}">${esc(D.surahs[i][0])}<em>${ar(c)}</em></button>`).join('')}</div>`);
+  if (spec.forms && spec.forms.length) { const d2 = sec('الصيغ', 'الكلمات بأصلها المعجمي'); d2.insertAdjacentHTML('beforeend', `<div class="tags">${spec.forms.slice(0, 24).map(([k, c]) => `<span class="tag">${esc(k)}<em>${ar(c)}</em></span>`).join('')}</div>`); }
+  const rel = related(st.vm, spec.roots || new Set());
+  if (rel.length) { const d3 = sec('قضايا مرتبطة', 'جذور تقترن به في الآيات أكثر من المعتاد'); d3.insertAdjacentHTML('beforeend', `<div class="tags">${rel.map(([r, c, l]) => `<button class="tag" data-root="${esc(r)}">${esc(r)}<em>×${ar(+l.toFixed(1))}</em></button>`).join('')}</div><p class="note">الرقم بجانب الجذر: كم مرة يزيد اقترانه بهذه الآيات عن معدله في القرآن كله.</p>`); }
+  claudeBlock(panel, () => {
+    const v = versesForPrompt(st.vm);
+    const ask = spec.prompt === 'story'
+      ? `ورد العَلَم "${spec.title}" في ${st.n} موضعًا في ${st.v} آية. رتّب قصته كما تُروى في هذه الآيات:\n## من هو\n## أحداث القصة بالترتيب، مع موضع كل حدث\n## كيف تتوزع القصة على السور، وما الذي تبرزه كل سورة\n## الحكم والدروس\n## روابط مع قصص وأعلام آخرين`
+      : `الموضوع: "${spec.title}" (${spec.kind}). ورد في ${st.n} موضعًا في ${st.v} آية و${st.s} سورة.\nاستخرج من هذه الآيات:\n## المعنى العام كما يظهر من الآيات\n## الحكم والدروس\n## التسلسل المنطقي للموضوع (من أين يبدأ وإلى أين ينتهي)\n## الروابط مع القضايا الأخرى (من الجذور المقترنة: ${rel.slice(0, 8).map(x => x[0]).join('، ')})\n## صيغ وتعبيرات متكررة لافتة`;
+    return `${RULES}\n\n${ask}\n\n${v.partial ? `هذه ${90} آية موزعة بالتساوي من أصل ${v.total}؛ استخدم الأدوات إن احتجت غيرها.\n` : ''}الآيات:\n${v.text}`;
+  }, spec.prompt === 'story' ? 'رتّب القصة واستخرج حكمها' : 'استخرج الحكمة والروابط');
+  const d4 = sec('الآيات كاملة', `${ar(st.v)} آية، والكلمات المقصودة مظلّلة`);
+  verseList(d4, st.vm);
+  openPanel();
+}
+function showSurah(s) {
+  const i = s - 1, [name, tr, type, nv, nw] = D.surahs[i];
+  panel.innerHTML = `<div class="p-head"><div><div class="kind">سورة ${type === 'm' ? 'مكية' : 'مدنية'} · رقم ${ar(s)}</div><h3>سورة ${esc(name)}</h3></div><button class="x" aria-label="إغلاق">✕</button></div>
+  <div class="stats"><div><b>${ar(nv)}</b><span>آية</span></div><div><b>${ar(nw)}</b><span>كلمة</span></div><div><b>${ar(surahRootsCount(i))}</b><span>جذرًا مختلفًا</span></div><div><b>${ar(s)}</b><span>ترتيبها</span></div></div>`;
+  panel.querySelector('.x').onclick = closePanel;
+  const sec = (h, sub) => { const d = document.createElement('div'); d.className = 'sec'; d.innerHTML = `<h4>${h}${sub ? ` <small>${sub}</small>` : ''}</h4>`; panel.append(d); return d; };
+  const sv = surahVectors();
+  const dist = sv.top[i];
+  sec('الجذور المميّزة لها', 'أكثر حضورًا فيها مقارنة ببقية السور').insertAdjacentHTML('beforeend', `<div class="tags">${dist.map(([r, c]) => `<button class="tag" data-root="${esc(r)}">${esc(r)}<em>${ar(c)}</em></button>`).join('')}</div>`);
+  sec('أقرب السور إليها', 'بحسب تشابه مفرداتها').insertAdjacentHTML('beforeend', `<div class="tags">${sv.sim[i].slice(0, 6).map(([j, c]) => `<button class="tag" data-surah="${j + 1}">${esc(D.surahs[j][0])}<em>${ar(Math.round(c * 100))}%</em></button>`).join('')}</div>`);
+  const vm = new Map(); for (let a = 0; a < nv; a++) vm.set(D.start[i] + a, null);
+  claudeBlock(panel, () => {
+    const v = versesForPrompt(vm, 120);
+    return `${RULES}\n\nسورة ${name} (رقم ${s}، ${type === 'm' ? 'مكية' : 'مدنية'}، ${nv} آية). أبرز جذورها المميزة: ${dist.map(x => x[0]).join('، ')}.\nاستخرج:\n## محور السورة ومقصدها\n## أقسام السورة وتسلسلها المنطقي (بمدى الآيات)\n## القصص والأعلام فيها\n## الحكم والدروس\n## روابطها بالسور الأقرب إليها: ${sv.sim[i].slice(0, 3).map(([j]) => D.surahs[j][0]).join('، ')}\n\n${v.partial ? `هذه ${120} آية موزعة من أصل ${v.total}؛ استخدم get_verses لما تحتاجه.\n` : ''}الآيات:\n${v.text}`;
+  }, 'مقاصد السورة وحكمها');
+  verseList(sec('نص السورة'), vm, 30);
+  openPanel();
+}
+function surahRootsCount(i) { const set = new Set(); for (let g = D.start[i]; g < D.start[i] + D.surahs[i][3]; g++) for (const r of D.verseRoots[g]) set.add(r); return set.size; }
+let SV = null;
+function surahVectors() {
+  if (SV) return SV;
+  const vec = Array.from({ length: 114 }, () => new Map()), sdf = new Map();
+  for (const r in D.roots) { const seen = new Set(); for (const c of D.roots[r]) { const s = D.vs[c >> 8] - 1; vec[s].set(r, (vec[s].get(r) || 0) + 1); seen.add(s); } sdf.set(r, seen.size); }
+  const w = vec.map(m => { const o = new Map(); let nn = 0; for (const [r, c] of m) { const x = (1 + Math.log(c)) * Math.log(114 / sdf.get(r)); if (x > 0) { o.set(r, x); nn += x * x; } } return { o, n: Math.sqrt(nn) || 1 }; });
+  const sim = Array.from({ length: 114 }, () => []);
+  for (let a = 0; a < 114; a++) for (let b = a + 1; b < 114; b++) {
+    let dot = 0; const [p, q] = w[a].o.size < w[b].o.size ? [w[a].o, w[b].o] : [w[b].o, w[a].o];
+    for (const [r, x] of p) { const y = q.get(r); if (y) dot += x * y; }
+    const c = dot / (w[a].n * w[b].n); sim[a].push([b, c]); sim[b].push([a, c]);
+  }
+  sim.forEach(l => l.sort((x, y) => y[1] - x[1]));
+  const top = vec.map((m, i) => [...m].filter(([r, c]) => c >= 2).map(([r, c]) => [r, c, (w[i].o.get(r) || 0)]).sort((x, y) => y[2] - x[2]).slice(0, 14).map(([r, c]) => [r, c]));
+  return (SV = { sim, top });
+}
+function openRoot(r) { showItem({ title: r, kind: 'جذر', codes: D.roots[r], roots: new Set([r]), forms: D.rootLem[r] || [], key: r }); }
+function openLemma(l, prompt) { const L = D.lemmas[l]; showItem({ title: l, kind: NAMECAT_OF[l] || 'كلمة', codes: L.codes, roots: new Set(L.root ? [L.root] : []), forms: [], prompt, key: l }); }
+panel.addEventListener('click', e => {
+  const t = e.target.closest('[data-root],[data-surah]'); if (!t) return;
+  if (t.dataset.root) { openRoot(t.dataset.root); space && space.focusKey(t.dataset.root); }
+  else showSurah(+t.dataset.surah);
+});
+
+/* ---------- names & subjects ---------- */
+const NAMECATS = [
+  ['الأنبياء والرسل', 'prophet', 'مُحَمَّد أَحْمَد مُوسَى إِبْراهِيم نُوح يُوسُف لُوط آدَم عِيسَى مَسِيح هارُون سُلَيْمان إِسْحاق يَعْقُوب داوُد إِسْماعِيل شُعَيْب هُود صالِح زَكَرِيّا يَحْيَى أَيُّوب يُونُس إِلْياس الْيَسَع إِدْرِيس'],
+  ['شخصيات', 'person', 'مَرْيَم فِرْعَوْن هامان قارُون جالُوت طالُوت عِمْران لُقْمان آزَر عُزَيْر سامِرِيّ زَيْد تُبَّع'],
+  ['أقوام وأمم', 'people', 'إِسْرائِيل ثَمُود عاد يَهُود نَصْرانِيّ مُسْلِم صابِئ مَجُوس رُوم قُرَيْش يَأْجُوج مَأْجُوج'],
+  ['أماكن', 'place', 'مِصْر مَدْيَن مَدِينَة يَثْرِب مَكَّة بَكَّة كَعْبَة صَفا مَرْوَة عَرَفات بَدْر حُنَيْن سَبَإ إِرَم أَحْقاف جُودِيّ سَيْناء سِينِين بابِل'],
+  ['الكتب', 'book', 'قُرْءان تَوْراة إِنجِيل زَبُور'],
+  ['عالم الغيب', 'unseen', 'جَنَّة عَدْن فِرْدَوْس سَلْسَبِيل جَهَنَّم سَقَر لَظَى زَقُّوم شَيْطان إِبْلِيس جِبْرِيل مِيكال هارُوت مارُوت مالِك'],
+  ['أصنام ومعبودات', 'idol', 'اللّات الْعُزَّى مَناة وَدّ سُواع يَغُوث يَعُوق نَسْر بَعْل شِعْرَى'],
+];
+const NAMECAT_OF = {}, NAMEKIND_OF = {};
+NAMECATS.forEach(([t, k, s]) => s.normalize('NFC').split(' ').forEach(n => { NAMECAT_OF[n] = t.replace(/ و.*/, ''); NAMEKIND_OF[n] = k; }));
+const KIND_COLOR = { prophet: 0xe8c46e, person: 0xf09a6b, people: 0x6fb7ff, place: 0x5cc9b8, book: 0x9be37a, unseen: 0xb79cff, idol: 0xd96b7b };
+
+const SUBJECTS = [
+  ['الإيمان والتوحيد', 'r:أمن r:وحد'], ['التقوى', 'r:وقي'], ['الصلاة', 'l:صَلاة l:صَلَّى'], ['الزكاة والصدقة', 'l:زَكاة l:صَدَقَة l:تَصَدَّقَ'],
+  ['الإنفاق', 'r:نفق'], ['الصيام', 'r:صوم'], ['الحج', 'l:حَجّ l:حِجّ l:حَجَّ l:كَعْبَة l:عَرَفات l:صَفا l:مَرْوَة l:بَكَّة'], ['الصبر', 'r:صبر'],
+  ['الشكر والنعمة', 'r:شكر r:نعم'], ['التوبة والمغفرة', 'r:توب r:غفر'], ['الرحمة', 'r:رحم'], ['العلم والتفكر', 'r:علم r:عقل r:فكر r:فقه'],
+  ['العدل والظلم', 'r:عدل r:قسط r:ظلم'], ['الرزق', 'r:رزق'], ['الصدق والكذب', 'r:صدق r:كذب'], ['الموت والبعث', 'r:موت r:بعث r:حشر l:قِيامَة'],
+  ['الجنة', 'l:جَنَّة l:عَدْن l:فِرْدَوْس l:نَعِيم'], ['النار والعذاب', 'l:نار l:جَهَنَّم l:سَقَر l:لَظَى l:عَذاب'], ['الدنيا', 'l:دُنْيا'],
+  ['الأسرة والزواج', 'r:زوج r:نكح r:طلق r:ولد'], ['اليتامى والمساكين', 'r:يتم l:مِسْكِين'], ['الجهاد والقتال', 'r:جهد r:قتل'],
+  ['الذكر والدعاء والتسبيح', 'r:ذكر r:دعو r:سبح'], ['الهداية والضلال', 'r:هدي r:ضلل'], ['الوحي والكتب', 'r:وحي l:قُرْءان l:تَوْراة l:إِنجِيل l:زَبُور'],
+  ['آيات الكون', 'l:سَماء r:شمس r:قمر l:نَجْم r:ليل r:بحر l:رِيح'], ['المال والتجارة', 'r:مول r:تجر r:بيع l:رِبا'], ['الخوف والرجاء', 'r:خوف r:خشي r:رجو'],
+];
+function subjectCodes(def) {
+  const set = new Set(), roots = new Set(), forms = [];
+  for (const it of def.normalize('NFC').split(' ')) {
+    const [t, k] = [it[0], it.slice(2)];
+    if (t === 'r' && D.roots[k]) { D.roots[k].forEach(c => set.add(c)); roots.add(k); forms.push([k, D.roots[k].length]); }
+    else if (t === 'l' && D.lemmas[k]) { D.lemmas[k].codes.forEach(c => set.add(c)); if (D.lemmas[k].root) roots.add(D.lemmas[k].root); forms.push([k, D.lemmas[k].codes.length]); }
+    else console.warn('missing', it);
+  }
+  return { codes: [...set].sort((a, b) => a - b), roots, forms };
+}
+
+/* ---------- views ---------- */
+function buildCount() {
+  const totalW = D.surahs.reduce((a, s) => a + s[4], 0);
+  $('#globalStats').innerHTML = [[114, 'سورة'], [D.text.length, 'آية'], [totalW, 'كلمة'], [Object.keys(D.roots).length, 'جذرًا'], [Object.keys(D.lemmas).length, 'أصلًا معجميًا']]
+    .map(([n, l]) => `<div><b>${ar(n)}</b><span>${l}</span></div>`).join('');
+  const tr = Object.keys(D.roots).sort((a, b) => D.roots[b].length - D.roots[a].length).slice(0, 25), mx = D.roots[tr[0]].length;
+  $('#topRoots').innerHTML = tr.map(r => `<button data-root="${esc(r)}"><span class="k">${esc(r)}</span><span class="bw"><span class="bar" style="display:block;width:${100 * D.roots[r].length / mx}%"></span></span><span class="num">${ar(D.roots[r].length)}</span></button>`).join('');
+  const ts = D.surahs.map((s, i) => [i, s[4]]).sort((a, b) => b[1] - a[1]).slice(0, 25), ms = ts[0][1];
+  $('#topSurahs').innerHTML = ts.map(([i, w]) => `<button data-surah="${i + 1}"><span class="k">${esc(D.surahs[i][0])}</span><span class="bw"><span class="bar" style="display:block;width:${100 * w / ms}%"></span></span><span class="num">${ar(w)}</span></button>`).join('');
+  for (const id of ['#topRoots', '#topSurahs']) $(id).onclick = e => { const b = e.target.closest('button'); if (!b) return; b.dataset.root ? openRoot(b.dataset.root) : showSurah(+b.dataset.surah); };
+  let cm = 'root';
+  document.querySelectorAll('[data-cm]').forEach(b => b.onclick = () => { cm = b.dataset.cm; document.querySelectorAll('[data-cm]').forEach(x => x.setAttribute('aria-pressed', x === b)); suggest(); });
+  const suggest = () => {
+    const q = $('#countIn').value; const rs = findRoots(q).slice(0, 6), ls = cm === 'root' ? [] : findLemmas(q, 10);
+    const rr = cm === 'root' && q.trim().length >= 2 ? Object.keys(D.roots).filter(r => norm(r).startsWith(norm(q))).sort((a, b) => D.roots[b].length - D.roots[a].length).slice(0, 12) : rs;
+    $('#sugg').innerHTML = rr.map(r => `<button class="tag" data-root="${esc(r)}">جذر ${esc(r)}<em>${ar(D.roots[r].length)}</em></button>`).join('') + ls.map(l => `<button class="tag" data-lemma="${esc(l)}">${esc(l)}<em>${ar(D.lemmas[l].codes.length)}</em></button>`).join('');
+  };
+  $('#countIn').oninput = suggest;
+  $('#sugg').onclick = e => { const b = e.target.closest('button'); if (!b) return; b.dataset.root ? openRoot(b.dataset.root) : openLemma(b.dataset.lemma); };
+  $('#countForm').onsubmit = e => {
+    e.preventDefault(); const q = $('#countIn').value.trim(); if (!q) return;
+    if (cm === 'root') { const r = findRoots(q)[0]; if (r) return openRoot(r); $('#sugg').innerHTML = `<span class="note">لا يوجد جذر بهذا الرسم. جرّب «كلمة تحتوي».</span>`; return; }
+    const codes = wordSearch(q, cm);
+    if (!codes.length) { $('#sugg').innerHTML = `<span class="note">لم ترد هذه الكلمة بهذا الرسم.</span>`; return; }
+    const forms = new Map(); for (const c of codes) { const w = bare(D.text[c >> 8].split(' ')[(c & 255) - 1]); forms.set(w, (forms.get(w) || 0) + 1); }
+    showItem({ title: q, kind: cm === 'exact' ? 'كلمة مطابقة' : 'كلمة تحتوي', codes, roots: new Set(), forms: [...forms].sort((a, b) => b[1] - a[1]) });
+  };
+}
+function buildSubjects() {
+  $('#subjGrid').innerHTML = SUBJECTS.map(([t, def], i) => { const s = subjectCodes(def); return `<button class="card" data-i="${i}"><b>${esc(t)}</b><span class="c">${ar(s.codes.length)} موضعًا</span><small>${esc(s.forms.map(f => f[0]).join('، '))}</small></button>`; }).join('');
+  $('#subjGrid').onclick = e => { const b = e.target.closest('.card'); if (!b) return; const [t, def] = SUBJECTS[+b.dataset.i]; const s = subjectCodes(def); showItem({ title: t, kind: 'موضوع', codes: s.codes, roots: s.roots, forms: s.forms }); };
+}
+function buildStories() {
+  const seen = new Set();
+  let h = NAMECATS.map(([t, k, s]) => {
+    const names = s.normalize('NFC').split(' ').filter(n => D.lemmas[n]).sort((a, b) => D.lemmas[b].codes.length - D.lemmas[a].codes.length);
+    names.forEach(n => seen.add(n));
+    return `<h3 class="group-h">${esc(t)}</h3><div class="grid">${names.map(n => { const st = stats(D.lemmas[n].codes); return `<button class="card" data-n="${esc(n)}"><span class="name-card">${esc(n)}</span><span class="c">${ar(st.n)} مرة</span><small>في ${ar(st.s)} سورة</small></button>`; }).join('')}</div>`;
+  }).join('');
+  const rest = D.pn.filter(n => !seen.has(n) && n !== 'اللَّه' && n !== 'اللَّهُمَّ');
+  if (rest.length) h += `<h3 class="group-h">أعلام أخرى</h3><div class="tags">${rest.map(n => `<button class="tag" data-n="${esc(n)}">${esc(n)}<em>${ar(D.lemmas[n].codes.length)}</em></button>`).join('')}</div>`;
+  $('#storyGroups').innerHTML = h;
+  $('#storyGroups').onclick = e => { const b = e.target.closest('[data-n]'); if (b) openLemma(b.dataset.n, 'story'); };
+}
+
+/* ---------- chat ---------- */
+function buildChat() {
+  const turns = [];
+  const chat = $('#chat'), starters = ['ما العلاقة بين الصبر والصلاة في القرآن؟', 'كيف تتوزع قصة موسى على السور، وما الذي تبرزه كل سورة؟', 'ما الآيات التي تجمع بين الرحمة والمغفرة، وما دلالة ذلك؟', 'ما الحكمة من تكرار قصة آدم وإبليس؟', 'ما الروابط بين الرزق والشكر؟'];
+  $('#starters').innerHTML = starters.map(s => `<button class="tag">${esc(s)}</button>`).join('');
+  $('#starters').onclick = e => { const b = e.target.closest('button'); if (b) { $('#chatIn').value = b.textContent; $('#chatForm').requestSubmit(); } };
+  chat.innerHTML = `<div class="msg a">أنا Claude. اسألني عن أي كلمة أو موضوع أو قصة، وسأبحث في نص المصحف المحمّل في هذه الصفحة، وأذكر أرقام الآيات التي أستند إليها.</div>`;
+  claudeReady.then(s => { if (!s) { chat.insertAdjacentHTML('beforeend', '<div class="unavail">سؤال Claude متاح عند فتح الصفحة داخل Claude (claude.ai أو التطبيق). بقية الصفحة تعمل في كل مكان.</div>'); $('#chatSend').disabled = true; } });
+  let busy = false;
+  $('#chatForm').onsubmit = async e => {
+    e.preventDefault(); const q = $('#chatIn').value.trim(); if (!q || busy || !SAMPLE) return;
+    busy = true; $('#chatSend').disabled = true; $('#chatIn').value = '';
+    chat.insertAdjacentHTML('beforeend', `<div class="msg u">${esc(q)}</div>`);
+    const a = document.createElement('div'); a.className = 'msg a'; a.innerHTML = '<p class="steps">يفكّر Claude ويبحث في المصحف…</p>'; chat.append(a);
+    a.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    turns.push({ role: 'user', content: q });
+    const steps = document.createElement('p'); steps.className = 'steps';
+    const tools = TOOLS.map(t => ({ ...t, execute: inp => { steps.textContent = `يبحث في المصحف: ${inp.query || inp.root || (inp.refs || []).join('، ')}`; if (!a.contains(steps)) a.prepend(steps); return t.execute(inp); } }));
+    try {
+      const { text } = await SAMPLE([{ role: 'user', content: RULES + '\nاستخدم الأدوات للبحث في المصحف قبل الإجابة، ولا تذكر عددًا لم تتحقق منه بالأدوات.' }, { role: 'assistant', content: 'فهمت. سأبحث في النص وأستشهد بالأرقام فقط.' }, ...turns.slice(-8)],
+        { tools, cache: false, modelTier: 'default', onText: ({ text }) => { a.innerHTML = mdLite(text); } });
+      turns.push({ role: 'assistant', content: text });
+    } catch (err) { a.innerHTML = (err.text ? mdLite(err.text) : '') + `<p class="note">${esc(errText(err))}</p>`; turns.pop(); }
+    busy = false; $('#chatSend').disabled = false;
+  };
+}
+
+/* ---------- 3D space ---------- */
+let space = null;
+const STOP = new Set('أله قول كون أيي أتي بين شيأ كلل جعل قبل جيأ بعد عند غير دون أول بعض ليس كيف أحد يدي فعل وجد رأي أخذ'.split(' '));
+function graphRoots() {
+  const rs = Object.keys(D.roots).filter(r => !STOP.has(r)).sort((a, b) => D.rootDf[b] - D.rootDf[a]).slice(0, 150);
+  const idx = new Map(rs.map((r, i) => [r, i])), N = D.text.length;
+  const co = new Map();
+  for (const vr of D.verseRoots) {
+    const p = vr.filter(r => idx.has(r));
+    for (let a = 0; a < p.length; a++) for (let b = a + 1; b < p.length; b++) { const k = idx.get(p[a]) < idx.get(p[b]) ? p[a] + '|' + p[b] : p[b] + '|' + p[a]; co.set(k, (co.get(k) || 0) + 1); }
+  }
+  const nb = rs.map(() => []);
+  for (const [k, c] of co) { if (c < 4) continue; const [a, b] = k.split('|'); const l = c * N / (D.rootDf[a] * D.rootDf[b]); nb[idx.get(a)].push([idx.get(b), l * Math.log(c)]); nb[idx.get(b)].push([idx.get(a), l * Math.log(c)]); }
+  const links = new Set();
+  nb.forEach((l, i) => l.sort((x, y) => y[1] - x[1]).slice(0, 3).forEach(([j]) => links.add(i < j ? i + '|' + j : j + '|' + i)));
+  const nodes = rs.map(r => { let mec = 0; for (const c of D.roots[r]) if (D.surahs[D.vs[c >> 8] - 1][2] === 'm') mec++; const t = mec / D.roots[r].length;
+    const col = new THREE.Color(0x5cc9b8).lerp(new THREE.Color(0xe8c46e), t);
+    return { key: r, label: r, size: Math.sqrt(D.roots[r].length), color: col, open: () => openRoot(r) }; });
+  return { nodes, links: [...links].map(k => k.split('|').map(Number)), desc: 'أكثر 150 جذرًا ورودًا. كل خيط يصل جذرين يجتمعان في الآيات أكثر من المعتاد. اللون من الذهبي (مكي) إلى الفيروزي (مدني).',
+    legend: '<span><i style="background:#e8c46e"></i>أغلبه مكي</span><span><i style="background:#5cc9b8"></i>أغلبه مدني</span><span>الحجم = عدد المواضع</span>' };
+}
+function graphNames() {
+  const ns = Object.keys(NAMEKIND_OF).filter(n => D.lemmas[n] && D.lemmas[n].codes.length >= 2 && NAMEKIND_OF[n] !== 'idol');
+  const sets = ns.map(n => new Set(D.lemmas[n].codes.map(c => D.vs[c >> 8])));
+  const vsets = ns.map(n => new Set(D.lemmas[n].codes.map(c => c >> 8)));
+  const links = new Set();
+  ns.forEach((_, i) => {
+    const sc = ns.map((__, j) => { if (i === j) return [j, 0]; let s = 0, v = 0; for (const x of sets[i]) if (sets[j].has(x)) s++; for (const x of vsets[i]) if (vsets[j].has(x)) v++; return [j, s / (sets[i].size + sets[j].size - s) + v * .15]; });
+    sc.sort((a, b) => b[1] - a[1]).slice(0, 3).forEach(([j, w]) => { if (w > .12) links.add(i < j ? i + '|' + j : j + '|' + i); });
+  });
+  const nodes = ns.map(n => ({ key: n, label: bare(n), size: 1.4 + Math.sqrt(D.lemmas[n].codes.length) * .9, color: new THREE.Color(KIND_COLOR[NAMEKIND_OF[n]]), open: () => openLemma(n, 'story') }));
+  const lg = NAMECATS.filter(c => c[1] !== 'idol').map(([t, k]) => `<span><i style="background:#${KIND_COLOR[k].toString(16).padStart(6, '0')}"></i>${t}</span>`).join('');
+  return { nodes, links: [...links].map(k => k.split('|').map(Number)), desc: 'الأعلام الواردة مرتين فأكثر. الخيط يصل بين علمين يُذكران في السور نفسها أو في الآيات نفسها، فتظهر القصص التي تُروى معًا.', legend: lg };
+}
+function graphSurahs() {
+  const sv = surahVectors();
+  const links = new Set(); sv.sim.forEach((l, i) => l.slice(0, 2).forEach(([j]) => links.add(i < j ? i + '|' + j : j + '|' + i)));
+  const nodes = D.surahs.map((s, i) => ({ key: s[0], label: s[0], size: 1.2 + Math.sqrt(s[3]) * .55, color: new THREE.Color(s[2] === 'm' ? 0xe8c46e : 0x5cc9b8), open: () => showSurah(i + 1),
+    fixed: (() => { const a = i * 0.62, r = 120 + (i % 2) * 18; return new THREE.Vector3(Math.cos(a) * r, (57 - i) * 3.4, Math.sin(a) * r); })() }));
+  return { nodes, links: [...links].map(k => k.split('|').map(Number)), desc: 'السور الـ114 على لولب بترتيب المصحف. الخيط يصل كل سورة بأقرب سورتين إليها في المفردات.',
+    legend: '<span><i style="background:#e8c46e"></i>مكية</span><span><i style="background:#5cc9b8"></i>مدنية</span><span>الحجم = عدد الآيات</span>' };
+}
+
+class Space {
+  constructor(canvas) {
+    this.cv = canvas;
+    this.r = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    this.r.setPixelRatio(Math.min(2, devicePixelRatio));
+    this.scene = new THREE.Scene(); this.scene.fog = new THREE.FogExp2(0x07101f, 0.0016);
+    this.cam = new THREE.PerspectiveCamera(55, 1, 1, 4000);
+    this.world = new THREE.Group(); this.scene.add(this.world);
+    this.scene.add(new THREE.AmbientLight(0xffffff, .55)); const dl = new THREE.DirectionalLight(0xfff1cf, .9); dl.position.set(200, 300, 400); this.scene.add(dl);
+    this.ornament(); this.stars();
+    this.rot = { x: .25, y: 0 }; this.dist = 430; this.distT = 430; this.focus = new THREE.Vector3(); this.focusT = new THREE.Vector3();
+    this.idle = 0; this.sel = -1; this.ray = new THREE.Raycaster(); this.ptrs = new Map();
+    this.bind(); new ResizeObserver(() => this.resize()).observe(canvas.parentElement); this.resize();
+    const loop = t => { requestAnimationFrame(loop); if (!document.hidden && $('#space').classList.contains('on')) this.frame(t); }; requestAnimationFrame(loop);
+  }
+  ornament() {
+    const gold = new THREE.LineBasicMaterial({ color: 0xe8c46e, transparent: true, opacity: .16 });
+    this.orn = new THREE.Group();
+    const poly = (n, r, rot) => { const pts = []; for (let i = 0; i <= n; i++) { const a = rot + i * 2 * Math.PI / n; pts.push(new THREE.Vector3(Math.cos(a) * r, Math.sin(a) * r, 0)); } return new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), gold); };
+    for (const [r, k] of [[260, 0], [200, 1], [140, 2]]) {
+      this.orn.add(poly(4, r, Math.PI / 4 + k * .2)); this.orn.add(poly(4, r, k * .2)); this.orn.add(poly(64, r * 1.08, 0));
+    }
+    const pts = []; for (let i = 0; i < 16; i++) { const a = i * Math.PI / 8; pts.push(new THREE.Vector3(Math.cos(a) * 290, Math.sin(a) * 290, 0), new THREE.Vector3(Math.cos(a + Math.PI * 5 / 8) * 290, Math.sin(a + Math.PI * 5 / 8) * 290, 0)); }
+    this.orn.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({ color: 0xe8c46e, transparent: true, opacity: .07 })));
+    this.orn.position.z = -320; this.scene.add(this.orn);
+  }
+  stars() {
+    const n = 1400, p = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const r = 700 + Math.random() * 900, t = Math.random() * Math.PI * 2, f = Math.acos(2 * Math.random() - 1); p.set([r * Math.sin(f) * Math.cos(t), r * Math.cos(f), r * Math.sin(f) * Math.sin(t)], i * 3); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(p, 3));
+    this.scene.add(new THREE.Points(g, new THREE.PointsMaterial({ color: 0xd9e4ff, size: 1.6, transparent: true, opacity: .7, fog: false })));
+  }
+  label(text, color) {
+    const c = document.createElement('canvas'), x = c.getContext('2d'), fs = 44;
+    x.font = `600 ${fs}px "IBM Plex Sans Arabic", "Segoe UI", sans-serif`; const w = Math.ceil(x.measureText(text).width) + 24;
+    c.width = w; c.height = fs + 22; x.font = `600 ${fs}px "IBM Plex Sans Arabic", "Segoe UI", sans-serif`; x.direction = 'rtl'; x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.shadowColor = 'rgba(0,0,0,.9)'; x.shadowBlur = 8; x.fillStyle = '#' + color.getHexString(); x.fillText(text, w / 2, c.height / 2 + 2);
+    const tex = new THREE.CanvasTexture(c); tex.minFilter = THREE.LinearFilter;
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false })); s.scale.set(w / 9, c.height / 9, 1); return s;
+  }
+  setGraph(G) {
+    if (this.nodeGroup) { this.world.remove(this.nodeGroup); this.nodeGroup.traverse(o => { o.geometry && o.geometry.dispose(); o.material && (o.material.map && o.material.map.dispose(), o.material.dispose()); }); }
+    this.G = G; this.sel = -1; this.nodeGroup = new THREE.Group(); this.world.add(this.nodeGroup);
+    const N = G.nodes.length, P = G.nodes.map((n, i) => n.fixed ? n.fixed.clone() : new THREE.Vector3((Math.random() - .5) * 300, (Math.random() - .5) * 300, (Math.random() - .5) * 300));
+    if (!G.nodes[0].fixed) this.layout(P, G.links);
+    this.adj = G.nodes.map(() => new Set()); G.links.forEach(([a, b]) => { this.adj[a].add(b); this.adj[b].add(a); });
+    const geo = new THREE.IcosahedronGeometry(1, 2); this.meshes = []; this.labels = [];
+    const order = G.nodes.map((n, i) => [i, n.size]).sort((a, b) => b[1] - a[1]); this.rank = new Array(N); order.forEach(([i], k) => this.rank[i] = k);
+    G.nodes.forEach((n, i) => {
+      const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ color: n.color, emissive: n.color, emissiveIntensity: .45, roughness: .35, metalness: .4 }));
+      m.position.copy(P[i]); m.scale.setScalar(n.size * 1.25); m.userData.i = i; this.nodeGroup.add(m); this.meshes.push(m);
+      const l = this.label(n.label, n.color.clone().lerp(new THREE.Color(0xffffff), .45)); l.position.copy(P[i]).add(new THREE.Vector3(0, n.size * 1.25 + 6, 0)); this.nodeGroup.add(l); this.labels.push(l);
+    });
+    const lp = []; G.links.forEach(([a, b]) => lp.push(P[a], P[b]));
+    this.lines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lp), new THREE.LineBasicMaterial({ color: 0xe8c46e, transparent: true, opacity: .22 }));
+    this.nodeGroup.add(this.lines); this.P = P; this.hl = null; this.applyVis();
+    this.focusT.set(0, 0, 0); this.distT = G.nodes[0].fixed ? 520 : 430;
+  }
+  layout(P, links) {
+    const N = P.length, V = P.map(() => new THREE.Vector3()), d = new THREE.Vector3();
+    for (let it = 0; it < 320; it++) {
+      const k = 1 - it / 320;
+      for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) { d.subVectors(P[i], P[j]); const l2 = Math.max(25, d.lengthSq()); d.multiplyScalar(2600 / l2 / Math.sqrt(l2)); V[i].add(d); V[j].sub(d); }
+      for (const [a, b] of links) { d.subVectors(P[b], P[a]); const l = d.length() || 1; d.multiplyScalar((l - 55) / l * .05); V[a].add(d); V[b].sub(d); }
+      for (let i = 0; i < N; i++) { V[i].addScaledVector(P[i], -.006); P[i].addScaledVector(V[i], .9 * k + .1); V[i].multiplyScalar(.55); }
+    }
+    let r = 0; P.forEach(p => r = Math.max(r, p.length())); P.forEach(p => p.multiplyScalar(200 / r));
+  }
+  applyVis() {
+    const s = this.sel, N = this.meshes.length;
+    for (let i = 0; i < N; i++) {
+      const on = s < 0 ? true : (i === s || this.adj[s].has(i));
+      this.meshes[i].material.opacity = on ? 1 : .18; this.meshes[i].material.transparent = !on;
+      this.labels[i].material.opacity = s < 0 ? (this.rank[i] < 45 ? .95 : .4) : (on ? 1 : .08);
+    }
+    this.lines.material.opacity = s < 0 ? .22 : .06;
+    if (this.hl) { this.nodeGroup.remove(this.hl); this.hl.geometry.dispose(); this.hl = null; }
+    if (s >= 0) { const lp = []; this.adj[s].forEach(j => lp.push(this.P[s], this.P[j])); this.hl = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lp), new THREE.LineBasicMaterial({ color: 0xffe7a8, transparent: true, opacity: .9 })); this.nodeGroup.add(this.hl); }
+  }
+  select(i, open = true) {
+    this.sel = i; this.applyVis(); $('#resetBtn').hidden = i < 0;
+    if (i >= 0) { this.focusT.copy(this.P[i]); this.distT = 190; if (open) this.G.nodes[i].open(); }
+    else { this.focusT.set(0, 0, 0); this.distT = this.G.nodes[0].fixed ? 520 : 430; }
+  }
+  clearSelection() { if (this.sel >= 0) this.select(-1, false); }
+  focusKey(k) { const i = this.G.nodes.findIndex(n => n.key === k); if (i >= 0 && $('#space').classList.contains('on')) this.select(i, false); }
+  find(q) { const n = norm(q); if (!n) return false; let i = this.G.nodes.findIndex(x => norm(x.key) === n); if (i < 0) i = this.G.nodes.findIndex(x => norm(x.key).includes(n)); if (i >= 0) { this.select(i); return true; } return false; }
+  resize() { const p = this.cv.parentElement, w = p.clientWidth, h = p.clientHeight; this.r.setSize(w, h, false); this.cam.aspect = w / h; this.cam.updateProjectionMatrix(); }
+  pick(ev) {
+    const b = this.cv.getBoundingClientRect(); const v = new THREE.Vector2(((ev.clientX - b.left) / b.width) * 2 - 1, -((ev.clientY - b.top) / b.height) * 2 + 1);
+    this.ray.setFromCamera(v, this.cam); const hit = this.ray.intersectObjects(this.meshes)[0]; return hit ? hit.object.userData.i : -1;
+  }
+  bind() {
+    const cv = this.cv, tip = $('#tip'); let down = null, moved = 0, pinch = 0;
+    cv.addEventListener('pointerdown', e => { cv.setPointerCapture(e.pointerId); this.ptrs.set(e.pointerId, [e.clientX, e.clientY]); down = [e.clientX, e.clientY]; moved = 0; this.idle = 0; });
+    cv.addEventListener('pointermove', e => {
+      if (this.ptrs.has(e.pointerId)) {
+        const p = this.ptrs.get(e.pointerId), dx = e.clientX - p[0], dy = e.clientY - p[1]; this.ptrs.set(e.pointerId, [e.clientX, e.clientY]);
+        if (this.ptrs.size === 2) { const [a, b] = [...this.ptrs.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch) this.distT = Math.min(900, Math.max(80, this.distT * pinch / d)); pinch = d; return; }
+        moved += Math.abs(dx) + Math.abs(dy); this.rot.y += dx * .006; this.rot.x = Math.max(-1.3, Math.min(1.3, this.rot.x + dy * .006)); this.idle = 0; tip.hidden = true; return;
+      }
+      const i = this.pick(e); cv.style.cursor = i >= 0 ? 'pointer' : 'grab';
+      if (i >= 0) { const b = cv.getBoundingClientRect(), n = this.G.nodes[i]; tip.hidden = false; tip.style.left = (e.clientX - b.left) + 'px'; tip.style.top = (e.clientY - b.top) + 'px'; tip.textContent = n.label; } else tip.hidden = true;
+    });
+    const up = e => { this.ptrs.delete(e.pointerId); if (this.ptrs.size < 2) pinch = 0; if (down && moved < 6 && this.ptrs.size === 0) { const i = this.pick(e); if (i >= 0) this.select(i); } down = null; };
+    cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', e => { this.ptrs.delete(e.pointerId); pinch = 0; });
+    cv.addEventListener('wheel', e => { e.preventDefault(); this.distT = Math.min(900, Math.max(80, this.distT * (1 + e.deltaY * .0012))); this.idle = 0; }, { passive: false });
+  }
+  frame() {
+    this.idle++;
+    const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (this.idle > 150 && this.sel < 0 && !still) this.rot.y += .0016;
+    this.world.rotation.set(this.rot.x, this.rot.y, 0);
+    this.focus.lerp(this.focusT, .08); this.dist += (this.distT - this.dist) * .08;
+    const f = this.focus.clone().applyEuler(this.world.rotation);
+    this.cam.position.set(f.x, f.y, f.z + this.dist); this.cam.lookAt(f);
+    this.orn.rotation.z += still ? 0 : .0007;
+    if (this.sel >= 0) { const m = this.meshes[this.sel], s = this.G.nodes[this.sel].size * 1.25 * (1 + .12 * Math.sin(performance.now() / 260)); m.scale.setScalar(s); }
+    this.r.render(this.scene, this.cam);
+  }
+}
+let MODES = {};
+function setMode(m) {
+  document.querySelectorAll('[data-mode]').forEach(b => b.setAttribute('aria-pressed', b.dataset.mode === m));
+  const G = MODES[m] || (MODES[m] = m === 'roots' ? graphRoots() : m === 'names' ? graphNames() : graphSurahs());
+  $('#modeDesc').textContent = G.desc; $('#legend').innerHTML = G.legend; space.setGraph(G); $('#resetBtn').hidden = true;
+}
+async function buildSpace() {
+  const cv = $('#gl'); cv.hidden = false; $('#hud').hidden = false; $('#hint').hidden = false;
+  if (!window.THREE) throw new Error('three');
+  try { await document.fonts.ready; } catch {}
+  space = new Space(cv);
+  document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { closePanel(); setMode(b.dataset.mode); });
+  $('#findForm').onsubmit = e => { e.preventDefault(); const q = $('#findIn').value; if (!space.find(q)) { const r = findRoots(q)[0]; if (r) openRoot(r); } };
+  $('#resetBtn').onclick = () => { closePanel(); space.select(-1, false); };
+  setMode('roots');
+}
+
+/* ---------- routing ---------- */
+const VIEWS = ['space', 'count', 'subjects', 'stories', 'wisdom'];
+function route() {
+  const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'space';
+  VIEWS.forEach(x => $('#' + x).classList.toggle('on', x === v));
+  document.querySelectorAll('nav.tabs a').forEach(a => a.getAttribute('href') === '#' + v ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current'));
+  if (v !== 'space') closePanel();
+  if (v === 'space' && space) space.resize();
+}
+addEventListener('hashchange', route); route();
+
+load().then(async () => {
+  $('#boot').remove();
+  buildCount(); buildSubjects(); buildStories(); buildChat();
+  try { await buildSpace(); }
+  catch (e) { $('#gl').hidden = true; $('#space').insertAdjacentHTML('beforeend', '<div class="nogl"><div>لا يدعم هذا الجهاز العرض الثلاثي. بقية الأقسام تعمل كاملة: <a href="#count" style="color:#e8c46e">الإحصاء</a> · <a href="#stories" style="color:#e8c46e">القصص</a></div></div>'); console.error(e); }
+}).catch(e => { $('#boot').innerHTML = '<div>تعذّر تحميل البيانات. أعد تحميل الصفحة.</div>'; console.error(e); });
+</script>
