@@ -183,5 +183,10 @@
   "ondevice.retry": "Try again",
   "ondevice.error": "The download failed. Check your connection and try again.",
   "ondevice.sorry": "Sorry, reciting cannot run on this device. It needs a newer phone or an up-to-date browser (Chrome or Safari).",
-  "server.privacyOnDevice": "Your recitation is processed on your device only and is never sent to a server."
+  "server.privacyOnDevice": "Your recitation is processed on your device only and is never sent to a server.",
+  "review.title": "Today's review",
+  "review.none": "Nothing due for review today. Well done!",
+  "review.mode": "Reviewing page {page}: recite it from memory",
+  "review.done": "Well done! Next review in {days} days",
+  "review.button": "Page {page}"
 }

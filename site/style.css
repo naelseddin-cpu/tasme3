@@ -542,3 +542,13 @@ body { background:#050a18 url(assets/space.webp) center top / cover no-repeat; }
 .odbtn { margin-top:8px; min-height:52px; width:100%; border:0; border-radius:14px; font-size:1.1rem; font-weight:700; cursor:pointer;
   background:linear-gradient(180deg, #f0d98c, var(--gold) 50%, var(--gold-deep)); color:#1a1405; }
 .odbtn:disabled { opacity:.55; cursor:progress; }
+
+/* ---- Review planner (مراجعة) ---- */
+.reviewlist { display:flex; flex-wrap:wrap; gap:8px; }
+.reviewlist button { min-height:44px; padding:8px 14px; border-radius:12px; border:1px solid var(--gold-deep); cursor:pointer;
+  background:linear-gradient(180deg,#24497f,#0f2447); color:#f3e6bb; font-size:.95rem; font-weight:600; }
+.reviewlist .none { color:var(--muted); font-size:.92rem; }
+.setupbtn { position:relative; }
+.duebadge { position:absolute; top:-6px; inset-inline-end:-6px; min-width:20px; height:20px; padding:0 5px; border-radius:999px;
+  background:#d4b96a; color:#0b1528; font-size:.72rem; font-weight:800; line-height:20px; box-shadow:0 0 0 2px #050a18; }
+.duebadge[hidden] { display:none; }

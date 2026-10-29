@@ -87,6 +87,7 @@
       v: SCHEMA_VERSION,
       profile: defaultProfile(),
       progressByPage: {},
+      reviewByPage: {},
       streak: defaultStreak(),
       today: defaultToday(),
       settings: defaultSettings(),
@@ -150,6 +151,55 @@
     }
     return out;
   }
+  // Review schedule (مراجعة): page -> {due: 'YYYY-MM-DD', step: 0..n}. A page gets its
+  // first review the day after it is memorized; each completed review moves it one
+  // step along REVIEW_DAYS. Kept apart from progressByPage on purpose: a review never
+  // changes what was memorized, it only re-hides the page for one recitation.
+  var REVIEW_DAYS = [1, 3, 7, 14, 30, 60, 120];
+  function repairReviewByPage(v) {
+    if (!isPlainObject(v)) return {};
+    var out = {};
+    for (var key in v) {
+      if (!Object.prototype.hasOwnProperty.call(v, key)) continue;
+      var pageNum = parseInt(key, 10), e = v[key];
+      if (!(pageNum >= 1 && pageNum <= 604) || !isPlainObject(e)) continue;
+      if (typeof e.due !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(e.due)) continue;
+      var step = Number.isInteger(e.step) ? Math.max(0, Math.min(REVIEW_DAYS.length - 1, e.step)) : 0;
+      out[String(pageNum)] = { due: e.due, step: step };
+    }
+    return out;
+  }
+  function mergeReviewByPage(a, b) { // the further-along schedule wins
+    a = a || {}; b = b || {};
+    var out = {}, key;
+    for (key in a) { if (Object.prototype.hasOwnProperty.call(a, key)) out[key] = a[key]; }
+    for (key in b) {
+      if (!Object.prototype.hasOwnProperty.call(b, key)) continue;
+      var x = out[key], y = b[key];
+      out[key] = !x ? y : (y.step > x.step || (y.step === x.step && y.due > x.due)) ? y : x;
+    }
+    return out;
+  }
+  function addDaysKey(n) { var d = new Date(); d.setDate(d.getDate() + n); return todayKey(d); }
+  function scheduleFirstReview(state, pageNum) {
+    state.reviewByPage = state.reviewByPage || {};
+    if (!state.reviewByPage[String(pageNum)]) state.reviewByPage[String(pageNum)] = { due: addDaysKey(REVIEW_DAYS[0]), step: 0 };
+  }
+  function markReviewed(state, pageNum) {
+    state.reviewByPage = state.reviewByPage || {};
+    var e = state.reviewByPage[String(pageNum)] || { step: -1 };
+    var step = Math.min(REVIEW_DAYS.length - 1, e.step + 1);
+    state.reviewByPage[String(pageNum)] = { due: addDaysKey(REVIEW_DAYS[step]), step: step };
+    rollDay(state); state.today.pagesCompleted += 1;
+    return REVIEW_DAYS[step];
+  }
+  function dueReviews(state) { // pages due today or overdue, most overdue first
+    var t = todayKey(), out = [];
+    var r = state.reviewByPage || {};
+    for (var key in r) if (Object.prototype.hasOwnProperty.call(r, key) && r[key].due <= t) out.push({ page: +key, due: r[key].due });
+    return out.sort(function (x, y) { return x.due < y.due ? -1 : x.due > y.due ? 1 : x.page - y.page; });
+  }
+
   function repairInstallPromo(v) {
     if (!isPlainObject(v)) return defaultInstallPromo();
     return {
@@ -201,6 +251,7 @@
       v: SCHEMA_VERSION,
       profile: repairProfile(parsed.profile),
       progressByPage: repairProgressByPage(parsed.progressByPage),
+      reviewByPage: repairReviewByPage(parsed.reviewByPage),
       streak: repairStreak(parsed.streak),
       today: repairToday(parsed.today),
       settings: repairSettings(parsed.settings),
@@ -297,6 +348,7 @@
   function mergeProgress(a, b) {
     return {
       progressByPage: mergeProgressByPage(a.progressByPage, b.progressByPage),
+      reviewByPage: mergeReviewByPage(a.reviewByPage, b.reviewByPage),
       streak: mergeStreak(a.streak, b.streak),
       today: mergeToday(a.today, b.today)
     };
@@ -321,6 +373,7 @@
         // union immediately, e.g. Storage.totalWordsRevealed(state) right
         // after this call.
         state.progressByPage = merged.progressByPage;
+        state.reviewByPage = merged.reviewByPage;
         state.streak = merged.streak;
         state.today = merged.today;
       }
@@ -364,6 +417,7 @@
     }
     var page = state.progressByPage[String(pageNum)];
     if (page) page.completedAt = t;
+    scheduleFirstReview(state, pageNum);
     return state;
   }
 
@@ -401,6 +455,9 @@
     addWordsRevealedToday: addWordsRevealedToday,
     totalWordsRevealed: totalWordsRevealed,
     mergeProgress: mergeProgress,
+    markReviewed: markReviewed,
+    dueReviews: dueReviews,
+    scheduleFirstReview: scheduleFirstReview,
     lastWrittenRaw: lastWrittenRaw
   };
 })(window);

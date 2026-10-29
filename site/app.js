@@ -79,6 +79,7 @@
   var ratio = 1, currentVeil = SHEET;
   var tokens = [], words = [], expected = [], markersByWord = {};
   var pointer = 0, revealed = new Set();
+  var reviewMode = false; // a due page re-hidden for one review recitation; never saved over its memorization
   // Residual audit A4: set true when the cross-tab `storage` listener fires
   // before `t` (Tasme3I18n.t) is assigned -- flushed by the init promise
   // below the moment `t` actually becomes callable. See that listener's own
@@ -502,6 +503,7 @@
   // pointer/contextRevealed (so an immediate reload, before any recitation,
   // still restores the jump correctly -- req. "lastPage restore").
   function persistPageProgress() {
+    if (reviewMode) { Storage.save(state); return; } // a review never rewrites what was memorized
     var entry = state.progressByPage[String(pageNum)] || { pointer: 0, revealed: [], contextRevealed: [], completedAt: null };
     entry.pointer = pointer;
     entry.revealed = Array.from(revealed);
@@ -532,6 +534,8 @@
     } else {
       pointer = 0; revealed = new Set(); contextRevealed = new Set();
     }
+    reviewMode = !!(opts && opts.review);
+    if (reviewMode) { pointer = 0; revealed = new Set(); contextRevealed = new Set(); }
     applySurahStartJump(opts);
     // A new page has entirely different line geometry -- force updateFocusMode
     // to treat this as a fresh entry (no slide-from-the-old-page's crop) and
@@ -1132,9 +1136,18 @@
     renderProgressPanel();
 
     var done = ('done' in r) ? r.done : (pointer >= expected.length);
+    if (done && expected.length > 0 && reviewMode) {
+      var days = Storage.markReviewed(state, pageNum);
+      reviewMode = false; Storage.save(state);
+      stopListening(); recorder.abort(); stopLive(); if (ON_DEVICE) odStop(true);
+      setStatus(t('review.done', { days: digits(days) }), 'good'); announceStatus(t('review.done', { days: digits(days) }));
+      renderReviewList();
+      return;
+    }
     if (done && expected.length > 0) {
       var streakBefore = state.streak.count;
       Storage.markPageCompleted(state, pageNum);
+      renderReviewList(); // the page now has its first review scheduled
       el.doneBanner.style.display = 'block';
       announceStatus(t('recite.pageComplete'));
       stopListening();
@@ -1671,6 +1684,25 @@
   }
 
   // -------------------------------------------------------------- progress
+  // ---- review planner (مراجعة): pages due today, most overdue first ----
+  function renderReviewList() {
+    var list = document.getElementById('reviewList'), badge = document.getElementById('dueBadge');
+    if (!list || !t) return;
+    var due = Storage.dueReviews(state);
+    badge.hidden = !due.length; badge.textContent = digits(due.length);
+    list.innerHTML = '';
+    if (!due.length) { var n = document.createElement('div'); n.className = 'none'; n.textContent = t('review.none'); list.appendChild(n); return; }
+    due.slice(0, 30).forEach(function (d) {
+      var b = document.createElement('button'); b.textContent = t('review.button', { page: digits(d.page) });
+      b.onclick = function () { closeSetupSheet(); startReview(d.page); };
+      list.appendChild(b);
+    });
+  }
+  function startReview(p) {
+    loadPage(p, { review: true });
+    setStatus(t('review.mode', { page: digits(p) }));
+  }
+
   function renderProgressPanel() {
     el.streakNum.textContent = digits(state.streak.count);
     el.wordsTodayLabel.textContent = t('progress.wordsToday', { count: digits(state.today.wordsRevealed) });
@@ -1924,6 +1956,7 @@
     // other tab genuinely added.
     var merged = Storage.mergeProgress(state, fresh);
     state.progressByPage = merged.progressByPage;
+    state.reviewByPage = merged.reviewByPage;
     state.streak = merged.streak;
     state.today = merged.today;
 
@@ -1996,6 +2029,7 @@
   // buttons can come out and be in a pop window for setup".
   function openSetupSheet() {
     closeDrawer();
+    renderReviewList();
     el.setupSheet.classList.add('open');
     el.setupBackdrop.style.display = 'block';
     showChrome(false); // stays visible for as long as the sheet is open
@@ -2404,6 +2438,7 @@
     updateFsBtnLabel();
     updateListenBtnLabel();
     maybeShowFirstRunHint();
+    renderReviewList();
     if (ON_DEVICE) setupOnDevice();
 
     // Idea #2: every fresh page load is one "session" -- the install-promo
