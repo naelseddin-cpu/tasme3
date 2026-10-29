@@ -15,6 +15,7 @@ server/RUNBOOK.md.
 
 from __future__ import annotations
 
+import math
 import os
 import sys
 import tempfile
@@ -200,15 +201,20 @@ class WhisperASR:
                 pass
 
     def transcribe_window(self, audio_bytes: bytes, start: float, max_seconds: float):
-        """Live listening: decode the whole take in memory (no temp file), keep
-        only the audio from `start` (minus a small lead-in, at most the last
-        `max_seconds`) and return its text plus per-word end times measured
-        from the beginning of the take, so the client can anchor the next window."""
+        """Live listening: decode the whole take in memory, keep only the audio
+        from `start` (minus a small lead-in, at most the last `max_seconds`), and
+        return its text plus estimated per-word times measured from the start of
+        the take, so the client can anchor the next window.
+
+        Requests from different reciters are decoded TOGETHER: each window goes
+        to a micro-batcher that waits up to BATCH_WAIT_S for others and runs one
+        GPU encode + one decode pass for up to BATCH_MAX windows."""
         model = self._ensure_model()
         if model is None:
             return "", []
         import io
         from faster_whisper.audio import decode_audio
+        from faster_whisper.vad import VadOptions, get_speech_timestamps
 
         sr = 16000
         try:
@@ -233,42 +239,131 @@ class WhisperASR:
         if len(window) < int(0.3 * sr):
             return "", []
         offset = first / sr
-        segments, _info = model.transcribe(
-            window,
-            language=self.language,
-            vad_filter=self.vad_filter,
-            beam_size=self.beam_size,
-            condition_on_previous_text=self.condition_on_previous_text,
-        )
-        # Word timestamps are NOT requested: with them the Quran turbo model
-        # decodes the trailing silence and hallucinates subtitle credits
-        # ("ترجمة نانسي قنقر", "اشتركوا في القناة"), ~40x slower -- and that
-        # fine-tune predicts no segment timestamps either (start == end).
-        # Instead the recognized words are spread over the SPEECH the voice-
-        # activity detector finds in the window (reciters pause between
-        # phrases), by letter count: an estimate that main._pointer_time
-        # anchors on with an early bias.
-        toks = [t for seg in segments for t in seg.text.split()]
-        from faster_whisper.vad import VadOptions, get_speech_timestamps
-
+        # Only the speech goes to Whisper: silence is where the Quran turbo model
+        # hallucinates subtitle credits ("ترجمة نانسي قنقر", "اشتركوا في القناة").
         try:
-            speech = [(c["start"] / sr, c["end"] / sr) for c in get_speech_timestamps(window, VadOptions())]
+            speech = [(c["start"], c["end"]) for c in get_speech_timestamps(window, VadOptions())]
         except Exception:
-            speech = []
+            speech = [(0, len(window))]
         if not speech:
-            speech = [(0.0, len(window) / sr)]
-        span = sum(e - b for b, e in speech) or 1e-6
+            return "", []
+        import numpy as np
+
+        clip = np.concatenate([window[b:e] for b, e in speech])
+        text = self._batcher().submit(clip).result()
+        # The fine-tune predicts no timestamps (and word timestamps trigger the
+        # hallucination above), so words are spread over the speech regions by
+        # letter count: an estimate that main._pointer_time anchors on early.
+        toks = text.split()
+        regions = [(b / sr, e / sr) for b, e in speech]
+        span = sum(e - b for b, e in regions) or 1e-6
         total = sum(len(t) for t in toks) or 1
         words, done = [], 0
         for t in toks:
             done += len(t)
-            at = span * done / total  # seconds of speech up to the end of this word
-            for b, e in speech:
+            at = span * done / total
+            for b, e in regions:
                 if at <= e - b:
                     end = b + at
                     break
                 at -= e - b
             else:
-                end = speech[-1][1]
+                end = regions[-1][1]
             words.append((t, offset + end - (len(t) / total) * span, offset + end))
         return " ".join(w[0] for w in words), words
+
+    def _batcher(self):
+        if getattr(self, "_batch", None) is None:
+            self._batch = _WhisperBatcher(self._model, self.language, self.beam_size)
+        return self._batch
+
+
+BATCH_WAIT_S = 0.025  # how long a request waits for others to share its GPU pass
+BATCH_MAX = 8
+
+
+class _WhisperBatcher:
+    """Decodes live-listening windows from several reciters in one GPU pass.
+
+    Each window (<= 25 s of speech, one Whisper chunk) is queued; a single
+    worker thread takes up to BATCH_MAX of them, waiting at most BATCH_WAIT_S
+    for the batch to fill, then runs one encode and one generate over the
+    whole batch. Output length is capped from the seconds of speech, so a
+    hallucinated run of text cannot keep the GPU busy."""
+
+    def __init__(self, model, language: str, beam_size: int) -> None:
+        import queue
+        import threading
+        from faster_whisper.tokenizer import Tokenizer
+
+        self.model = model
+        self.beam_size = beam_size
+        self.tokenizer = Tokenizer(model.hf_tokenizer, model.model.is_multilingual, task="transcribe", language=language)
+        # timestamp-mode prompt (no <|notimestamps|>): the Quran turbo fine-tune was
+        # trained that way; with notimestamps it stops early ("" for 1:1, "قله احد" for 112:1).
+        # Timestamp tokens (ids above eot) are dropped when decoding.
+        self.prompt = model.get_prompt(self.tokenizer, [], without_timestamps=False)
+        self.q: "queue.Queue" = queue.Queue()
+        threading.Thread(target=self._run, name="whisper-batcher", daemon=True).start()
+
+    def submit(self, clip):
+        from concurrent.futures import Future
+
+        fut: Future = Future()
+        self.q.put((clip, fut))
+        return fut
+
+    def _run(self) -> None:
+        import queue
+        import time
+
+        while True:
+            batch = [self.q.get()]
+            deadline = time.monotonic() + BATCH_WAIT_S
+            while len(batch) < BATCH_MAX:
+                left = deadline - time.monotonic()
+                if left <= 0:
+                    break
+                try:
+                    batch.append(self.q.get(timeout=left))
+                except queue.Empty:
+                    break
+            try:
+                texts = self._decode([c for c, _ in batch])
+                for (_, fut), text in zip(batch, texts):
+                    fut.set_result(text)
+            except Exception as exc:  # noqa: BLE001 - every waiter must be released
+                for _, fut in batch:
+                    if not fut.done():
+                        fut.set_exception(exc)
+
+    def _decode(self, clips):
+        import numpy as np
+        from faster_whisper.audio import pad_or_trim
+
+        m = self.model
+        # Encode only as much as the longest clip needs (5 s steps, >= 10 s) instead
+        # of Whisper's fixed 30 s: the encoder dominates the cost, and on the bench
+        # (<= 25 s speech clips) accuracy is identical at ~2.5x less compute.
+        secs = max(len(c) for c in clips) / 16000
+        frames = min(3000, max(1000, int(math.ceil((secs + 1) / 5) * 500)))
+        feats = np.stack([pad_or_trim(m.feature_extractor(c), frames) for c in clips])
+        enc = m.encode(feats)
+        # ~2.5 words/s of recitation, a few tokens per word: allow ~12 tokens per second of speech
+        room = m.max_length - len(self.prompt)
+        max_new = max(min(room, int(12 * max(len(c) for c in clips) / 16000) + 10), 16)
+        results = m.model.generate(
+            enc,
+            [list(self.prompt) for _ in clips],
+            beam_size=self.beam_size,
+            max_length=len(self.prompt) + max_new,
+            suppress_blank=True,
+            suppress_tokens=[-1],
+            return_no_speech_prob=True,
+        )
+        eot = self.tokenizer.eot
+        out = []
+        for r in results:
+            ids = [t for t in r.sequences_ids[0] if t < eot]
+            out.append("" if r.no_speech_prob > 0.8 else self.tokenizer.decode(ids).strip())
+        return out

@@ -21,6 +21,7 @@ from urllib.parse import unquote
 
 from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
 from pydantic import BaseModel
 
 from .accounts import (
@@ -297,7 +298,8 @@ def create_app(
         except StreamError as e:
             raise HTTPException(status_code=e.status, detail=e.detail)
         try:
-            transcript, words = asr.transcribe_window(take, start, STREAM_WINDOW_SECONDS)
+            # in a worker thread: concurrent reciters can then share one batched GPU pass
+            transcript, words = await run_in_threadpool(asr.transcribe_window, take, start, STREAM_WINDOW_SECONDS)
         finally:
             del take
             if final:
