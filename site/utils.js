@@ -17,9 +17,10 @@
   // lazily at call time (not at load time -- this file loads before i18n.js
   // in index.html's script order), so it always reflects whatever language
   // is active the moment it's called.
+  // Founder decision (2026-10-29): numbers are always Western digits (1234),
+  // in Arabic too. toArabicDigits stays exported for any caller that needs it.
   function digits(n) {
-    var lang = global.Tasme3I18n && global.Tasme3I18n.currentLang && global.Tasme3I18n.currentLang();
-    return lang === 'ar' ? toArabicDigits(n) : String(n);
+    return String(n);
   }
 
   global.Tasme3Utils = { toArabicDigits: toArabicDigits, clamp: clamp, pad3: pad3, digits: digits };

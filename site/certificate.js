@@ -240,12 +240,12 @@
     lang = lang || 'ar';
     if (lang === 'ar') {
       try {
-        var fmt = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura', { day: 'numeric', month: 'long', year: 'numeric' });
+        var fmt = new Intl.DateTimeFormat('ar-SA-u-ca-islamic-umalqura-nu-latn', { day: 'numeric', month: 'long', year: 'numeric' });
         if (/islamic/.test(fmt.resolvedOptions().calendar)) return fmt.format(new Date());
       } catch (_) { /* fall through to Gregorian */ }
     }
     try {
-      return new Intl.DateTimeFormat(lang, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
+      return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : lang, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());
     } catch (_) {
       try {
         return new Intl.DateTimeFormat('en', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date());

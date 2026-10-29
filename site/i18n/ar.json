@@ -105,7 +105,7 @@
   "account.copy": "نسخ",
   "account.copied": "تم النسخ ✓",
   "account.loginTitle": "لديك رمز؟ سجّل الدخول",
-  "account.loginPlaceholder": "أدخل رمز الحفظ (١٠ أرقام)",
+  "account.loginPlaceholder": "أدخل رمز الحفظ (10 أرقام)",
   "account.loginButton": "دخول",
   "account.loggedInAs": "مسجّل الدخول برمز الحفظ",
   "account.logout": "تسجيل الخروج",
