@@ -62,13 +62,13 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('models', nargs='+')
     ap.add_argument('--device', default='cpu'); ap.add_argument('--index', type=int, default=0)
-    ap.add_argument('--compute', default='int8'); ap.add_argument('--beam', type=int, default=1)
+    ap.add_argument('--compute', default='int8'); ap.add_argument('--threads', type=int, default=0); ap.add_argument('--beam', type=int, default=1)
     ap.add_argument('--chunk', type=float, default=0, help='also test N-second chunks (like live listening)')
     a = ap.parse_args()
     from faster_whisper import WhisperModel
     ref = reference()
     for path in a.models:
-        m = WhisperModel(path, device=a.device, device_index=a.index, compute_type=a.compute)
+        m = WhisperModel(path, device=a.device, device_index=a.index, compute_type=a.compute, cpu_threads=a.threads)
         errs = total = jerrs = 0; secs = 0.0; worst = []
         for rc in RECITERS:
             for s, ay in AYAT:
