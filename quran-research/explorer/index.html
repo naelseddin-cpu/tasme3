@@ -246,7 +246,9 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
   .top-about { display: block; order: 2; margin-inline-start: auto; color: var(--space-muted); font-size: .9rem; text-decoration: none; padding: 10px 4px; }
   .top-in { flex-wrap: nowrap; }
   #space { height: calc(100dvh - 48px - 58px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); min-height: 380px; }
-  .hud:not(.more) #modeDesc, .hud:not(.more) .legend { display: none; }
+  .hud:not(.more) #modeDesc, .hud:not(.more) .legend, .hud:not(.more) .modes, .hud:not(.more) h1 { display: none; }
+  .hud:not(.more) { grid-template-columns: auto minmax(0, 1fr); align-items: center; padding: 8px 10px; background: rgba(5, 9, 18, .45); }
+  .hud:not(.more) .find input { min-height: 40px; }
   .chip.info { display: inline-block; justify-self: start; }
   #space.picked .hud, #space.picked .hint { display: none; }
   .chip, .seg button, .tag { min-height: 40px; }
@@ -925,6 +927,7 @@ const ATMO_VS = 'varying vec3 vN; varying vec3 vW; void main() { vec4 w = modelM
 const ATMO_FS = 'uniform vec3 color; uniform vec3 sun; uniform float opacity; varying vec3 vN; varying vec3 vW; void main() { vec3 v = normalize(cameraPosition - vW); float rim = pow(1.0 - max(dot(vN, v), 0.0), 2.6); float lit = clamp(dot(vN, normalize(sun - vW)) * 0.75 + 0.4, 0.0, 1.0); gl_FragColor = vec4(color * (0.6 + rim), rim * lit * opacity); }';
 const sprite = (kind, color, opacity = 1) => new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(kind), alphaMap: tex(kind), color, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending }));
 const planetR = n => 2.2 + n.size * .55;
+const MAJOR = 24;   // roots shown as full planets with names; the rest are small distant bodies until searched or linked
 // warm worlds for mostly-Meccan roots, cool worlds for mostly-Medinan; which one within the family is fixed by the name
 const WARM = ['amber', 'saturn', 'mars', 'ruby', 'lava', 'gold-turquoise', 'marble'];
 const COOL = ['ice', 'teal', 'earth', 'emerald', 'amethyst', 'teal-gold', 'sapphire'];
@@ -948,7 +951,7 @@ class Space {
     this.scene.add(new THREE.AmbientLight(0x9fb4d8, .38));
     const SUN = new THREE.Vector3(-430, 150, -240), sl = new THREE.PointLight(0xfff0d8, 1.8); this.SUN = SUN; sl.position.copy(SUN); this.scene.add(sl);
     const sun = sprite('sun', 0xffffff); sun.position.copy(SUN); sun.scale.setScalar(560); sun.material.fog = false; this.scene.add(sun);
-    this.rot = { x: .25, y: 0 }; this.dist = 480; this.distT = 480; this.focus = new THREE.Vector3(); this.focusT = new THREE.Vector3();
+    this.rot = { x: .25, y: 0 }; this.dist = 560; this.distT = 560; this.focus = new THREE.Vector3(); this.focusT = new THREE.Vector3();
     this.idle = 0; this.sel = -1; this.ray = new THREE.Raycaster(); this.ptrs = new Map();
     this.scene.background = this.bg;
     // Film look: bloom makes the sun, lit rims and atmospheres glow; the last pass applies
@@ -1002,14 +1005,14 @@ class Space {
     const order = G.nodes.map((n, i) => [i, n.size]).sort((a, b) => b[1] - a[1]); this.rank = new Array(N); order.forEach(([i], k) => this.rank[i] = k);
     G.nodes.forEach((n, i) => {
       // a planet: a Nano Banana surface by family (warm = mostly Meccan, cool = mostly Medinan), an atmosphere, rings for the largest
-      const R = planetR(n), cool = n.mec !== undefined ? n.mec < .5 : n.color.g > n.color.r, fam = cool ? COOL : WARM, kind = fam[hashOf(n.key) % fam.length];
+      const major = this.rank[i] < MAJOR, R = major ? planetR(n) : 1.1 + n.size * .12, cool = n.mec !== undefined ? n.mec < .5 : n.color.g > n.color.r, fam = cool ? COOL : WARM, kind = fam[hashOf(n.key) % fam.length];
       const rocky = ['mars', 'earth', 'lava', 'gold-turquoise', 'emerald', 'sapphire', 'marble'].includes(kind);
       const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex(kind), bumpMap: rocky ? tex(kind) : null, bumpScale: rocky ? .05 : 0, color: kind === 'teal' ? 0x8fe0ec : 0xffffff, roughness: kind === 'earth' ? .6 : .85, metalness: 0, emissive: 0x0b1222, emissiveIntensity: .35 }));
       m.add(this.atmosphere(ATMO[kind], kind === 'mars' ? .5 : .9));
       m.position.copy(P[i]); m.scale.setScalar(R); m.rotation.set(.2 * Math.sin(i), i, .25 * Math.cos(i * 1.3)); m.userData.i = i; m.userData.g = R * 2.7; this.nodeGroup.add(m); this.meshes.push(m);
       const gl = sprite('glow', ATMO[kind], .14); gl.position.copy(P[i]); gl.scale.setScalar(R * 2.7); this.nodeGroup.add(gl); m.userData.glow = gl;
-      if (this.rank[i] < 12) m.add(this.ring(R, RING_TINT[hashOf(n.key + 'r') % RING_TINT.length]));
-      const l = this.label(n.label, new THREE.Color(0xf3ead2), .9); l.position.copy(P[i]).add(new THREE.Vector3(0, R * (this.rank[i] < 12 ? 1.5 : 1) + 4, 0)); this.nodeGroup.add(l); this.labels.push(l);
+      if (this.rank[i] < 5) m.add(this.ring(R, RING_TINT[hashOf(n.key + 'r') % RING_TINT.length]));
+      const l = this.label(n.label, new THREE.Color(0xf3ead2), .9); l.position.copy(P[i]).add(new THREE.Vector3(0, R * (this.rank[i] < 5 ? 1.5 : 1) + 4, 0)); this.nodeGroup.add(l); this.labels.push(l);
     });
     const lp = []; G.links.forEach(([a, b]) => lp.push(P[a], P[b]));
     this.lines = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lp), new THREE.LineBasicMaterial({ color: 0xe8c46e, transparent: true, opacity: .22, depthWrite: false }));
@@ -1026,16 +1029,16 @@ class Space {
       for (const [a, b] of links) { d.subVectors(P[b], P[a]); const l = d.length() || 1; d.multiplyScalar((l - 55) / l * .05); V[a].add(d); V[b].sub(d); }
       for (let i = 0; i < N; i++) { V[i].addScaledVector(P[i], -.006); P[i].addScaledVector(V[i], .9 * k + .1); V[i].multiplyScalar(.55); }
     }
-    let r = 0; P.forEach(p => r = Math.max(r, p.length())); P.forEach(p => p.multiplyScalar(240 / r));
+    let r = 0; P.forEach(p => r = Math.max(r, p.length())); P.forEach(p => p.multiplyScalar(330 / r));
   }
   applyVis() {
     const s = this.sel, N = this.meshes.length;
     for (let i = 0; i < N; i++) {
       const on = s < 0 ? true : (i === s || this.adj[s].has(i));
       this.meshes[i].visible = on; this.meshes[i].userData.glow.visible = on; this.labels[i].visible = on; 
-      this.labels[i].material.opacity = s < 0 ? (this.rank[i] < 45 ? .95 : .4) : (on ? 1 : .08);
+      this.labels[i].material.opacity = s < 0 ? (this.rank[i] < 12 ? .95 : 0) : (on ? 1 : 0);
     }
-    this.lines.material.opacity = s < 0 ? .22 : .06;
+    this.lines.material.opacity = s < 0 ? 0 : .04; // threads appear only for the selected root
     if (this.halo) this.halo.material.opacity = s < 0 ? .55 : .06;
     if (this.hl) { this.nodeGroup.remove(this.hl); this.hl.geometry.dispose(); this.hl = null; }
     if (s >= 0) { const lp = []; this.adj[s].forEach(j => lp.push(this.P[s], this.P[j])); this.hl = new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(lp), new THREE.LineBasicMaterial({ color: 0xffe7a8, transparent: true, opacity: .9 })); this.nodeGroup.add(this.hl); }
@@ -1044,7 +1047,7 @@ class Space {
     this.sel = i; this.applyVis(); $('#resetBtn').hidden = i < 0; $('#space').classList.toggle('picked', i >= 0);
     this.showFamily(i >= 0 && this.G.nodes[i].family ? i : -1);
     if (i >= 0) { this.focusT.copy(this.P[i]); this.distT = (this.fam ? Math.min(300, Math.max(80, this.famR * 2.5)) : 190) * (innerWidth <= 720 ? 1.12 : 1); if (open) this.G.nodes[i].open(); }
-    else { this.focusT.set(0, 0, 0); this.distT = this.G.nodes[0].fixed ? 520 : 480; }
+    else { this.focusT.set(0, 0, 0); this.distT = this.G.nodes[0].fixed ? 520 : 560; }
   }
   // The selected root's derived words (lemmas) become moons on tilted gold orbits around the planet,
   // and each moon is circled by small satellites: the lemma's written forms in the text. Counts ride on the labels.
