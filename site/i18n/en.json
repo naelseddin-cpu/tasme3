@@ -173,5 +173,15 @@
   "mic.retrying": "Retrying…",
   "help.title": "How does the app work?",
   "help.body": "Press the microphone and recite from memory. Words appear on the page as you recite them correctly. Use ⚙️ to change your level or view your certificates.",
-  "app.updateReady": "Update ready — reopen the app to apply it"
+  "app.updateReady": "Update ready — reopen the app to apply it",
+  "ondevice.title": "The recitation engine on your device",
+  "ondevice.body": "To listen to your recitation and reveal each word in its place on the mushaf page, the app needs to download its listening engine once (about 130 MB). After that, reciting runs right on your device, even offline, and your recitation never leaves your phone.",
+  "ondevice.wifi": "Wi-Fi is recommended. On iPhone, add this page to your Home Screen so the engine stays saved.",
+  "ondevice.download": "Download the recitation engine",
+  "ondevice.downloading": "Downloading… {pct}% ({mb} MB)",
+  "ondevice.preparing": "Preparing the recitation engine…",
+  "ondevice.retry": "Try again",
+  "ondevice.error": "The download failed. Check your connection and try again.",
+  "ondevice.sorry": "Sorry, reciting cannot run on this device. It needs a newer phone or an up-to-date browser (Chrome or Safari).",
+  "server.privacyOnDevice": "Your recitation is processed on your device only and is never sent to a server."
 }

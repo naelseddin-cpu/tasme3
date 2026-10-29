@@ -523,3 +523,22 @@ body { background:#050a18 url(assets/space.webp) center top / cover no-repeat; }
 .recbtn.listening { background:radial-gradient(circle at 34% 30%, rgba(255,255,255,.25), rgba(0,0,0,0) 45%, rgba(0,0,0,.5) 100%),
   url(assets/planet-rec.webp) center / cover;
   box-shadow:0 0 0 7px rgba(176, 58, 36, .28), 0 0 22px rgba(255, 120, 80, .6), 0 3px 10px rgba(0,0,0,.4); }
+
+/* ---- On-device engine download gate (planet theme, Nano Banana art) ---- */
+.odgate { position:fixed; inset:0; z-index:60; display:flex; align-items:center; justify-content:center; padding:24px;
+  background:#050a18 url(assets/space.webp) center / cover no-repeat; }
+.odgate[hidden] { display:none; }
+.odcard { max-width:420px; width:100%; text-align:center; color:#f3ead2; background:rgba(5, 10, 24, .78);
+  border:1px solid rgba(212, 185, 106, .55); border-radius:20px; padding:26px 22px 24px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+  box-shadow:0 20px 60px rgba(0, 0, 0, .6); }
+.odplanet { width:96px; height:96px; margin:0 auto 14px; border-radius:50%; background:radial-gradient(circle at 34% 30%, rgba(255,255,255,.3), rgba(0,0,0,0) 45%, rgba(0,0,0,.55) 100%),
+  url(assets/planet-idle.webp) center / cover; box-shadow:0 0 34px rgba(110, 160, 255, .6), 0 0 0 1px #8f7226; }
+.odcard h2 { font-size:1.35rem; color:var(--gold); margin:0 0 10px; }
+.odcard p { font-size:1.02rem; line-height:1.8; margin:0 0 10px; }
+.odnote { font-size:.9rem !important; color:#cfc4a6; }
+.odbar { height:10px; border-radius:999px; background:rgba(255,255,255,.12); overflow:hidden; margin:14px 0 6px; }
+.odbar span { display:block; height:100%; width:0; background:linear-gradient(90deg, var(--gold-deep), var(--gold)); transition:width .3s; }
+.odstatus { min-height:1.6em; font-size:.95rem !important; color:#f3e6bb; font-variant-numeric:tabular-nums; }
+.odbtn { margin-top:8px; min-height:52px; width:100%; border:0; border-radius:14px; font-size:1.1rem; font-weight:700; cursor:pointer;
+  background:linear-gradient(180deg, #f0d98c, var(--gold) 50%, var(--gold-deep)); color:#1a1405; }
+.odbtn:disabled { opacity:.55; cursor:progress; }

@@ -33,7 +33,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, 'explorer')
 HIFZ_ROOT = os.path.join(os.path.dirname(HERE), 'site')
 HIFZ_API = 'http://127.0.0.1:8010'
-HIFZ_CONFIG = b"window.TASME3_CONFIG = { SERVER_URL: '/hifz-api' };\n"
+# On-device recitation: the Quran Whisper model (browser build, ~103 MB) and the speech engine
+# (transformers.js + ONNX Runtime Web) live outside the repo and are served at /hifz/models/ and
+# /hifz/engine/. For a public launch these should move to a CDN (Hugging Face) via config.js.
+ONDEVICE = os.path.expanduser('~/.local/share/tasme3-ondevice')
+HIFZ_CONFIG = (b"window.TASME3_CONFIG = { SERVER_URL: '/hifz-api', ON_DEVICE: true, "
+               b"MODEL_BASE: '/hifz/models/', ENGINE_BASE: '/hifz/engine/', MODEL_ID: 'tasme3/whisper-base-ar-quran' };\n")
 MAX_AUDIO = 16_000_000
 PW_FILE = os.path.join(HERE, '.chat-password')
 CLAUDE = shutil.which('claude')
@@ -64,7 +69,7 @@ def is_private(host):
 
 class Handler(SimpleHTTPRequestHandler):
     # index.html is an artifact page without <meta charset>, so the header must say UTF-8
-    extensions_map = {**SimpleHTTPRequestHandler.extensions_map,
+    extensions_map = {**SimpleHTTPRequestHandler.extensions_map, '.mjs': 'text/javascript; charset=utf-8', '.wasm': 'application/wasm', '.onnx': 'application/octet-stream',
                       '.html': 'text/html; charset=utf-8', '.json': 'application/json; charset=utf-8',
                       '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8'}
 
@@ -82,11 +87,17 @@ class Handler(SimpleHTTPRequestHandler):
             cache = 'no-cache'
         elif path.endswith(('.jpg', '.webp', '.png', '.woff2', '.ttf', '.otf', '.onnx', '.wasm')):
             cache = 'public, max-age=2592000'           # 30 days
+        elif path.endswith('.mjs'):
+            cache = 'public, max-age=2592000'
         elif path.endswith('.json'):
             cache = 'public, max-age=86400, stale-while-revalidate=604800'
         else:
             cache = 'public, max-age=3600'
         self.send_header('Cache-Control', cache)
+        if path.startswith('/hifz/'):
+            self.send_header('Cross-Origin-Opener-Policy', 'same-origin')
+            self.send_header('Cross-Origin-Embedder-Policy', 'credentialless')
+            self.send_header('Cross-Origin-Resource-Policy', 'same-origin')
         super().end_headers()
 
     def owner(self):
@@ -103,6 +114,13 @@ class Handler(SimpleHTTPRequestHandler):
         return 'claude' if CLAUDE and self.owner() else 'local'
 
     def translate_path(self, path):
+        for prefix, sub in (('/hifz/models/', 'models'), ('/hifz/engine/', 'engine')):
+            if path.startswith(prefix):
+                saved, self.directory = self.directory, os.path.join(ONDEVICE, sub)
+                try:
+                    return super().translate_path(path[len(prefix) - 1:])
+                finally:
+                    self.directory = saved
         if path.startswith('/hifz/'):
             saved, self.directory = self.directory, HIFZ_ROOT
             try:

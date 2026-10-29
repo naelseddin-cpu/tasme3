@@ -60,6 +60,10 @@
 
   var SERVER_URL = ((window.TASME3_CONFIG || {}).SERVER_URL || '').replace(/\/+$/, '');
   var SERVER_MODE = !!SERVER_URL;
+  // On-device recitation (config ON_DEVICE): the phone runs the Quran Whisper model and
+  // the matcher; the server only keeps accounts. The engine download is mandatory.
+  var OD = window.Tasme3OnDevice, ON_DEVICE = !!(OD && (window.TASME3_CONFIG || {}).ON_DEVICE);
+  var odReady = false;
 
   var MIN_PAGE = 1, MAX_PAGE = 604, NAV_MIN = 3, NAV_MAX = 604;
   var SHEET = '#fffdf5', GOLD = '#b8a24a';
@@ -750,6 +754,7 @@
     showPageSpinnerSoon(); // covers this whole navigation's JSON+image fetch span
     recorder.abort();
     stopLive(); recorder.bumpToken(); // a live request still in flight belongs to the old page
+    if (ON_DEVICE) odStop(true);
     listener.stop();
     stopListening();
     el.pageChip.textContent = pageLabel(p);
@@ -1135,6 +1140,7 @@
       stopListening();
       recorder.abort();
       stopLive();
+      if (ON_DEVICE) odStop(true);
       showShareBar(streakBefore);
       window.Tasme3Account.scheduleSync(function () { return state; });
       celebrateNewlyCompletedSurahs(pageNum);
@@ -1239,7 +1245,7 @@
   // "tap to start" -- never updated back after the mic started/stopped).
   function updateRecBtnLabel() {
     if (!t) return;
-    var active = SERVER_MODE ? recorder.isRecording() : listening;
+    var active = ON_DEVICE ? !!odTake : SERVER_MODE ? recorder.isRecording() : listening;
     el.recBtn.setAttribute('aria-label', t(active ? 'record.tapToStop' : 'record.tapToStart'));
   }
 
@@ -1346,6 +1352,113 @@
     pump();
   }
 
+  // ------------------------------------------------ on-device recitation
+  // Same rules as the server's live listening, all on the phone: Whisper hears only
+  // the audio after the last revealed word (anchorSample) and matching starts there
+  // (anchorPtr); a result only counts if it moves the pointer FORWARD; one run at a
+  // time. Where the revealed word ended is estimated by spreading the recognised
+  // words over the window's speech (by letters) and anchoring a little early.
+  var odTake = null, OD_SR = 16000, OD_TICK_MS = 500, OD_MAX_WIN = 25 * OD_SR, OD_EARLY = 1.0 * OD_SR, OD_STALL = 3 * OD_SR;
+
+  function odWordEnd(text, audio, level) {
+    // sample offset (in `audio`) where the token matching expected[pointer - 1] ends
+    var toks = Matcher.tokenize(text); if (!toks.length) return -1;
+    var forms = Matcher.wordForms(expected[pointer - 1]), k = -1;
+    for (var i = toks.length - 1; i >= 0 && k < 0; i--)
+      for (var f = 0; f < forms.length; f++) if (toks[i] === forms[f] || Matcher.fuzzyEqual(toks[i], forms[f], level)) { k = i; break; }
+    if (k < 0) return -1;
+    var total = 0, upto = 0; toks.forEach(function (w, j) { total += w.length; if (j <= k) upto += w.length; });
+    var regions = OD.speechRegions(audio); if (!regions.length) regions = [[0, audio.length]];
+    var span = 0; regions.forEach(function (r) { span += r[1] - r[0]; });
+    var at = span * upto / Math.max(1, total);
+    for (i = 0; i < regions.length; i++) { var len = regions[i][1] - regions[i][0]; if (at <= len) return regions[i][0] + at; at -= len; }
+    return regions[regions.length - 1][1];
+  }
+
+  function odRun(tk, isFinal) {
+    var end = tk.cap.length;
+    // stall recovery: new recitation but no progress since the last advance -> re-listen 2 s earlier
+    var back = end - tk.advancedAt > OD_STALL ? 2 * OD_SR : 0;
+    var start = Math.max(tk.anchorSample - 0.3 * OD_SR - back, end - OD_MAX_WIN, 0);
+    if (end - start < 0.5 * OD_SR) return Promise.resolve();
+    var audio = tk.cap.slice(start, end);
+    if (!isFinal && !OD.speechRegions(audio.subarray(Math.max(0, audio.length - 2 * OD_SR))).length && tk.lastEnd && end - tk.lastEnd < 3 * OD_SR) return Promise.resolve(); // silence: skip
+    tk.busy = true; tk.lastEnd = end;
+    return OD.transcribe(audio).then(function (r) {
+      if (odTake !== tk && !isFinal) return;
+      var res = Matcher.matchTranscript(expected, tk.anchorPtr, r.text, level);
+      if (res.pointer > pointer) {
+        var from = pointer;
+        applyMatches({ matched: (res.matched || []).filter(function (i) { return i >= from; }), pointer: res.pointer, done: res.pointer >= expected.length });
+        tk.advancedAt = end;
+      }
+      if (pointer === res.pointer && pointer > tk.anchorPtr) {
+        var we = odWordEnd(r.text, audio, level);
+        tk.anchorPtr = pointer;
+        if (we >= 0) tk.anchorSample = Math.max(tk.anchorSample, start + we - OD_EARLY);
+      }
+    }).catch(function () {}).then(function () { tk.busy = false; });
+  }
+
+  function odStart() {
+    if (!odReady) { showOdGate(); return; }
+    var tk = odTake = { cap: new OD.Capture(), anchorPtr: pointer, anchorSample: 0, busy: false, lastEnd: 0, advancedAt: 0, timer: null };
+    el.recBtn.classList.add('listening'); setStatus(t('record.tapToStop')); updateRecBtnLabel();
+    tk.cap.start().then(function () {
+      if (odTake !== tk) { tk.cap.stop(); return; }
+      tk.timer = setInterval(function () { if (!tk.busy && odTake === tk) odRun(tk, false); }, OD_TICK_MS);
+    }).catch(function () { odTake = null; el.recBtn.classList.remove('listening'); updateRecBtnLabel(); showMicHelp(); });
+  }
+
+  function odStop(silent) {
+    var tk = odTake; if (!tk) return;
+    odTake = null; clearInterval(tk.timer); tk.cap.stop();
+    el.recBtn.classList.remove('listening'); updateRecBtnLabel();
+    if (silent) return;
+    el.recBtn.classList.add('busy'); el.recBtn.disabled = true;
+    (function waitIdle() { // let a run in progress finish, then one last pass on the tail
+      if (tk.busy) return setTimeout(waitIdle, 100);
+      odRun(tk, true).then(function () {
+        el.recBtn.classList.remove('busy'); el.recBtn.disabled = false;
+        if (pointer < expected.length) renderStatusIdle();
+      });
+    })();
+  }
+
+  // ---- the mandatory engine download (or a polite "not on this device") ----
+  function showOdGate() {
+    var gate = document.getElementById('odGate'), btn = document.getElementById('odBtn'), bar = document.getElementById('odBar'),
+      fill = document.getElementById('odFill'), status = document.getElementById('odStatus');
+    var why = OD.supported();
+    gate.hidden = false;
+    if (why) {
+      document.getElementById('odBody').textContent = t('ondevice.sorry');
+      document.getElementById('odNote').hidden = true; btn.hidden = true; return;
+    }
+    btn.onclick = function () {
+      btn.disabled = true; bar.hidden = false; status.textContent = t('ondevice.preparing');
+      OD.load(function (got, all) {
+        var pct = all ? Math.floor(100 * got / all) : 0;
+        fill.style.width = pct + '%';
+        status.textContent = t('ondevice.downloading', { pct: pct, mb: Math.round(got / 1e6) });
+      }).then(function () {
+        odReady = true; gate.hidden = true; el.recBtn.disabled = false; renderStatusIdle();
+      }).catch(function () {
+        status.textContent = t('ondevice.error'); btn.disabled = false; btn.textContent = t('ondevice.retry');
+      });
+    };
+  }
+
+  function setupOnDevice() {
+    if (OD.supported()) { showOdGate(); return; }
+    OD.isDownloaded().then(function (have) {
+      if (!have) { showOdGate(); return; }
+      el.recBtn.disabled = true; setStatus(t('ondevice.preparing'));   // from the browser cache: ~1-2 s
+      OD.load().then(function () { odReady = true; el.recBtn.disabled = false; renderStatusIdle(); })
+        .catch(function () { el.recBtn.disabled = false; showOdGate(); });
+    });
+  }
+
   function onRecordError(reason) {
     el.recBtn.classList.remove('listening', 'busy');
     el.recBtn.disabled = false;
@@ -1356,6 +1469,7 @@
   }
 
   el.recBtn.onclick = function () {
+    if (ON_DEVICE) { odTake ? odStop(false) : odStart(); return; }
     if (SERVER_MODE) {
       if (recorder.isRecording()) {
         recorder.stop();
@@ -2172,7 +2286,7 @@
     updateRecBtnLabel();
     updateFsBtnLabel();
     updateListenBtnLabel();
-    el.privacyLine.setAttribute('data-i18n', SERVER_MODE ? 'server.privacyServer' : 'server.privacyInterim');
+    el.privacyLine.setAttribute('data-i18n', ON_DEVICE ? 'server.privacyOnDevice' : SERVER_MODE ? 'server.privacyServer' : 'server.privacyInterim');
     window.Tasme3I18n.applyTranslations(document);
     populateLevelSegDigits();
     if (surahIndex) {
@@ -2276,7 +2390,7 @@
     // flush a render the cross-tab `storage` listener above deferred
     // because it fired while `t` was still null.
     if (pendingExternalRender) { pendingExternalRender = false; renderProgressPanel(); }
-    el.privacyLine.setAttribute('data-i18n', SERVER_MODE ? 'server.privacyServer' : 'server.privacyInterim');
+    el.privacyLine.setAttribute('data-i18n', ON_DEVICE ? 'server.privacyOnDevice' : SERVER_MODE ? 'server.privacyServer' : 'server.privacyInterim');
     window.Tasme3I18n.applyTranslations(document);
     activateLevelUI();
     populateLevelSegDigits();
@@ -2290,6 +2404,7 @@
     updateFsBtnLabel();
     updateListenBtnLabel();
     maybeShowFirstRunHint();
+    if (ON_DEVICE) setupOnDevice();
 
     // Idea #2: every fresh page load is one "session" -- the install-promo
     // card is eligible only from the SECOND one onward, never the first.

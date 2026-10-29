@@ -92,7 +92,19 @@
     <p data-i18n="hint.settings"></p>
   </div>
 
-  <div class="floatbar">
+  <!-- On-device recitation engine: mandatory one-time download (or a polite "not on this device") -->
+<div class="odgate" id="odGate" hidden role="dialog" aria-modal="true" aria-labelledby="odTitle">
+  <div class="odcard">
+    <div class="odplanet" aria-hidden="true"></div>
+    <h2 id="odTitle" data-i18n="ondevice.title"></h2>
+    <p id="odBody" data-i18n="ondevice.body"></p>
+    <p class="odnote" id="odNote" data-i18n="ondevice.wifi"></p>
+    <div class="odbar" id="odBar" hidden><span id="odFill"></span></div>
+    <p class="odstatus" id="odStatus" aria-live="polite"></p>
+    <button class="odbtn" id="odBtn" data-i18n="ondevice.download"></button>
+  </div>
+</div>
+<div class="floatbar">
     <button class="iconbtn setupbtn" id="setupBtn" data-i18n-aria-label="nav.settings">⚙️</button>
     <button class="recbtn" id="recBtn">🎙️</button>
   </div>
@@ -268,6 +280,7 @@
 <script src="certificate.js" defer></script>
 <script src="listen.js" defer></script>
 <script src="recorder.js" defer></script>
+<script src="ondevice.js" defer></script>
 <script src="app.js" defer></script>
 </body>
 </html>

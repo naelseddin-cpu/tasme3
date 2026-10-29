@@ -3,7 +3,7 @@
 // must be purged, not accumulate forever).
 //
 // Bump CACHE_VERSION on every deploy that changes any precached file.
-var CACHE_VERSION = 'tasme3-v26';
+var CACHE_VERSION = 'tasme3-v27';
 var SHELL_CACHE = CACHE_VERSION + '-shell';
 var RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 var RUNTIME_CAP = 50; // ~50-entry LRU-ish cap on runtime-cached page images/i18n/fonts
@@ -23,6 +23,8 @@ var SHELL_URLS = [
   'certificate.js',
   'listen.js',
   'recorder.js',
+  'ondevice.js',
+  'asr-worker.js',
   'app.js',
   'manifest.webmanifest',
   'surah-index.json',
@@ -98,6 +100,9 @@ self.addEventListener('fetch', function (event) {
   if (request.method !== 'GET') return; // never intercept POST/PUT (the /evaluate, /account, /progress API)
 
   var url = new URL(request.url);
+  // The on-device engine and model (~130 MB) are cached by the speech library itself
+  // (Cache Storage "transformers-cache"); copying them into the shell cache would double it.
+  if (/\/(models|engine)\//.test(url.pathname)) return;
 
   // Cross-origin: reference audio (everyayah.com) and any configured
   // SERVER_URL API host. Network-only — never cached (audio caching is
