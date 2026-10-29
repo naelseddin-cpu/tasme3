@@ -1,0 +1,4 @@
+Create an image. Wide 2:1 equirectangular texture map for wrapping onto a 3D sphere, landscape.
+
+An ice giant of rich amethyst and violet bands with glowing streaks of gold aurora light and pale lilac high clouds.
+Composition: the surface covers the ENTIRE frame edge to edge, seamless where the left edge meets the right edge, no space, no stars, no black background, no planet outline, no lighting or shadow — a flat planetary texture map. Style: photorealistic NASA/JPL texture map quality, rich saturated colors. NO text, NO letters.

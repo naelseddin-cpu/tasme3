@@ -193,7 +193,7 @@ dialog .t { font-family: var(--f-quran); font-size: 1.45rem; line-height: 2.3; }
 /* Home: a cinematic scroll "camera push" — courtyard → muqarnas portal → dome oculus → the star map.
    The track is tall; the stage sticks to the screen and JS maps scroll progress to each scene's zoom and fade. */
 #home { background: #05080f; color: #f3ead2; }
-.hero-track { height: 520vh; position: relative; }
+.hero-track { height: 680vh; position: relative; }
 .hero-stage { position: sticky; top: 0; height: 100dvh; overflow: hidden; }
 .hero-scene { position: absolute; inset: -2%; background: center / cover no-repeat; opacity: 0; will-change: transform, opacity; }
 .hero-scene::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 45%, transparent 35%, rgba(3, 6, 14, .72) 100%), linear-gradient(to top, rgba(3, 6, 14, .85), transparent 45%); }
@@ -268,12 +268,16 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
 <main>
   <section id="home" class="view" aria-label="البداية">
     <div class="hero-track"><div class="hero-stage">
-      <div class="hero-scene" style="background-image:url(img/hd/hero-1-courtyard.jpg)"></div>
-      <div class="hero-scene" style="background-image:url(img/hd/hero-2-portal.jpg)"></div>
+      <!-- the journey: Makkah → Madinah → Al-Quds → Damascus, then up through the dome's oculus into the space -->
+      <div class="hero-scene" style="background-image:url(img/hd/journey-kaaba.jpg)"></div>
+      <div class="hero-scene" style="background-image:url(img/hd/journey-nabawi.jpg)"></div>
+      <div class="hero-scene" style="background-image:url(img/hd/journey-aqsa.jpg)"></div>
+      <div class="hero-scene" style="background-image:url(img/hd/journey-umayyad.jpg)"></div>
       <div class="hero-scene" style="background-image:url(img/hd/hero-3-dome.jpg)"></div>
       <div class="hero-cap"><h1>مستكشف القرآن</h1><p>رحلة في كلمات المصحف: من أين تأتي، وكيف تتفرع، وبمَ ترتبط.</p></div>
       <div class="hero-cap"><div class="hero-nums"><div><b data-n="surahs">114</b><span>سورة</span></div><div><b data-n="verses">6,236</b><span>آية</span></div><div><b data-n="words">77,429</b><span>كلمة</span></div></div><p>نص مصحف المدينة كاملًا (رواية حفص)، مع تحليل صرفي لكل كلمة.</p></div>
       <div class="hero-cap"><div class="hero-nums"><div><b data-n="roots">1,651</b><span>جذرًا</span></div><div><b data-n="lemmas">4,763</b><span>كلمة معجمية</span></div></div><p>تعود الكلمات إلى جذور قليلة. من الجذر الواحد تتفرع كلمات كثيرة، وكل كلمة تَرِد بصيغ متعددة في الآيات.</p></div>
+      <div class="hero-cap"><p>من مكة إلى المدينة إلى القدس إلى دمشق، تُتلى الآيات نفسها منذ قرون. وكل كلمة فيها تعود إلى جذر يصلها بأخواتها.</p></div>
       <div class="hero-cap"><p>في الفضاء: كل جذر كوكب، تدور حوله أقمار هي كلماته المشتقة. والخيوط الذهبية تصل الجذور التي تجتمع في الآيات أكثر من المعتاد.</p><div class="hero-acts"><a class="hero-go" href="#space"><svg width="18" height="18"><use href="#star"/></svg>ادخل الفضاء</a><a class="hero-go alt" href="/hifz/">ابدأ الحفظ والتسميع</a></div></div>
       <div class="hero-cue">مرّر للأسفل<i></i></div>
     </div></div>
@@ -902,8 +906,12 @@ const ATMO_FS = 'uniform vec3 color; uniform vec3 sun; uniform float opacity; va
 const sprite = (kind, color, opacity = 1) => new THREE.Sprite(new THREE.SpriteMaterial({ map: tex(kind), alphaMap: tex(kind), color, transparent: true, opacity, depthWrite: false, blending: THREE.AdditiveBlending }));
 const planetR = n => 2.2 + n.size * .55;
 // warm worlds for mostly-Meccan roots, cool worlds for mostly-Medinan; which one within the family is fixed by the name
-const WARM = ['amber', 'saturn', 'mars'], COOL = ['ice', 'teal', 'earth'];
-const ATMO = { amber: 0xffb070, saturn: 0xffe0a0, mars: 0xff8a60, ice: 0x6aa8ff, teal: 0x8ff0ff, earth: 0x7fc0ff };
+const WARM = ['amber', 'saturn', 'mars', 'ruby', 'lava', 'gold-turquoise', 'marble'];
+const COOL = ['ice', 'teal', 'earth', 'emerald', 'amethyst', 'teal-gold', 'sapphire'];
+// ring tints: gold, rose gold, pale gold, silver
+const RING_TINT = [0xf0d9a0, 0xf2b8a0, 0xfff0c8, 0xd8e2f0];
+const ATMO = { amber: 0xffb070, saturn: 0xffe0a0, mars: 0xff8a60, ice: 0x6aa8ff, teal: 0x8ff0ff, earth: 0x7fc0ff,
+  ruby: 0xff7088, lava: 0xffa040, 'gold-turquoise': 0x7ff0e0, marble: 0xfff0d0, emerald: 0x90ffb0, amethyst: 0xc890ff, 'teal-gold': 0x80ffe8, sapphire: 0x70a0ff };
 const hashOf = k => { let h = 0; for (const c of k) h = (h * 31 + c.charCodeAt(0)) | 0; return Math.abs(h); };
 
 class Space {
@@ -923,6 +931,7 @@ class Space {
     this.rot = { x: .25, y: 0 }; this.dist = 480; this.distT = 480; this.focus = new THREE.Vector3(); this.focusT = new THREE.Vector3();
     this.idle = 0; this.sel = -1; this.ray = new THREE.Raycaster(); this.ptrs = new Map();
     this.scene.background = this.bg;
+    this.kaaba();
     // Film look: bloom makes the sun, lit rims and atmospheres glow; the last pass applies
     // ACES tone mapping and sRGB (the composer renders in linear light). Glow can't be drawn
     // into transparent pixels, which is why the nebula is the scene background, not CSS.
@@ -945,10 +954,33 @@ class Space {
     const loop = t => { requestAnimationFrame(loop); if (!document.hidden && $('#space').classList.contains('on')) this.frame(t); }; requestAnimationFrame(loop);
   }
   // a Saturn-style ring: the Nano Banana band is laid radially (u = distance from the planet), tilted with the planet
-  ring(R) {
+  // The Kaaba at the center of the space: a true cube (proportions of the real building,
+  // roughly 12 x 11 m and 13 m high) dressed in the Nano Banana kiswah (gold band as
+  // ornament only, no lettering), on a white marble base, with a ring of light circling
+  // it counter-clockwise as in tawaf. It sits in the scene, so it turns with the planets.
+  kaaba() {
+    const g = new THREE.Group(), S = 24, side = tex('kiswah'); // the door face waits for a door texture without script-like marks
+    const silk = t => new THREE.MeshStandardMaterial({ map: t, roughness: .55, metalness: .25, emissive: 0x1a1408, emissiveIntensity: .4 });
+    const top = new THREE.MeshStandardMaterial({ color: 0x0b0b0e, roughness: .6, metalness: .2 });
+    const cube = new THREE.Mesh(new THREE.BoxGeometry(S * 1.12, S * 1.3, S * 1.02), [silk(side), silk(side), top, top, silk(side), silk(side)]);
+    cube.position.y = S * .65 + .6; g.add(cube);
+    const base = new THREE.Mesh(new THREE.BoxGeometry(S * 1.22, 1.2, S * 1.12), new THREE.MeshStandardMaterial({ color: 0xf4f1ea, roughness: .35, metalness: .1 }));
+    base.position.y = .6; g.add(base);
+    const halo = sprite('glow', 0xffd890, .8); halo.scale.setScalar(S * 6); halo.position.y = S * .65; g.add(halo);
+    // warm light from above, so the black kiswah and its gold band read against space
+    const lamp = new THREE.PointLight(0xffd9a0, 2.2, S * 9, 1.6); lamp.position.set(S * .6, S * 2.4, S * 1.4); g.add(lamp);
+    const n = 1600, pos = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const a = Math.random() * Math.PI * 2, r = S * (1.1 + Math.random() * 1.6); pos.set([Math.cos(a) * r, .4 + Math.random() * 1.6, Math.sin(a) * r], i * 3); }
+    const pg = new THREE.BufferGeometry(); pg.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    this.tawaf = new THREE.Points(pg, new THREE.PointsMaterial({ map: tex('glow'), alphaMap: tex('glow'), color: 0xfff2d0, size: 2.4, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }));
+    g.add(this.tawaf);
+    g.position.y = -S * .5;
+    this.world.add(g); this.kaabaGroup = g;
+  }
+  ring(R, tint = 0xf0e4c8) {
     const inner = 1.35, outer = 2.35, g = new THREE.RingGeometry(inner, outer, 128, 1), p = g.attributes.position, uv = g.attributes.uv, v = new THREE.Vector3();
     for (let k = 0; k < p.count; k++) { v.fromBufferAttribute(p, k); uv.setXY(k, (v.length() - inner) / (outer - inner), .5); }
-    const r = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: tex('ring'), alphaMap: tex('ring'), color: 0xf0e4c8, roughness: .9, metalness: 0, emissive: 0x1a160e, emissiveIntensity: .5, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+    const r = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ map: tex('ring'), alphaMap: tex('ring'), color: tint, roughness: .9, metalness: 0, emissive: 0x1a160e, emissiveIntensity: .5, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
     r.rotation.x = Math.PI / 2 - .35; r.userData.ring = true; return r;
   }
   atmosphere(color, strength) {
@@ -974,13 +1006,13 @@ class Space {
     const order = G.nodes.map((n, i) => [i, n.size]).sort((a, b) => b[1] - a[1]); this.rank = new Array(N); order.forEach(([i], k) => this.rank[i] = k);
     G.nodes.forEach((n, i) => {
       // a planet: a Nano Banana surface by family (warm = mostly Meccan, cool = mostly Medinan), an atmosphere, rings for the largest
-      const R = planetR(n), cool = n.mec !== undefined ? n.mec < .5 : n.color.g > n.color.r, kind = (cool ? COOL : WARM)[hashOf(n.key) % 3];
-      const rocky = kind === 'mars' || kind === 'earth';
+      const R = planetR(n), cool = n.mec !== undefined ? n.mec < .5 : n.color.g > n.color.r, fam = cool ? COOL : WARM, kind = fam[hashOf(n.key) % fam.length];
+      const rocky = ['mars', 'earth', 'lava', 'gold-turquoise', 'emerald', 'sapphire', 'marble'].includes(kind);
       const m = new THREE.Mesh(geo, new THREE.MeshStandardMaterial({ map: tex(kind), bumpMap: rocky ? tex(kind) : null, bumpScale: rocky ? .05 : 0, color: kind === 'teal' ? 0x8fe0ec : 0xffffff, roughness: kind === 'earth' ? .6 : .85, metalness: 0, emissive: 0x0b1222, emissiveIntensity: .35 }));
       m.add(this.atmosphere(ATMO[kind], kind === 'mars' ? .5 : .9));
       m.position.copy(P[i]); m.scale.setScalar(R); m.rotation.set(.2 * Math.sin(i), i, .25 * Math.cos(i * 1.3)); m.userData.i = i; m.userData.g = R * 2.7; this.nodeGroup.add(m); this.meshes.push(m);
       const gl = sprite('glow', ATMO[kind], .14); gl.position.copy(P[i]); gl.scale.setScalar(R * 2.7); this.nodeGroup.add(gl); m.userData.glow = gl;
-      if (this.rank[i] < 12) m.add(this.ring(R));
+      if (this.rank[i] < 12) m.add(this.ring(R, RING_TINT[hashOf(n.key + 'r') % RING_TINT.length]));
       const l = this.label(n.label, new THREE.Color(0xf3ead2), .9); l.position.copy(P[i]).add(new THREE.Vector3(0, R * (this.rank[i] < 12 ? 1.5 : 1) + 4, 0)); this.nodeGroup.add(l); this.labels.push(l);
     });
     const lp = []; G.links.forEach(([a, b]) => lp.push(P[a], P[b]));
@@ -999,6 +1031,7 @@ class Space {
       for (let i = 0; i < N; i++) { V[i].addScaledVector(P[i], -.006); P[i].addScaledVector(V[i], .9 * k + .1); V[i].multiplyScalar(.55); }
     }
     let r = 0; P.forEach(p => r = Math.max(r, p.length())); P.forEach(p => p.multiplyScalar(240 / r));
+    P.forEach(p => { const l = p.length(); if (l < 95) p.multiplyScalar((95 + l * .35) / Math.max(l, 1e-3)); }); // room for the Kaaba
   }
   applyVis() {
     const s = this.sel, N = this.meshes.length;
@@ -1100,7 +1133,7 @@ class Space {
     if (lift !== this.lift) { this.lift = lift; const w = this.cv.clientWidth, h = this.cv.clientHeight; lift ? this.cam.setViewOffset(w, h, 0, lift, w, h) : this.cam.clearViewOffset(); }
     if (this.sel >= 0) { const m = this.meshes[this.sel]; m.userData.glow.scale.setScalar(m.userData.g * 1.25 * (1 + .08 * Math.sin(performance.now() / 400))); }
     const t = performance.now() / 1000;
-    if (!still) for (const m of this.meshes) m.rotation.y += .0015;
+    if (!still) { for (const m of this.meshes) m.rotation.y += .0015; if (this.tawaf) this.tawaf.rotation.y += .004; } // tawaf: counter-clockwise seen from above
     if (this.orbits) this.moveOrbits(still ? 0 : t * .25);
     if (this.composer) this.composer.render(); else this.r.render(this.scene, this.cam);
   }
@@ -1139,8 +1172,8 @@ const heroScenes = [...document.querySelectorAll('.hero-scene')], heroCaps = [..
 function heroFrame() {
   if (!$('#home').classList.contains('on')) return;
   const tr = $('.hero-track'), still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  // p runs 0 → 3 over the track: scene k is in front around p = k, and the camera keeps pushing in
-  const p = Math.min(1, Math.max(0, -tr.getBoundingClientRect().top / (tr.offsetHeight - innerHeight))) * 3;
+  // p runs 0 → (scenes - 1) over the track: scene k is in front around p = k, and the camera keeps pushing in
+  const p = Math.min(1, Math.max(0, -tr.getBoundingClientRect().top / (tr.offsetHeight - innerHeight))) * (heroScenes.length - 1);
   heroScenes.forEach((el, k) => {
     const d = p - k, last = k === heroScenes.length - 1;
     const op = d < -1 ? 0 : d < 0 ? 1 + d : last ? 1 : Math.max(0, 1 - d * 1.6);

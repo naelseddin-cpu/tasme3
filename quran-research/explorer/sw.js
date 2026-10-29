@@ -4,7 +4,7 @@
 // the phone and makes no server requests except the live chat (/api/).
 // The memorization app (/hifz/) has its own worker and is left alone here.
 // Bump VERSION whenever a precached file changes.
-var VERSION = 'qx-v2';
+var VERSION = 'qx-v3';
 var CORE = ['./', 'index.html', 'data.json', 'text.json',
   'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js'].concat(
   ['shaders/CopyShader.js', 'shaders/LuminosityHighPassShader.js', 'postprocessing/EffectComposer.js', 'postprocessing/RenderPass.js',
