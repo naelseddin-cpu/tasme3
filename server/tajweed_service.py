@@ -29,7 +29,7 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 app = FastAPI(title="tasme3 tajweed")
 _lock = threading.Lock()
 _model = None
-MAX_AUDIO_BYTES = 8 * 1024 * 1024  # ~4 min of 16-bit 16 kHz audio
+MAX_AUDIO_BYTES = 3 * 1024 * 1024  # ~90 s of 16-bit 16 kHz audio: one take of a few verses
 # madd lengths a learner is not told off for (counts): small timing drift is normal
 MADD_TOLERANCE = int(os.environ.get("TAJWEED_MADD_TOLERANCE", "1"))
 
@@ -47,6 +47,15 @@ def model():
         from quran_muaalem import Muaalem
         _model = Muaalem(device="cuda" if torch.cuda.is_available() else "cpu")
     return _model
+
+
+def _free_gpu():
+    try:
+        import torch
+        if torch.cuda.is_available():
+            torch.cuda.empty_cache()
+    except Exception:
+        pass
 
 
 def _word_index(text: str, pos: int) -> int:
@@ -141,6 +150,7 @@ async def tajweed(audio: UploadFile = File(...), ayat: str = Form(...)):
     full_ref = quran_phonetizer(" ".join(texts), moshaf, remove_spaces=True)  # only to condition the model
     with _lock:  # one GPU pass at a time; ~0.1-0.8 s per verse
         heard = model()([np.asarray(wave)], [full_ref], sampling_rate=16000)[0].phonemes.text
+        _free_gpu()  # GPU 1 is shared (ALRASSAI's Gemma): keep only the weights (~1.2 GB) between checks
     parts = _split_heard(heard, [r.phonemes for r in refs])
 
     out = []

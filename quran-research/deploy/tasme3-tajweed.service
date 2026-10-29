@@ -9,6 +9,7 @@ WorkingDirectory=%h/tasme3
 # GPU 1 = RTX 5060 Ti, shared with ALRASSAI's Gemma: tasme3 stays under 4.5 GB there in total
 Environment=CUDA_VISIBLE_DEVICES=1
 Environment=TAJWEED_MADD_TOLERANCE=1
+Environment=PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 ExecStart=%h/.local/share/muaalem-venv/bin/uvicorn server.tajweed_service:app --host 127.0.0.1 --port 8011
 Restart=always
 RestartSec=5

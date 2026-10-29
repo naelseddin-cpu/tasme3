@@ -33,7 +33,7 @@ const ITEM_TIMEOUT = 8 * 60 * 1000;
       if (fs.existsSync(file)) { skipped++; continue; }
       await p.evaluate(() => { const b = document.querySelector('#panel button.ask'); b.dataset.fresh = '1'; b.hidden = false; b.click(); });
       const t0 = Date.now();
-      const res = await p.waitForFunction(() => {
+      let res = await p.waitForFunction(() => {
         const o = document.querySelector('#panel .answer');
         if (o && o.dataset.answer) return { text: o.dataset.answer };
         const n = o && o.querySelector('.note'); if (n && !o.dataset.answer && /تعذّر|أُوقف|كثيرة|مشغول|أكبر/.test(n.textContent)) return { error: n.textContent };
