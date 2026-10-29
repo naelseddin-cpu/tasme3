@@ -74,14 +74,19 @@ class WhisperASR:
     def __init__(
         self,
         model_size: Optional[str] = None,
-        compute_type: str = "int8",
+        compute_type: Optional[str] = None,
         language: str = "ar",
         vad_filter: bool = True,
     ) -> None:
         self.model_size = model_size or os.environ.get(
             "WHISPER_MODEL", DEFAULT_WHISPER_MODEL
         )
-        self.compute_type = compute_type
+        # Optional GPU tuning; unset = previous behaviour (int8, device "auto").
+        # e.g. WHISPER_DEVICE=cuda WHISPER_DEVICE_INDEX=1 WHISPER_COMPUTE_TYPE=float16
+        # (newer cards such as RTX 50xx reject int8 cuBLAS, so use float16 there).
+        self.compute_type = compute_type or os.environ.get("WHISPER_COMPUTE_TYPE", "int8")
+        self.device = os.environ.get("WHISPER_DEVICE", "auto")
+        self.device_index = int(os.environ.get("WHISPER_DEVICE_INDEX", "0"))
         self.language = language
         self.vad_filter = vad_filter
         self._model = None
@@ -98,7 +103,8 @@ class WhisperASR:
             from faster_whisper import WhisperModel  # imported lazily too
 
             self._model = WhisperModel(
-                self.model_size, compute_type=self.compute_type
+                self.model_size, device=self.device, device_index=self.device_index,
+                compute_type=self.compute_type
             )
         except Exception as exc:  # noqa: BLE001 - deliberately broad, see below
             # Two distinct failure modes land here and are both non-fatal to

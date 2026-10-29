@@ -17,15 +17,24 @@ Two engines:
           One public request runs at a time; extra ones get 429.
 Verse lookups always run in the visitor's browser (index.html's TOOLS); the model only
 writes text.
+
+Memorization (تسميع): the repo's PWA (site/) is served at /hifz/, and its recognition +
+accounts server (server/, uvicorn on 127.0.0.1:8010, Whisper on this PC's GPU) is proxied
+at /hifz-api. /hifz/config.js is answered here so the app talks to /hifz-api without
+changing site/config.js (which stays empty for the static GitHub Pages build).
 """
 import argparse, hashlib, hmac, ipaddress, json, os, secrets, shutil, subprocess, tempfile, threading
-import urllib.request
+import urllib.error, urllib.request
 from functools import partial
 from http.cookies import SimpleCookie
 from http.server import ThreadingHTTPServer, SimpleHTTPRequestHandler
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, 'explorer')
+HIFZ_ROOT = os.path.join(os.path.dirname(HERE), 'site')
+HIFZ_API = 'http://127.0.0.1:8010'
+HIFZ_CONFIG = b"window.TASME3_CONFIG = { SERVER_URL: '/hifz-api' };\n"
+MAX_AUDIO = 16_000_000
 PW_FILE = os.path.join(HERE, '.chat-password')
 CLAUDE = shutil.which('claude')
 MAX_BODY = 400_000
@@ -80,13 +89,58 @@ class Handler(SimpleHTTPRequestHandler):
     def engine(self):
         return 'claude' if CLAUDE and self.owner() else 'local'
 
+    def translate_path(self, path):
+        if path.startswith('/hifz/'):
+            saved, self.directory = self.directory, HIFZ_ROOT
+            try:
+                return super().translate_path(path[len('/hifz'):])
+            finally:
+                self.directory = saved
+        return super().translate_path(path)
+
     def do_GET(self):
+        if self.path == '/hifz':
+            self.send_response(301); self.send_header('Location', '/hifz/'); self.end_headers(); return
+        if self.path.split('?')[0] == '/hifz/config.js':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/javascript; charset=utf-8')
+            self.send_header('Content-Length', str(len(HIFZ_CONFIG)))
+            self.end_headers(); self.wfile.write(HIFZ_CONFIG); return
+        if self.path.startswith('/hifz-api/'):
+            return self._proxy()
         if self.path == '/api/health':
             e = self.engine()
             return self._json(200, {'ok': True, 'engine': e, 'name': 'Claude' if e == 'claude' else 'Gemma'})
         super().do_GET()
 
+    def _proxy(self):
+        """Pass a /hifz-api request to the memorization server, with the visitor's real address
+        (Cloudflare's Cf-Connecting-Ip, which visitors cannot set) for its per-client rate limits."""
+        n = int(self.headers.get('Content-Length') or 0)
+        if n > MAX_AUDIO:
+            return self._json(413, {'detail': 'audio too large'})
+        body = self.rfile.read(n) if n else None
+        hdrs = {k: v for k, v in self.headers.items() if k.lower() in ('content-type', 'authorization', 'accept')}
+        hdrs['X-Forwarded-For'] = self.headers.get('Cf-Connecting-Ip') or self.client_address[0]
+        req = urllib.request.Request(HIFZ_API + self.path[len('/hifz-api'):], data=body, headers=hdrs, method=self.command)
+        try:
+            r = urllib.request.urlopen(req, timeout=120)
+        except urllib.error.HTTPError as e:
+            r = e
+        except OSError:
+            return self._json(502, {'detail': 'memorization server unavailable'})
+        data = r.read()
+        self.send_response(r.status if hasattr(r, 'status') else r.code)
+        for k in ('Content-Type', 'Retry-After'):
+            if r.headers.get(k):
+                self.send_header(k, r.headers[k])
+        self.send_header('Content-Length', str(len(data)))
+        self.end_headers()
+        self.wfile.write(data)
+
     def do_POST(self):
+        if self.path.startswith('/hifz-api/'):
+            return self._proxy()
         n = int(self.headers.get('Content-Length') or 0)
         if n > MAX_BODY:
             return self._json(413, {'error': 'prompt_too_large'})

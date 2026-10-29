@@ -1,0 +1,21 @@
+# The memorization (تسميع) recognition + accounts server (../../server), on this PC's GPU.
+# Reached by visitors only through quran-research/server.py at /hifz-api.
+[Unit]
+Description=Tasme3 memorization server (Whisper on the GPU)
+After=network-online.target
+
+[Service]
+WorkingDirectory=%h/tasme3
+Environment=WHISPER_MODEL=%h/tasme3/server/models/whisper-base-ar-quran-ct2
+# GPU 1 = RTX 5060 Ti (the 3090 is full with llama.cpp); RTX 50xx needs float16, not int8
+Environment=WHISPER_DEVICE=cuda
+Environment=WHISPER_DEVICE_INDEX=1
+Environment=WHISPER_COMPUTE_TYPE=float16
+Environment=DB_PATH=%h/.local/share/tasme3/tasme3.db
+# trust X-Forwarded-For only from the local proxy, so rate limits see each visitor's address
+ExecStart=%h/.local/share/tasme3-venv/bin/uvicorn server.main:app --host 127.0.0.1 --port 8010 --proxy-headers --forwarded-allow-ips 127.0.0.1
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target

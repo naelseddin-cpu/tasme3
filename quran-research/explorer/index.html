@@ -207,6 +207,10 @@ dialog .t { font-family: var(--f-quran); font-size: 1.45rem; line-height: 2.3; }
 .hero-nums span { font-size: clamp(.95rem, 1.8vw, 1.2rem); color: #e9dfc3; }
 .hero-go { display: inline-flex; align-items: center; gap: 10px; margin-top: 1.1em; padding: 12px 28px; border-radius: 999px; background: #e8c46e; color: #0b1528; font-weight: 600; font-size: 1.1rem; text-decoration: none; box-shadow: 0 0 40px rgba(232, 196, 110, .45); }
 .hero-go:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.hero-acts { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+.hero-go.alt { background: transparent; color: #f3ead2; border: 1.5px solid #e8c46e; box-shadow: none; }
+nav.tabs a.hifz-tab { color: #e8c46e; }
+.top-about { display: none; }
 .hero-cue { position: absolute; bottom: 3vh; inset-inline: 0; text-align: center; font-size: .95rem; color: #cfc4a6; letter-spacing: 0; }
 .hero-cue i { display: block; width: 2px; height: 34px; margin: 8px auto 0; background: linear-gradient(#e8c46e, transparent); animation: cue 1.8s ease-in-out infinite; }
 @keyframes cue { 0%, 100% { transform: translateY(0); opacity: 1 } 50% { transform: translateY(10px); opacity: .4 } }
@@ -224,6 +228,9 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
   nav.tabs a { min-height: 58px; display: grid; place-items: center; padding: 4px 2px; border-radius: 0; font-size: .82rem; text-align: center; line-height: 1.3; }
   nav.tabs a[aria-current="page"] { background: transparent; color: #e8c46e; box-shadow: inset 0 3px 0 #e8c46e; font-weight: 600; }
   nav.tabs .l { display: none; } nav.tabs .s { display: inline; }
+  nav.tabs a[href="#about"] { display: none; }
+  .top-about { display: block; order: 2; margin-inline-start: auto; color: var(--space-muted); font-size: .9rem; text-decoration: none; padding: 10px 4px; }
+  .top-in { flex-wrap: nowrap; }
   #space { height: calc(100dvh - 48px - 58px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px)); min-height: 380px; }
   .hud:not(.more) #modeDesc, .hud:not(.more) .legend { display: none; }
   .chip.info { display: inline-block; justify-self: start; }
@@ -251,9 +258,10 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
 
 <div dir="rtl" lang="ar">
 <header class="top"><div class="top-in">
+  <a class="top-about" href="#about">عن المنهج</a>
   <a class="brand" href="#home"><svg style="color:#e8c46e"><use href="#star"/></svg><b>مستكشف القرآن</b></a>
   <nav class="tabs" aria-label="الأقسام">
-    <a href="#space">الفضاء</a><a href="#count">الإحصاء</a><a href="#subjects">المواضيع</a><a href="#stories"><span class="l">القصص والأعلام</span><span class="s">القصص</span></a><a href="#wisdom">الحكمة</a><a href="#about"><span class="l">عن المنهج</span><span class="s">المنهج</span></a>
+    <a href="#space">الفضاء</a><a href="#count">الإحصاء</a><a href="#subjects">المواضيع</a><a href="#stories"><span class="l">القصص والأعلام</span><span class="s">القصص</span></a><a href="#wisdom">الحكمة</a><a href="/hifz/" class="hifz-tab">التحفيظ</a><a href="#about"><span class="l">عن المنهج</span><span class="s">المنهج</span></a>
   </nav>
 </div></header>
 
@@ -266,7 +274,7 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
       <div class="hero-cap"><h1>مستكشف القرآن</h1><p>رحلة في كلمات المصحف: من أين تأتي، وكيف تتفرع، وبمَ ترتبط.</p></div>
       <div class="hero-cap"><div class="hero-nums"><div><b data-n="surahs">114</b><span>سورة</span></div><div><b data-n="verses">6,236</b><span>آية</span></div><div><b data-n="words">77,429</b><span>كلمة</span></div></div><p>نص مصحف المدينة كاملًا (رواية حفص)، مع تحليل صرفي لكل كلمة.</p></div>
       <div class="hero-cap"><div class="hero-nums"><div><b data-n="roots">1,651</b><span>جذرًا</span></div><div><b data-n="lemmas">4,763</b><span>كلمة معجمية</span></div></div><p>تعود الكلمات إلى جذور قليلة. من الجذر الواحد تتفرع كلمات كثيرة، وكل كلمة تَرِد بصيغ متعددة في الآيات.</p></div>
-      <div class="hero-cap"><p>في الفضاء: كل جذر كوكب، تدور حوله أقمار هي كلماته المشتقة. والخيوط الذهبية تصل الجذور التي تجتمع في الآيات أكثر من المعتاد.</p><a class="hero-go" href="#space"><svg width="18" height="18"><use href="#star"/></svg>ادخل الفضاء</a></div>
+      <div class="hero-cap"><p>في الفضاء: كل جذر كوكب، تدور حوله أقمار هي كلماته المشتقة. والخيوط الذهبية تصل الجذور التي تجتمع في الآيات أكثر من المعتاد.</p><div class="hero-acts"><a class="hero-go" href="#space"><svg width="18" height="18"><use href="#star"/></svg>ادخل الفضاء</a><a class="hero-go alt" href="/hifz/">ابدأ الحفظ والتسميع</a></div></div>
       <div class="hero-cue">مرّر للأسفل<i></i></div>
     </div></div>
   </section>

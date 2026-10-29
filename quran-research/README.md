@@ -32,6 +32,15 @@ tunnel that gives it a public HTTPS address (it changes on every restart):
     sudo loginctl enable-linger $USER     # start at boot without logging in
     deploy/public-url.sh                  # print the current public address
 
+Memorization (التحفيظ): the same site serves the repo's تسميع PWA (`../site`) at
+`/hifz/` and proxies its recognition + accounts server (`../server`) at `/hifz-api`.
+That server runs as `deploy/tasme3-api.service` with the Quran-tuned Whisper
+(`tarteel-ai/whisper-base-ar-quran`, converted once to CTranslate2 into
+`server/models/`, see `server/RUNBOOK.md`) on the GPU:
+
+    cp deploy/tasme3-api.service ~/.config/systemd/user/
+    systemctl --user enable --now tasme3-api
+
 ## Design (all artwork from Nano Banana)
 
 Every image in `explorer/img/` was generated with Nano Banana Pro through the

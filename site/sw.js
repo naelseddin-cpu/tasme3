@@ -3,7 +3,7 @@
 // must be purged, not accumulate forever).
 //
 // Bump CACHE_VERSION on every deploy that changes any precached file.
-var CACHE_VERSION = 'tasme3-v23';
+var CACHE_VERSION = 'tasme3-v24';
 var SHELL_CACHE = CACHE_VERSION + '-shell';
 var RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 var RUNTIME_CAP = 50; // ~50-entry LRU-ish cap on runtime-cached page images/i18n/fonts
@@ -101,8 +101,10 @@ self.addEventListener('fetch', function (event) {
   // Cross-origin: reference audio (everyayah.com) and any configured
   // SERVER_URL API host. Network-only — never cached (audio caching is
   // explicitly out of scope for the MVP listen feature; API responses are
-  // always live data).
-  if (url.origin !== self.location.origin) {
+  // always live data). The same goes for same-origin URLs outside this
+  // worker's scope, e.g. an API proxied at /hifz-api next to an app served
+  // at /hifz/: they are not app-shell files and must never be cached.
+  if (url.origin !== self.location.origin || url.href.indexOf(self.registration.scope) !== 0) {
     event.respondWith(fetch(request).catch(function () { return new Response('', { status: 503 }); }));
     return;
   }
