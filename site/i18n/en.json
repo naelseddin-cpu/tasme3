@@ -188,5 +188,19 @@
   "review.none": "Nothing due for review today. Well done!",
   "review.mode": "Reviewing page {page}: recite it from memory",
   "review.done": "Well done! Next review in {days} days",
-  "review.button": "Page {page}"
+  "review.button": "Page {page}",
+  "tajweed.check": "Check tajweed",
+  "tajweed.checking": "Checking tajweed…",
+  "tajweed.clean": "Masha Allah! No tajweed notes in {n} verse(s).",
+  "tajweed.found": "{n} tajweed note(s):",
+  "tajweed.none": "Recite at least one complete verse, then check tajweed.",
+  "tajweed.error": "Tajweed check failed. Please try again.",
+  "tajweed.note": "Automatic, approximate guidance — not an ijazah. Recite to a qualified teacher.",
+  "tajweed.ayah": "Verse {k}",
+  "tajweed.word": "word «{w}»",
+  "tajweed.madd": "{n} counts, heard {h}",
+  "tajweed.tashkeel": "vowel or shadda",
+  "tajweed.letter": "letter",
+  "tajweed.missing": "not heard",
+  "tajweed.extra": "extra"
 }

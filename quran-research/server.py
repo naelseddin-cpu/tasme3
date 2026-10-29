@@ -33,6 +33,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.join(HERE, 'explorer')
 HIFZ_ROOT = os.path.join(os.path.dirname(HERE), 'site')
 HIFZ_API = 'http://127.0.0.1:8010'
+TAJWEED_API = 'http://127.0.0.1:8011'  # server/tajweed_service.py (muaalem)
 # On-device recitation: the Quran Whisper model (browser build, ~103 MB) and the speech engine
 # (transformers.js + ONNX Runtime Web) live outside the repo and are served at /hifz/models/ and
 # /hifz/engine/. For a public launch these should move to a CDN (Hugging Face) via config.js.
@@ -153,7 +154,9 @@ class Handler(SimpleHTTPRequestHandler):
         body = self.rfile.read(n) if n else None
         hdrs = {k: v for k, v in self.headers.items() if k.lower() in ('content-type', 'authorization', 'accept')}
         hdrs['X-Forwarded-For'] = self.headers.get('Cf-Connecting-Ip') or self.client_address[0]
-        req = urllib.request.Request(HIFZ_API + self.path[len('/hifz-api'):], data=body, headers=hdrs, method=self.command)
+        sub = self.path[len('/hifz-api'):]
+        base = TAJWEED_API if sub.startswith('/tajweed') else HIFZ_API
+        req = urllib.request.Request(base + sub, data=body, headers=hdrs, method=self.command)
         try:
             r = urllib.request.urlopen(req, timeout=120)
         except urllib.error.HTTPError as e:

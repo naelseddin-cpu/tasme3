@@ -552,3 +552,16 @@ body { background:#050a18 url(assets/space.webp) center top / cover no-repeat; }
 .duebadge { position:absolute; top:-6px; inset-inline-end:-6px; min-width:20px; height:20px; padding:0 5px; border-radius:999px;
   background:#d4b96a; color:#0b1528; font-size:.72rem; font-weight:800; line-height:20px; box-shadow:0 0 0 2px #050a18; }
 .duebadge[hidden] { display:none; }
+
+/* ---- Tajweed feedback (guidance, not ijazah) ---- */
+.tajbtn { width:auto; padding:0 14px; height:44px; border-radius:22px; font-size:.95rem; font-weight:700;
+  background:linear-gradient(180deg,#f0d98c,var(--gold) 55%,var(--gold-deep)); color:#1a1405; border:1px solid #8f7226; }
+.tajbtn[hidden] { display:none; }
+.tajpanel { position:fixed; inset-inline:12px; bottom:calc(env(safe-area-inset-bottom) + var(--fab-clear) + 6px); z-index:25; max-height:46vh; overflow:auto;
+  background:rgba(5,10,24,.94); color:#f3ead2; border:1px solid rgba(212,185,106,.6); border-radius:16px; padding:14px 16px 10px; box-shadow:0 10px 30px rgba(0,0,0,.6); }
+.tajpanel[hidden] { display:none; }
+.tajpanel h4 { margin:0 0 8px; color:var(--gold); font-size:1rem; }
+.tajpanel ul { margin:0; padding-inline-start:18px; } .tajpanel li { margin:6px 0; line-height:1.7; font-size:.95rem; }
+.tajpanel li b { color:#ffb37a; }
+.tajnote { font-size:.8rem; color:#b9ae92; margin:8px 0 0; }
+.tajclose { position:absolute; top:6px; inset-inline-end:8px; width:36px; height:36px; border:0; background:transparent; color:#f3ead2; font-size:1.4rem; cursor:pointer; }

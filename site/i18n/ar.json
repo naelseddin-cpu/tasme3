@@ -188,5 +188,19 @@
   "review.none": "لا مراجعة مستحقة اليوم. أحسنت!",
   "review.mode": "مراجعة الصفحة {page}: اقرأها غيبًا",
   "review.done": "أحسنت! المراجعة القادمة بعد {days} يوم",
-  "review.button": "الصفحة {page}"
+  "review.button": "الصفحة {page}",
+  "tajweed.check": "افحص التجويد",
+  "tajweed.checking": "جارٍ فحص التجويد…",
+  "tajweed.clean": "ما شاء الله! لم تُرصد ملاحظات في التجويد في {n} آية.",
+  "tajweed.found": "رُصدت {n} ملاحظة في التجويد:",
+  "tajweed.none": "اقرأ آية كاملة على الأقل ثم افحص التجويد.",
+  "tajweed.error": "تعذّر فحص التجويد الآن. حاول مرة أخرى.",
+  "tajweed.note": "إرشاد آلي تقريبي، وليس إجازة. اعرض تلاوتك على شيخ متقن.",
+  "tajweed.ayah": "الآية {k}",
+  "tajweed.word": "كلمة «{w}»",
+  "tajweed.madd": "{n} حركات، سُمعت {h}",
+  "tajweed.tashkeel": "حركة أو شدّة",
+  "tajweed.letter": "حرف",
+  "tajweed.missing": "لم تُسمع",
+  "tajweed.extra": "زيادة"
 }

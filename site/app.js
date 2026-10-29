@@ -79,6 +79,7 @@
   var ratio = 1, currentVeil = SHEET;
   var tokens = [], words = [], expected = [], markersByWord = {};
   var pointer = 0, revealed = new Set();
+  var tajMarks = {}; // page word index -> 'tajweed' | 'tashkeel' | 'normal' (outlined after a tajweed check)
   var reviewMode = false; // a due page re-hidden for one review recitation; never saved over its memorization
   // Residual audit A4: set true when the cross-tab `storage` listener fires
   // before `t` (Tasme3I18n.t) is assigned -- flushed by the init promise
@@ -216,6 +217,12 @@
         var my = (m.y - cropY0) * pxPerUnitY, mh = m.h * pxPerUnitY;
         ctx.fillRect(m.x * cssW - px, my - py, m.w * cssW + 2 * px, mh + 2 * py);
       });
+    });
+    Object.keys(tajMarks).forEach(function (k) { // tajweed notes: orange outline, dashed for tashkeel
+      var tw = words[+k]; if (!tw) return;
+      var ty = (tw.y - cropY0) * pxPerUnitY, th = tw.h * pxPerUnitY;
+      ctx.save(); ctx.strokeStyle = '#ff8a3d'; ctx.lineWidth = 2.5; ctx.setLineDash(tajMarks[k] === 'tashkeel' ? [5, 3] : []);
+      ctx.strokeRect(tw.x * cssW - px - 2, ty - py - 2, tw.w * cssW + 2 * px + 4, th + 2 * py + 4); ctx.restore();
     });
     if (pointer < words.length) {
       var w = words[pointer];
@@ -524,7 +531,7 @@
     var wi = -1;
     tokens.forEach(function (tk) {
       if (tk.e) { (markersByWord[wi] = markersByWord[wi] || []).push(tk); }
-      else { wi++; words.push(tk); expected.push({ n: tk.n, a: tk.a }); }
+      else { wi++; words.push(tk); expected.push({ n: tk.n, a: tk.a }); } // tk.k = 's:a' (used by the tajweed check)
     });
     var saved = state.progressByPage[String(pageNum)];
     if (saved) {
@@ -535,6 +542,7 @@
       pointer = 0; revealed = new Set(); contextRevealed = new Set();
     }
     reviewMode = !!(opts && opts.review);
+    tajMarks = {}; odLast = null; if (document.getElementById('tajPanel')) { document.getElementById('tajPanel').hidden = true; document.getElementById('tajBtn').hidden = true; }
     if (reviewMode) { pointer = 0; revealed = new Set(); contextRevealed = new Set(); }
     applySurahStartJump(opts);
     // A new page has entirely different line geometry -- force updateFocusMode
@@ -1153,7 +1161,7 @@
       stopListening();
       recorder.abort();
       stopLive();
-      if (ON_DEVICE) odStop(true);
+      if (ON_DEVICE) odStop(true, true); // keep the take: a finished page can still be checked for tajweed
       showShareBar(streakBefore);
       window.Tasme3Account.scheduleSync(function () { return state; });
       celebrateNewlyCompletedSurahs(pageNum);
@@ -1415,7 +1423,8 @@
 
   function odStart() {
     if (!odReady) { showOdGate(); return; }
-    var tk = odTake = { cap: new OD.Capture(), anchorPtr: pointer, anchorSample: 0, busy: false, lastEnd: 0, advancedAt: 0, timer: null };
+    var tk = odTake = { cap: new OD.Capture(), anchorPtr: pointer, startPtr: pointer, anchorSample: 0, busy: false, lastEnd: 0, advancedAt: 0, timer: null };
+    hideTajweed(true);
     el.recBtn.classList.add('listening'); setStatus(t('record.tapToStop')); updateRecBtnLabel();
     tk.cap.start().then(function () {
       if (odTake !== tk) { tk.cap.stop(); return; }
@@ -1423,9 +1432,11 @@
     }).catch(function () { odTake = null; el.recBtn.classList.remove('listening'); updateRecBtnLabel(); showMicHelp(); });
   }
 
-  function odStop(silent) {
+  function odStop(silent, keepForTajweed) {
     var tk = odTake; if (!tk) return;
     odTake = null; clearInterval(tk.timer); tk.cap.stop();
+    odLast = silent && !keepForTajweed ? null : { cap: tk.cap, from: tk.startPtr, page: pageNum };
+    if (keepForTajweed && SERVER_URL && fullAyat(tk.startPtr, pointer).length) document.getElementById('tajBtn').hidden = false;
     el.recBtn.classList.remove('listening'); updateRecBtnLabel();
     if (silent) return;
     el.recBtn.classList.add('busy'); el.recBtn.disabled = true;
@@ -1434,8 +1445,67 @@
       odRun(tk, true).then(function () {
         el.recBtn.classList.remove('busy'); el.recBtn.disabled = false;
         if (pointer < expected.length) renderStatusIdle();
+        document.getElementById('tajBtn').hidden = !(SERVER_URL && odLast && fullAyat(odLast.from, pointer).length);
       });
     })();
+  }
+
+  // ---- tajweed feedback: the last take's complete verses, checked on the server's GPU ----
+  var odLast = null;
+  function fullAyat(from, to) { // verses whose every word on this page was recited in [from, to)
+    var seen = [], out = [];
+    for (var i = from; i < to; i++) { var k = words[i] && words[i].k; if (k && seen.indexOf(k) < 0) seen.push(k); }
+    seen.forEach(function (k) {
+      var idx = []; words.forEach(function (w, i) { if (w.k === k) idx.push(i); });
+      if (idx.length && idx[0] >= from && idx[idx.length - 1] < to) out.push(k);
+    });
+    return out;
+  }
+  function toWav(f32) {
+    var n = f32.length, buf = new ArrayBuffer(44 + 2 * n), v = new DataView(buf), w = function (o, s) { for (var i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); v.setUint32(4, 36 + 2 * n, true); w(8, 'WAVEfmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true);
+    v.setUint32(24, 16000, true); v.setUint32(28, 32000, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true); w(36, 'data'); v.setUint32(40, 2 * n, true);
+    for (var i = 0; i < n; i++) v.setInt16(44 + 2 * i, Math.max(-1, Math.min(1, f32[i])) * 0x7fff, true);
+    return new Blob([buf], { type: 'audio/wav' });
+  }
+  function hideTajweed(clearMarks) {
+    document.getElementById('tajPanel').hidden = true; document.getElementById('tajBtn').hidden = true;
+    if (clearMarks) { tajMarks = {}; draw(); }
+  }
+  function checkTajweed() {
+    var last = odLast; if (!last || last.page !== pageNum) return;
+    var ayat = fullAyat(last.from, pointer), btn = document.getElementById('tajBtn'), body = document.getElementById('tajBody');
+    var panel = document.getElementById('tajPanel');
+    panel.hidden = false;
+    if (!ayat.length) { body.textContent = t('tajweed.none'); return; }
+    btn.disabled = true; body.textContent = t('tajweed.checking');
+    var form = new FormData();
+    form.append('audio', toWav(last.cap.slice(0)), 'take.wav'); form.append('ayat', JSON.stringify(ayat));
+    fetch(SERVER_URL + '/tajweed', { method: 'POST', body: form })
+      .then(function (r) { if (!r.ok) throw new Error('http_' + r.status); return r.json(); })
+      .then(function (d) {
+        tajMarks = {}; var items = [], count = 0;
+        (d.ayat || []).forEach(function (a) {
+          var idx = []; words.forEach(function (w, i) { if (w.k === a.k) idx.push(i); });
+          var mapped = idx.length === a.words; // same word split as the page: safe to point at words
+          a.errors.forEach(function (e) {
+            count++;
+            var pi = mapped ? idx[e.word] : -1;
+            if (pi >= 0) tajMarks[pi] = e.kind;
+            var what = e.rules && e.rules.length ? e.rules.map(function (r) { return r.ar; }).join('، ')
+              : e.kind === 'tashkeel' ? t('tajweed.tashkeel') : t('tajweed.letter');
+            if (e.expected_len != null && e.heard_len != null) what += ': ' + t('tajweed.madd', { n: digits(e.expected_len), h: digits(e.heard_len) });
+            else if (e.op === 'delete') what += ' (' + t('tajweed.missing') + ')';
+            else if (e.op === 'insert') what += ' (' + t('tajweed.extra') + ')';
+            items.push('<li>' + t('tajweed.ayah', { k: a.k }) + (pi >= 0 ? ' — ' + t('tajweed.word', { w: words[pi].n }) : '') + ': <b>' + what + '</b></li>');
+          });
+        });
+        body.innerHTML = count ? '<h4>' + t('tajweed.found', { n: digits(count) }) + '</h4><ul>' + items.join('') + '</ul>'
+          : '<h4>' + t('tajweed.clean', { n: digits(ayat.length) }) + '</h4>';
+        draw();
+      })
+      .catch(function () { body.textContent = t('tajweed.error'); })
+      .then(function () { btn.disabled = false; });
   }
 
   // ---- the mandatory engine download (or a polite "not on this device") ----
@@ -2439,6 +2509,8 @@
     updateListenBtnLabel();
     maybeShowFirstRunHint();
     renderReviewList();
+    document.getElementById('tajBtn').onclick = checkTajweed;
+    document.getElementById('tajClose').onclick = function () { hideTajweed(true); };
     if (ON_DEVICE) setupOnDevice();
 
     // Idea #2: every fresh page load is one "session" -- the install-promo
