@@ -49,7 +49,7 @@
       var pct = all ? Math.floor(100 * got / all) : 0;
       fill.style.width = pct + '%'; status.textContent = t('ondevice.downloading', { pct: A.digits(pct), mb: A.digits(Math.round(got / 1e6)) });
     }).then(function () {
-      A.setEngineReady(); renderEngine();
+      A.setEngineReady(); renderEngine(); global.Tasme3Feedback.toast(t('fb.engineReady'), 'ok');
     }).catch(function (e) {
       var why = String(e && (e.message || e) || 'unknown');
       status.innerHTML = ''; status.appendChild(document.createTextNode(t('ondevice.error')));
@@ -93,7 +93,7 @@
     var t = A.t, name = ask(t('groups.askName')); if (!name) return;
     var nick = ask(t('groups.askNick'), A.state().settings.name); if (!nick) return;
     ensureAccount().then(function (code) { return Acc.Groups.create(code, name, nick); })
-      .then(function (g) { openGroup(g.id); }).catch(function () { global.alert(t('groups.error')); });
+      .then(function (g) { global.Tasme3Feedback.toast(t('fb.groupCreated'), 'ok'); openGroup(g.id); }).catch(function () { global.Tasme3Feedback.toast(t('groups.error'), 'err'); });
   }
 
   function joinGroup(invite) {
@@ -101,14 +101,14 @@
     invite = invite || ask(t('groups.askInvite')); if (!invite) return;
     var nick = ask(invite && arguments.length ? t('groups.joinPrompt') : t('groups.askNick'), A.state().settings.name); if (!nick) return;
     ensureAccount().then(function (code) { return Acc.Groups.join(code, invite, nick); })
-      .then(function (g) { openGroup(g.id); })
-      .catch(function (e) { global.alert(e && e.status === 404 ? t('groups.badInvite') : t('groups.error')); });
+      .then(function (g) { global.Tasme3Feedback.toast(t('fb.joined'), 'ok'); openGroup(g.id); })
+      .catch(function (e) { global.Tasme3Feedback.toast(e && e.status === 404 ? t('groups.badInvite') : t('groups.error'), 'err'); });
   }
 
   function openGroup(id) {
     var t = A.t, d = A.digits, code = A.state().profile.code; if (!code) return;
     openGroupId = id; show('groupView');
-    $('gMembers').innerHTML = ''; $('gTogether').textContent = '';
+    $('gMembers').innerHTML = ''; $('gTogether').textContent = t('fb.loadingGroup');
     A.sync();
     Acc.Groups.view(code, id).then(function (g) {
       $('gTitle').textContent = g.name; $('gInvite').textContent = g.invite;
@@ -122,7 +122,7 @@
       };
       $('gLeave').onclick = function () {
         if (!global.confirm(t('groups.confirmLeave'))) return;
-        Acc.Groups.leave(code, id).then(function () { show('home'); render(); });
+        Acc.Groups.leave(code, id).then(function () { global.Tasme3Feedback.toast(t('fb.left')); show('home'); render(); });
       };
       g.members.forEach(function (m) {
         var li = document.createElement('li'); if (m.me) li.className = 'me';

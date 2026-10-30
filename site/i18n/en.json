@@ -245,5 +245,15 @@
   "rb.quiet": "I can't hear you. Move closer to the microphone and speak a little louder.",
   "rb.stopped": "Stopped listening. Tap the microphone to continue.",
   "rb.noEngine": "Download the recitation engine first from the home screen 🏠",
-  "rb.error": "The recitation engine hit an error. Reload the page and try again."
+  "rb.error": "The recitation engine hit an error. Reload the page and try again.",
+  "fb.groupCreated": "Group created ✓",
+  "fb.joined": "You joined the group ✓",
+  "fb.left": "You left the group",
+  "fb.engineReady": "Recitation engine ready ✓",
+  "fb.loadingGroup": "Loading the group…",
+  "fb.saving": "Saving…",
+  "fb.checkingTajweed": "Checking tajweed…",
+  "fb.preparing": "Preparing the recitation engine…",
+  "fb.startingMic": "Starting the microphone…",
+  "fb.loadingPage": "Loading the page…"
 }

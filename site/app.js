@@ -1460,7 +1460,8 @@
     hideTajweed(true);
     el.recBtn.classList.add('listening'); setStatus(t('record.tapToStop')); updateRecBtnLabel(); updateGuide();
     setRb('listening'); tk.startedAt = Date.now(); tk.lastAdvance = Date.now(); tk.voiceAt = 0;
-    tk.cap.start().then(function () {
+    window.Tasme3Feedback.busy(t('fb.startingMic'));
+    tk.cap.start().then(function (v) { window.Tasme3Feedback.done(t('fb.startingMic')); return v; }, function (e) { window.Tasme3Feedback.done(t('fb.startingMic')); throw e; }).then(function () {
       if (odTake !== tk) { tk.cap.stop(); return; }
       tk.timer = setInterval(function () {
         if (odTake !== tk) return;

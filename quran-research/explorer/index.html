@@ -97,6 +97,14 @@ nav.tabs .s { display: none; }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 4px; vertical-align: middle; }
 .hint { position: absolute; bottom: 14px; inset-inline-start: max(16px, env(safe-area-inset-right, 0px)); color: var(--space-muted); font-size: .8rem; pointer-events: none; }
 .find-note { margin: 0; font-size: .85rem; color: #ffcf8a; }
+/* press confirmation + busy feedback (founder: confirm every press, say what is happening when it takes time) */
+button, a.hero-go, nav.tabs a, .card, .tag { -webkit-tap-highlight-color: transparent; transition: transform .08s ease, filter .08s ease, box-shadow .12s ease; }
+button:active:not(:disabled), a.hero-go:active, nav.tabs a:active, .card:active { transform: scale(.95); filter: brightness(1.18); box-shadow: 0 0 0 3px rgba(232,196,110,.55), 0 0 18px rgba(232,196,110,.35); }
+.busybar { position: fixed; inset-inline: 0; top: 0; height: 4px; z-index: 200; overflow: hidden; background: rgba(232,196,110,.18); pointer-events: none; }
+.busybar[hidden], .busylabel[hidden] { display: none; }
+.busybar span { position: absolute; inset-block: 0; width: 35%; background: linear-gradient(90deg, transparent, #e8c46e, #fff2c0, #e8c46e, transparent); animation: busy 1.1s ease-in-out infinite; }
+@keyframes busy { from { inset-inline-start: -35%; } to { inset-inline-start: 100%; } }
+.busylabel { position: fixed; top: 12px; left: 50%; transform: translateX(-50%); z-index: 200; padding: 6px 14px; border-radius: 999px; font-size: .9rem; background: rgba(5,10,24,.92); color: #f3e6bb; border: 1px solid rgba(212,185,106,.6); pointer-events: none; }
 .tip { position: absolute; pointer-events: none; background: rgba(8, 16, 31, .92); border: 1px solid var(--space-line); color: var(--space-ink); padding: 4px 10px; border-radius: 8px; font-size: .85rem; transform: translate(-50%, -130%); white-space: nowrap; }
 .reset { position: absolute; bottom: 12px; inset-inline-end: max(16px, env(safe-area-inset-left, 0px)); }
 .nogl { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--space-muted); }
@@ -273,6 +281,7 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
   <symbol id="star" viewBox="0 0 100 100"><g fill="none" stroke="currentColor" stroke-width="4"><rect x="22" y="22" width="56" height="56"/><rect x="22" y="22" width="56" height="56" transform="rotate(45 50 50)"/><circle cx="50" cy="50" r="13"/></g></symbol>
 </svg>
 
+<div class="busybar" id="busyBar" hidden><span></span></div><div class="busylabel" id="busyLabel" hidden></div>
 <div dir="rtl" lang="ar">
 <!-- First open: download all the HD art for this screen first, then show the experience complete -->
 <div id="loader" class="loader" hidden role="status" aria-live="polite">
@@ -414,6 +423,23 @@ footer.src { color: var(--muted); font-size: .82rem; margin-top: 40px; border-to
 const AR = new Intl.NumberFormat('en-US');
 const ar = n => AR.format(n);
 const $ = s => document.querySelector(s);
+// ---- busy feedback: slow requests (>300 ms) and heavy panels show a moving gold bar ----
+document.addEventListener('touchstart', () => {}, { passive: true }); // iOS: enables :active press styles
+let busyN = 0, busyT = null;
+function busyOn(text) {
+  busyN++;
+  if (text) { $('#busyLabel').textContent = text; $('#busyLabel').hidden = false; $('#busyBar').hidden = false; return; }
+  if (!busyT) busyT = setTimeout(() => { busyT = null; if (busyN) $('#busyBar').hidden = false; }, 300);
+}
+function busyOff() { busyN = Math.max(0, busyN - 1); if (!busyN) { clearTimeout(busyT); busyT = null; $('#busyBar').hidden = true; $('#busyLabel').hidden = true; } }
+{ const of = window.fetch.bind(window);
+  window.fetch = (input, init) => {
+    const url = typeof input === 'string' ? input : (input && input.url) || '';
+    if (/\/api\/(sample|clientlog)/.test(url)) return of(input, init); // the chat shows its own progress
+    busyOn(); return of(input, init).then(r => { busyOff(); return r; }, e => { busyOff(); throw e; });
+  }; }
+// heavy synchronous work (a big root's verses): show the label first, let it paint, then work
+function busyNow(text, fn) { busyOn(text); requestAnimationFrame(() => setTimeout(() => { try { fn(); } finally { busyOff(); } }, 16)); }
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const DIAC = /[ً-ٰٟۖ-ۭـ۞]/g;
 const norm = w => w.replace(DIAC, '').replace(/[ٱأإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[اءؤئ]/g, '');
@@ -794,8 +820,8 @@ function surahVectors() {
   const top = vec.map((m, i) => [...m].filter(([r, c]) => c >= 2).map(([r, c]) => [r, c, (w[i].o.get(r) || 0)]).sort((x, y) => y[2] - x[2]).slice(0, 14).map(([r, c]) => [r, c]));
   return (SV = { sim, top });
 }
-function openRoot(r) { showItem({ title: r, kind: 'جذر', codes: D.roots[r], roots: new Set([r]), forms: D.rootLem[r] || [], key: r }); }
-function openLemma(l, prompt) { const L = D.lemmas[l]; showItem({ title: l, kind: NAMECAT_OF[l] || 'كلمة', codes: L.codes, roots: new Set(L.root ? [L.root] : []), forms: [], prompt, key: l }); }
+function openRoot(r) { busyNow('جارٍ جمع الآيات…', () => showItem({ title: r, kind: 'جذر', codes: D.roots[r], roots: new Set([r]), forms: D.rootLem[r] || [], key: r })); }
+function openLemma(l, prompt) { const L = D.lemmas[l]; busyNow('جارٍ جمع الآيات…', () => showItem({ title: l, kind: NAMECAT_OF[l] || 'كلمة', codes: L.codes, roots: new Set(L.root ? [L.root] : []), forms: [], prompt, key: l })); }
 panel.addEventListener('click', e => {
   const t = e.target.closest('[data-root],[data-surah]'); if (!t) return;
   if (t.dataset.root) { openRoot(t.dataset.root); space && space.focusKey(t.dataset.root); }
