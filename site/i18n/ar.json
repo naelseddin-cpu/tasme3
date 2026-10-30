@@ -235,5 +235,6 @@
   "groups.error": "تعذّر الاتصال الآن. حاول مرة أخرى.",
   "groups.badInvite": "رمز الدعوة غير صحيح.",
   "groups.confirmLeave": "مغادرة هذه المجموعة؟",
-  "groups.copied": "نُسخ رابط الدعوة"
+  "groups.copied": "نُسخ رابط الدعوة",
+  "home.toSite": "‹ مستكشف القرآن"
 }

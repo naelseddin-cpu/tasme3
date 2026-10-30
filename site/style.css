@@ -624,3 +624,7 @@ body { background:#050a18 url(assets/space.webp) center top / cover no-repeat; }
 .home.group .hsmall { text-shadow:0 2px 8px rgba(0,0,0,.9); }
 .hic { display:block; width:34px; height:34px; margin:0 auto 4px; background:center / contain no-repeat; }
 @media (min-width:600px) { .home, .home.group { background-size:600px 100vh, 600px auto; } }
+
+.tosite { position:absolute; top:calc(env(safe-area-inset-top) + 14px); inset-inline-start:16px; z-index:2; min-height:40px; display:inline-flex; align-items:center;
+  padding:6px 14px; border-radius:999px; background:rgba(5,10,24,.7); border:1px solid rgba(212,185,106,.55); color:var(--gold); text-decoration:none; font-weight:700; font-size:.95rem; backdrop-filter:blur(6px); }
+.home-in { position:relative; }

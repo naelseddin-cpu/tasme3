@@ -235,5 +235,6 @@
   "groups.error": "Couldn't connect right now. Please try again.",
   "groups.badInvite": "Invalid invite code.",
   "groups.confirmLeave": "Leave this group?",
-  "groups.copied": "Invite link copied"
+  "groups.copied": "Invite link copied",
+  "home.toSite": "‹ Quran Explorer"
 }
