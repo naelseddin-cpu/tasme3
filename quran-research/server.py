@@ -183,6 +183,11 @@ class Handler(SimpleHTTPRequestHandler):
         self._json(405, {'error': 'method not allowed'})
 
     def do_POST(self):
+        if self.path == '/api/clientlog':  # pilot diagnostics: a phone reports why the engine download failed
+            n = min(int(self.headers.get('Content-Length') or 0), 4000)
+            msg = self.rfile.read(n).decode('utf-8', 'replace').replace('\n', ' ')[:2000]
+            self.log_message('clientlog %s | %s', msg, (self.headers.get('User-Agent') or '')[:160])
+            return self._json(200, {'ok': True})
         if self.path.startswith('/hifz-api/'):
             return self._proxy()
         n = int(self.headers.get('Content-Length') or 0)

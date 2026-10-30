@@ -61,7 +61,7 @@
     return (function go() {
       return fn().catch(function (err) {
         attempt++;
-        if (attempt > 12) throw err;
+        if (attempt > 12 || (err && err.fatal)) throw err;
         return online().then(function () { return sleep(Math.min(15000, 800 * Math.pow(2, attempt - 1))); }).then(go);
       });
     })();
@@ -72,7 +72,7 @@
         var cr = r.headers.get('Content-Range'), m = cr && cr.match(/\/(\d+)$/);
         if (r.status === 206 && m) return +m[1];
         if (r.ok && r.headers.get('Content-Length')) return +r.headers.get('Content-Length'); // no range support
-        throw new Error('size ' + r.status);
+        throw new Error('size ' + r.status + ' ' + url.split('/').pop());
       });
     });
   }
@@ -104,7 +104,8 @@
                       return r.blob();
                     }).then(function (blob) {
                       if (blob.size !== z - a + 1) throw new Error('short ' + blob.size);
-                      return parts.put(partKey(i), new Response(blob)).then(function () { return blob; });
+                      return parts.put(partKey(i), new Response(blob)).then(function () { return blob; },
+                        function (e) { var x = new Error('part ' + i + ': ' + (e && (e.name + ' ' + e.message))); x.fatal = true; throw x; });
                     });
                   });
                 }).then(function (blob) { blobs[i] = blob; done[fi] += blob.size; report(); });
@@ -112,7 +113,8 @@
               function worker() { return next < n ? one(next++).then(worker) : null; }
               return Promise.all([worker(), worker(), worker()]).then(function () {   // 3 ranges at a time
                 var whole = new Blob(blobs, { type: 'application/octet-stream' });
-                return target.put(b.url, new Response(whole, { headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(whole.size) } }));
+                return target.put(b.url, new Response(whole, { headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(whole.size) } }))
+                  .catch(function (e) { throw new Error('store ' + b.url.split('/').pop() + ' ' + whole.size + ': ' + (e && (e.name + ' ' + e.message))); });
               }).then(function () {
                 return Promise.all(blobs.map(function (_, i) { return parts.delete(partKey(i)); }));
               });

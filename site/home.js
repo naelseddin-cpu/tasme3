@@ -50,8 +50,13 @@
       fill.style.width = pct + '%'; status.textContent = t('ondevice.downloading', { pct: A.digits(pct), mb: A.digits(Math.round(got / 1e6)) });
     }).then(function () {
       A.setEngineReady(); renderEngine();
-    }).catch(function () {
-      status.textContent = t('ondevice.error'); btn.disabled = false; btn.textContent = t('ondevice.retry'); btn.hidden = false;
+    }).catch(function (e) {
+      var why = String(e && (e.message || e) || 'unknown');
+      status.innerHTML = ''; status.appendChild(document.createTextNode(t('ondevice.error')));
+      var small = document.createElement('small'); small.style.cssText = 'display:block;opacity:.7;font-size:.75rem;direction:ltr';
+      small.textContent = why; status.appendChild(small);
+      try { navigator.sendBeacon ? navigator.sendBeacon('/api/clientlog', 'engine: ' + why) : fetch('/api/clientlog', { method: 'POST', body: 'engine: ' + why }); } catch (_) {}
+      btn.disabled = false; btn.textContent = t('ondevice.retry'); btn.hidden = false;
     });
   }
 
