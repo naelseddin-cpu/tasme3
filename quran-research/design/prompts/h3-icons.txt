@@ -1,0 +1,9 @@
+Create an image. Square 1:1.
+
+A set of four matching icons arranged in a perfect 2x2 grid, each centered in its own quarter with generous empty space around it, all in the same style: polished gold metal line-art with a soft warm glow, on a PURE SOLID BLACK background (#000000).
+Top-right: a CLOSED book seen from the front with a geometric star on its cover.
+Top-left: three small eight-pointed stars in a row, like beads.
+Bottom-right: a crescent moon cradling a small flame.
+Bottom-left: a single radiant eight-pointed star with soft rays.
+Style: luxury app icon design, gold jewelry render, consistent line thickness, flat front view, no perspective.
+NO letters, NO numbers, NO writing, NO text anywhere.

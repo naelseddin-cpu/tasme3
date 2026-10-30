@@ -613,3 +613,14 @@ body { background:#050a18 url(assets/space.webp) center top / cover no-repeat; }
 .gmembers .nm { font-weight:700; } .gmembers .sub { font-size:.82rem; color:#cfc4a6; }
 .gmembers .num { font-size:1.15rem; color:var(--gold); font-weight:700; text-align:center; font-variant-numeric:tabular-nums; } .gmembers .num small { display:block; font-size:.7rem; color:#cfc4a6; font-weight:400; }
 .homebtn { width:44px; height:44px; border-radius:50%; font-size:1.15rem; }
+
+/* Nano Banana scenes behind home (a lantern-lit corner with a closed mushaf) and groups (a halaqa) */
+.home { background:linear-gradient(to bottom, rgba(5,8,15,0) 34vh, rgba(5,8,15,.85) 48vh, #05080f 58vh) center top / 100% 100vh no-repeat, #05080f url(assets/home.webp) center top / 100% auto no-repeat; }
+.home.group { background:linear-gradient(to bottom, rgba(5,8,15,0) 30vh, rgba(5,8,15,.85) 44vh, #05080f 54vh) center top / 100% 100vh no-repeat, #05080f url(assets/group.webp) center top / 100% auto no-repeat; }
+.home-head { padding-top:44vh; padding-bottom:6px; }
+.home-head h1 { font-size:2.6rem; text-shadow:0 3px 18px rgba(0,0,0,.9); }
+.home-hello { text-shadow:0 2px 10px rgba(0,0,0,.9); }
+.home.group .home-in > h1 { margin-top:36vh; font-family:'UthmanicHafs',serif; font-size:2.2rem; color:var(--gold); text-shadow:0 3px 18px rgba(0,0,0,.9); }
+.home.group .hsmall { text-shadow:0 2px 8px rgba(0,0,0,.9); }
+.hic { display:block; width:34px; height:34px; margin:0 auto 4px; background:center / contain no-repeat; }
+@media (min-width:600px) { .home, .home.group { background-size:600px 100vh, 600px auto; } }
