@@ -202,5 +202,8 @@
   "tajweed.tashkeel": "حركة أو شدّة",
   "tajweed.letter": "حرف",
   "tajweed.missing": "لم تُسمع",
-  "tajweed.extra": "زيادة"
+  "tajweed.extra": "زيادة",
+  "guide.where": "سورة {surah} · الآية {ayah}",
+  "guide.text": "الكلمات مخفية، وتظهر كل كلمة في مكانها حين تتلوها صحيحة من حفظك. المربع الذهبي يدلّك على الكلمة التالية.",
+  "guide.cta": "اضغط الميكروفون 🎙️ وابدأ التلاوة"
 }

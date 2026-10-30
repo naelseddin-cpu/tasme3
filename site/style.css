@@ -565,3 +565,12 @@ body { background:#050a18 url(assets/space.webp) center top / cover no-repeat; }
 .tajpanel li b { color:#ffb37a; }
 .tajnote { font-size:.8rem; color:#b9ae92; margin:8px 0 0; }
 .tajclose { position:absolute; top:6px; inset-inline-end:8px; width:36px; height:36px; border:0; background:transparent; color:#f3ead2; font-size:1.4rem; cursor:pointer; }
+
+/* ---- Guide over the (intentionally hidden) page ---- */
+.guide { position:fixed; inset-inline:18px; top:calc(env(safe-area-inset-top) + 64px); z-index:15; text-align:center;
+  background:rgba(5,10,24,.9); color:#f3ead2; border:1px solid rgba(212,185,106,.6); border-radius:18px; padding:18px 18px 16px;
+  box-shadow:0 12px 34px rgba(0,0,0,.45); pointer-events:none; backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+.guide[hidden] { display:none; }
+.guide-where { font-family:'UthmanicHafs',serif; font-size:1.5rem; color:var(--gold); line-height:1.6; }
+.guide-text { margin:6px 0 10px; font-size:1rem; line-height:1.8; }
+.guide-cta { display:inline-block; font-weight:700; font-size:1rem; color:#1a1405; background:linear-gradient(180deg,#f0d98c,var(--gold)); border-radius:999px; padding:8px 18px; }

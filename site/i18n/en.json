@@ -202,5 +202,8 @@
   "tajweed.tashkeel": "vowel or shadda",
   "tajweed.letter": "letter",
   "tajweed.missing": "not heard",
-  "tajweed.extra": "extra"
+  "tajweed.extra": "extra",
+  "guide.where": "Surah {surah} · verse {ayah}",
+  "guide.text": "The words are hidden; each appears in its place when you recite it correctly from memory. The gold box marks the next word.",
+  "guide.cta": "Tap the microphone 🎙️ and start reciting"
 }

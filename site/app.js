@@ -674,7 +674,19 @@
     if (bySurah) return bySurah;
     return surahForPage(pageNum);
   }
+  // The page stays veiled until recited (founder principle); this card says so and
+  // where to start, whenever the user is not reciting and the page isn't finished.
+  function updateGuide() {
+    var g = document.getElementById('guide'); if (!g || !t) return;
+    var reciting = ON_DEVICE ? !!odTake : SERVER_MODE ? recorder.isRecording() : listening;
+    var gateOpen = document.getElementById('odGate') && !document.getElementById('odGate').hidden;
+    var show = !reciting && !gateOpen && words.length > 0 && pointer < words.length && revealed.size < 3;
+    g.hidden = !show; if (!show) return;
+    var s = currentSurah(), k = words[Math.min(pointer, words.length - 1)].k || '';
+    document.getElementById('guideWhere').textContent = s ? t('guide.where', { surah: s.name, ayah: digits(k.split(':')[1] || '') }) : pageLabel(pageNum);
+  }
   function updatePageChip() {
+    updateGuide();
     // Guards a real race: surah-index.json can resolve before the initial
     // i18n setLanguage() promise does (see the "surah-index" fetch below,
     // which is independent of the init chain and calls this eagerly the
@@ -1425,7 +1437,7 @@
     if (!odReady) { showOdGate(); return; }
     var tk = odTake = { cap: new OD.Capture(), anchorPtr: pointer, startPtr: pointer, anchorSample: 0, busy: false, lastEnd: 0, advancedAt: 0, timer: null };
     hideTajweed(true);
-    el.recBtn.classList.add('listening'); setStatus(t('record.tapToStop')); updateRecBtnLabel();
+    el.recBtn.classList.add('listening'); setStatus(t('record.tapToStop')); updateRecBtnLabel(); updateGuide();
     tk.cap.start().then(function () {
       if (odTake !== tk) { tk.cap.stop(); return; }
       tk.timer = setInterval(function () { if (!tk.busy && odTake === tk) odRun(tk, false); }, OD_TICK_MS);
@@ -1434,7 +1446,7 @@
 
   function odStop(silent, keepForTajweed) {
     var tk = odTake; if (!tk) return;
-    odTake = null; clearInterval(tk.timer); tk.cap.stop();
+    odTake = null; clearInterval(tk.timer); tk.cap.stop(); updateGuide();
     odLast = silent && !keepForTajweed ? null : { cap: tk.cap, from: tk.startPtr, page: pageNum };
     if (keepForTajweed && SERVER_URL && fullAyat(tk.startPtr, pointer).length) document.getElementById('tajBtn').hidden = false;
     el.recBtn.classList.remove('listening'); updateRecBtnLabel();
@@ -1525,7 +1537,7 @@
         fill.style.width = pct + '%';
         status.textContent = t('ondevice.downloading', { pct: pct, mb: Math.round(got / 1e6) });
       }).then(function () {
-        odReady = true; gate.hidden = true; el.recBtn.disabled = false; renderStatusIdle();
+        odReady = true; gate.hidden = true; el.recBtn.disabled = false; renderStatusIdle(); updateGuide();
       }).catch(function () {
         status.textContent = t('ondevice.error'); btn.disabled = false; btn.textContent = t('ondevice.retry');
       });
