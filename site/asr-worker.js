@@ -28,6 +28,7 @@ self.onmessage = async (e) => {
       }
       T.env.useBrowserCache = true;
       T.env.backends.onnx.wasm.wasmPaths = m.wasmBase || m.engineBase;
+      if (m.wasmBinary) T.env.backends.onnx.wasm.wasmBinary = m.wasmBinary; // downloaded once, kept in Cache Storage
       T.env.backends.onnx.wasm.numThreads = m.threads;
       const progress_callback = (p) => {
         if (p.status === 'progress') self.postMessage({ type: 'progress', file: p.file, loaded: p.loaded, total: p.total });

@@ -27,15 +27,101 @@
   }
 
   var FILES = ['onnx/encoder_model_quantized.onnx', 'onnx/decoder_model_merged_quantized.onnx'];
+  var WASM = 'ort-wasm-simd-threaded.asyncify.wasm';
+  function modelUrl(f) {
+    return cfg.MODEL_HOST ? cfg.MODEL_HOST + cfg.MODEL_ID + '/resolve/main/' + f
+      : new URL(cfg.MODEL_BASE + cfg.MODEL_ID + '/' + f, global.location.href).href;
+  }
+  function wasmUrl() { return new URL((cfg.WASM_BASE || cfg.ENGINE_BASE) + WASM, global.location.href).href; }
+  // the big files and the cache each lives in (the model where transformers.js looks for it)
+  function bigFiles() {
+    return FILES.map(function (f) { return { url: modelUrl(f), cache: 'transformers-cache' }; })
+      .concat([{ url: wasmUrl(), cache: 'tasme3-engine' }]);
+  }
   function isDownloaded() {
     if (!global.caches) return Promise.resolve(false);
-    return global.caches.open('transformers-cache').then(function (c) {
-      return Promise.all(FILES.map(function (f) {
-        var url = cfg.MODEL_HOST ? cfg.MODEL_HOST + cfg.MODEL_ID + '/resolve/main/' + f
-          : new URL(cfg.MODEL_BASE + cfg.MODEL_ID + '/' + f, global.location.href).href;
-        return c.match(url);
-      }));
-    }).then(function (hits) { return hits.every(Boolean); }).catch(function () { return false; });
+    return Promise.all(bigFiles().map(function (b) {
+      return global.caches.open(b.cache).then(function (c) { return c.match(b.url); });
+    })).then(function (hits) { return hits.every(Boolean); }).catch(function () { return false; });
+  }
+
+  // ---- resumable download ----------------------------------------------------
+  // Weak mobile connections drop. Each big file is fetched in 4 MB ranges; every
+  // finished range is kept in Cache Storage ("tasme3-dl"), so a dropped connection
+  // or a reload resumes where it stopped. A failed range retries on its own with
+  // backoff (and waits for the network to come back), so the user never has to.
+  var CHUNK = 4 * 1024 * 1024, PART = 'tasme3-dl';
+  function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function online() {
+    if (global.navigator.onLine !== false) return Promise.resolve();
+    return new Promise(function (r) { global.addEventListener('online', function f() { global.removeEventListener('online', f); r(); }); });
+  }
+  function withRetry(fn) {
+    var attempt = 0;
+    return (function go() {
+      return fn().catch(function (err) {
+        attempt++;
+        if (attempt > 12) throw err;
+        return online().then(function () { return sleep(Math.min(15000, 800 * Math.pow(2, attempt - 1))); }).then(go);
+      });
+    })();
+  }
+  function sizeOf(url) { // ranged request for 1 byte: Content-Range gives the full size
+    return withRetry(function () {
+      return fetch(url, { headers: { Range: 'bytes=0-0' } }).then(function (r) {
+        var cr = r.headers.get('Content-Range'), m = cr && cr.match(/\/(\d+)$/);
+        if (r.status === 206 && m) return +m[1];
+        if (r.ok && r.headers.get('Content-Length')) return +r.headers.get('Content-Length'); // no range support
+        throw new Error('size ' + r.status);
+      });
+    });
+  }
+  function downloadAll(onProgress) {
+    var files = bigFiles(), sizes = [], done = [];
+    var report = function () {
+      var got = done.reduce(function (a, b) { return a + b; }, 0), all = sizes.reduce(function (a, b) { return a + b; }, 0);
+      if (onProgress) onProgress(got, all);
+    };
+    return Promise.all(files.map(function (b) { return sizeOf(b.url); })).then(function (sz) {
+      sizes = sz; done = sz.map(function () { return 0; });
+      return global.caches.open(PART);
+    }).then(function (parts) {
+      var chain = Promise.resolve();
+      files.forEach(function (b, fi) {
+        chain = chain.then(function () {
+          return global.caches.open(b.cache).then(function (target) {
+            return target.match(b.url).then(function (have) {
+              if (have) { done[fi] = sizes[fi]; report(); return; }
+              var n = Math.ceil(sizes[fi] / CHUNK), blobs = new Array(n), next = 0;
+              function partKey(i) { return b.url + (b.url.indexOf('?') < 0 ? '?' : '&') + '__part=' + i; }
+              function one(i) {
+                return parts.match(partKey(i)).then(function (hit) {
+                  if (hit) return hit.blob();
+                  var a = i * CHUNK, z = Math.min(sizes[fi], a + CHUNK) - 1;
+                  return withRetry(function () {
+                    return fetch(b.url, { headers: { Range: 'bytes=' + a + '-' + z } }).then(function (r) {
+                      if (r.status !== 206 && !(r.ok && n === 1)) throw new Error('range ' + r.status);
+                      return r.blob();
+                    }).then(function (blob) {
+                      if (blob.size !== z - a + 1) throw new Error('short ' + blob.size);
+                      return parts.put(partKey(i), new Response(blob)).then(function () { return blob; });
+                    });
+                  });
+                }).then(function (blob) { blobs[i] = blob; done[fi] += blob.size; report(); });
+              }
+              function worker() { return next < n ? one(next++).then(worker) : null; }
+              return Promise.all([worker(), worker(), worker()]).then(function () {   // 3 ranges at a time
+                var whole = new Blob(blobs, { type: 'application/octet-stream' });
+                return target.put(b.url, new Response(whole, { headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(whole.size) } }));
+              }).then(function () {
+                return Promise.all(blobs.map(function (_, i) { return parts.delete(partKey(i)); }));
+              });
+            });
+          });
+        });
+      });
+      return chain;
+    });
   }
 
   function load(onProgress) {
@@ -43,12 +129,15 @@
     // keep the ~130 MB download even under storage pressure (and on iOS home-screen apps)
     if (global.navigator.storage && global.navigator.storage.persist) global.navigator.storage.persist().catch(function () {});
     var threads = global.crossOriginIsolated ? Math.max(1, Math.min(4, (global.navigator.hardwareConcurrency || 2) - 1)) : 1;
-    ready = new Promise(function (resolve, reject) {
+    var started = downloadAll(onProgress).then(function () {
+      return global.caches.open('tasme3-engine').then(function (c) { return c.match(wasmUrl()); }).then(function (r) { return r.arrayBuffer(); });
+    });
+    ready = started.then(function (wasmBinary) { return new Promise(function (resolve, reject) {
       worker = new Worker('asr-worker.js', { type: 'module' });
       var files = {};
       worker.onmessage = function (e) {
         var m = e.data;
-        if (m.type === 'progress') {
+        if (m.type === 'progress' && false) { // the big files come from the resumable downloader above
           files[m.file] = [m.loaded || 0, m.total || 0];
           var got = 0, all = 0; Object.keys(files).forEach(function (k) { got += files[k][0]; all += files[k][1]; });
           if (onProgress) onProgress(got, all);
@@ -61,8 +150,9 @@
       };
       worker.onerror = function (e) { ready = null; reject(new Error(e.message || 'worker')); };
       var abs = function (p) { return new URL(p, global.location.href).href; };
-      worker.postMessage({ type: 'load', engineBase: abs(cfg.ENGINE_BASE), wasmBase: cfg.WASM_BASE ? abs(cfg.WASM_BASE) : '', modelHost: cfg.MODEL_HOST || '', modelBase: cfg.MODEL_BASE, modelId: cfg.MODEL_ID, threads: threads });
-    });
+      worker.postMessage({ type: 'load', engineBase: abs(cfg.ENGINE_BASE), wasmBase: cfg.WASM_BASE ? abs(cfg.WASM_BASE) : '', wasmBinary: wasmBinary,
+        modelHost: cfg.MODEL_HOST || '', modelBase: cfg.MODEL_BASE, modelId: cfg.MODEL_ID, threads: threads }, [wasmBinary]);
+    }); }).catch(function (e) { ready = null; throw e; });
     return ready;
   }
 
