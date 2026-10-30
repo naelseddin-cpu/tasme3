@@ -32,7 +32,7 @@
     return cfg.MODEL_HOST ? cfg.MODEL_HOST + cfg.MODEL_ID + '/resolve/main/' + f
       : new URL(cfg.MODEL_BASE + cfg.MODEL_ID + '/' + f, global.location.href).href;
   }
-  function wasmUrl() { return new URL((cfg.WASM_BASE || cfg.ENGINE_BASE) + WASM, global.location.href).href; }
+  function wasmUrl() { return cfg.WASM_URL || new URL((cfg.WASM_BASE || cfg.ENGINE_BASE) + WASM, global.location.href).href; }
   // the big files and the cache each lives in (the model where transformers.js looks for it)
   function bigFiles() {
     return FILES.map(function (f) { return { url: modelUrl(f), cache: 'transformers-cache' }; })

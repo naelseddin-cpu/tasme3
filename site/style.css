@@ -574,3 +574,42 @@ body { background:#050a18 url(assets/space.webp) center top / cover no-repeat; }
 .guide-where { font-family:'UthmanicHafs',serif; font-size:1.5rem; color:var(--gold); line-height:1.6; }
 .guide-text { margin:6px 0 10px; font-size:1rem; line-height:1.8; }
 .guide-cta { display:inline-block; font-weight:700; font-size:1rem; color:#1a1405; background:linear-gradient(180deg,#f0d98c,var(--gold)); border-radius:999px; padding:8px 18px; }
+
+/* ---- Home + group dashboards (planet theme) ---- */
+.home { position:fixed; inset:0; z-index:50; overflow-y:auto; color:#f3ead2;
+  background:#050a18 url(assets/space.webp) center / cover no-repeat fixed; padding:calc(env(safe-area-inset-top) + 18px) 16px calc(env(safe-area-inset-bottom) + 28px); }
+.home[hidden] { display:none; }
+.home-in { max-width:520px; margin:0 auto; display:grid; gap:14px; }
+.home-head { text-align:center; padding:6px 0 4px; }
+.home-mark { width:78px; height:78px; margin:0 auto 8px; border-radius:50%; background:radial-gradient(circle at 34% 30%, rgba(255,255,255,.3), rgba(0,0,0,0) 45%, rgba(0,0,0,.55) 100%), url(assets/planet-idle.webp) center / cover; box-shadow:0 0 30px rgba(110,160,255,.55), 0 0 0 1px #8f7226; }
+.home h1 { font-family:'UthmanicHafs',serif; font-size:2.1rem; color:var(--gold); margin:0; }
+.home-hello { margin:4px 0 0; color:#d9cfb2; }
+.hcard { background:rgba(5,10,24,.78); border:1px solid rgba(212,185,106,.45); border-radius:18px; padding:16px; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
+.hcard h2 { margin:0 0 10px; font-size:1.1rem; color:var(--gold); }
+.hcard p { margin:0 0 8px; line-height:1.8; }
+.hbtn { min-height:48px; width:100%; border-radius:14px; border:1px solid rgba(212,185,106,.6); background:rgba(255,255,255,.06); color:#f3ead2; font-size:1rem; font-weight:700; cursor:pointer; padding:10px 14px; }
+.hbtn.gold { background:linear-gradient(180deg,#f0d98c,var(--gold) 50%,var(--gold-deep)); color:#1a1405; border:0; }
+.hbtn.big { min-height:62px; font-size:1.15rem; }
+.hbtn.small { width:auto; min-height:38px; font-size:.9rem; padding:6px 12px; }
+.hbtn:disabled { opacity:.55; }
+.hrow { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+.hstats { display:grid; grid-template-columns:repeat(4, 1fr); gap:8px; text-align:center; }
+.hstats b { display:block; font-size:1.45rem; color:var(--gold); font-variant-numeric:tabular-nums; }
+.hstats span { font-size:.78rem; color:#cfc4a6; }
+.hprog { height:8px; border-radius:999px; background:rgba(255,255,255,.12); overflow:hidden; margin-top:12px; }
+.hprog span { display:block; height:100%; width:0; background:linear-gradient(90deg,var(--gold-deep),var(--gold)); }
+.hsmall { font-size:.88rem; color:#cfc4a6; margin:6px 0 0; }
+.gitem { display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; min-height:56px; margin-bottom:8px; padding:10px 12px;
+  border-radius:12px; border:1px solid rgba(212,185,106,.35); background:rgba(255,255,255,.04); color:#f3ead2; cursor:pointer; font-size:1rem; text-align:start; }
+.gitem small { color:#cfc4a6; font-size:.82rem; }
+.hback, .hlink { background:none; border:0; color:var(--gold); font-size:1rem; cursor:pointer; justify-self:start; padding:8px 0; }
+.hlink { color:#cfa79a; justify-self:center; }
+.ginvite { display:flex; align-items:center; gap:8px; flex-wrap:wrap; background:rgba(5,10,24,.7); border:1px dashed rgba(212,185,106,.6); border-radius:12px; padding:10px 12px; }
+.ginvite b { font-size:1.2rem; letter-spacing:.12em; color:var(--gold); font-variant-numeric:tabular-nums; }
+.gmembers { list-style:none; margin:0; padding:0; display:grid; gap:8px; }
+.gmembers li { display:grid; grid-template-columns:auto 1fr auto; gap:10px; align-items:center; background:rgba(5,10,24,.78); border:1px solid rgba(212,185,106,.3); border-radius:12px; padding:10px 12px; }
+.gmembers li.me { border-color:var(--gold); }
+.gmembers .dot { width:12px; height:12px; border-radius:50%; background:#3a4256; } .gmembers .dot.on { background:#5ad08a; box-shadow:0 0 8px #5ad08a; }
+.gmembers .nm { font-weight:700; } .gmembers .sub { font-size:.82rem; color:#cfc4a6; }
+.gmembers .num { font-size:1.15rem; color:var(--gold); font-weight:700; text-align:center; font-variant-numeric:tabular-nums; } .gmembers .num small { display:block; font-size:.7rem; color:#cfc4a6; font-weight:400; }
+.homebtn { width:44px; height:44px; border-radius:50%; font-size:1.15rem; }

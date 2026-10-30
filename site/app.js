@@ -1447,6 +1447,7 @@
   function odStop(silent, keepForTajweed) {
     var tk = odTake; if (!tk) return;
     odTake = null; clearInterval(tk.timer); tk.cap.stop(); updateGuide();
+    window.Tasme3Account.scheduleSync(function () { return state; });
     odLast = silent && !keepForTajweed ? null : { cap: tk.cap, from: tk.startPtr, page: pageNum };
     if (keepForTajweed && SERVER_URL && fullAyat(tk.startPtr, pointer).length) document.getElementById('tajBtn').hidden = false;
     el.recBtn.classList.remove('listening'); updateRecBtnLabel();
@@ -1545,11 +1546,11 @@
   }
 
   function setupOnDevice() {
-    if (OD.supported()) { showOdGate(); return; }
+    if (OD.supported()) return;           // the home screen shows the "not on this device" notice
     OD.isDownloaded().then(function (have) {
-      if (!have) { showOdGate(); return; }
+      if (!have) return;                  // the home screen offers the download
       el.recBtn.disabled = true; setStatus(t('ondevice.preparing'));   // from the browser cache: ~1-2 s
-      OD.load().then(function () { odReady = true; el.recBtn.disabled = false; renderStatusIdle(); })
+      OD.load().then(function () { odReady = true; el.recBtn.disabled = false; renderStatusIdle(); document.dispatchEvent(new Event('tasme3:engine-ready')); })
         .catch(function () { el.recBtn.disabled = false; showOdGate(); });
     });
   }
@@ -2524,6 +2525,15 @@
     updateListenBtnLabel();
     maybeShowFirstRunHint();
     renderReviewList();
+    window.Tasme3App = {
+      state: function () { return state; }, t: t, digits: digits, save: function () { Storage.save(state); },
+      loadPage: function (p) { loadPage(p); }, startReview: startReview, dueReviews: function () { return Storage.dueReviews(state); },
+      currentPage: function () { return pageNum; }, surahForPage: function (p) { return surahForPage(p); },
+      engineReady: function () { return odReady; }, onDevice: ON_DEVICE,
+      setEngineReady: function () { odReady = true; el.recBtn.disabled = false; renderStatusIdle(); updateGuide(); },
+      totalWords: function () { return Storage.totalWordsRevealed(state); }, sync: function () { window.Tasme3Account.scheduleSync(function () { return state; }); }
+    };
+    document.dispatchEvent(new Event('tasme3:ready'));
     document.getElementById('tajBtn').onclick = checkTajweed;
     document.getElementById('tajClose').onclick = function () { hideTajweed(true); };
     if (ON_DEVICE) setupOnDevice();

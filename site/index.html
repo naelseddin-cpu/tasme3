@@ -92,7 +92,63 @@
     <p data-i18n="hint.settings"></p>
   </div>
 
-  <!-- On-device recitation engine: mandatory one-time download (or a polite "not on this device") -->
+  <!-- Home: where every visit starts and every action lives -->
+<section class="home" id="home" hidden aria-labelledby="homeTitle">
+  <div class="home-in">
+    <header class="home-head">
+      <div class="home-mark" aria-hidden="true"></div>
+      <h1 id="homeTitle" data-i18n="home.brand">تسميع</h1>
+      <p class="home-hello" id="homeHello"></p>
+    </header>
+
+    <div class="hcard engine" id="hEngine" hidden>
+      <h2 data-i18n="ondevice.title"></h2>
+      <p id="hEngineText" data-i18n="home.engineText"></p>
+      <div class="odbar" id="hBar" hidden><span id="hFill"></span></div>
+      <p class="odstatus" id="hEngineStatus" aria-live="polite"></p>
+      <button class="hbtn gold" id="hEngineBtn" data-i18n="ondevice.download"></button>
+    </div>
+
+    <button class="hbtn gold big" id="hContinue"></button>
+    <button class="hbtn" id="hReview"></button>
+
+    <div class="hcard">
+      <h2 data-i18n="home.mine">لوحتي</h2>
+      <div class="hstats">
+        <div><b id="hPages">0</b><span data-i18n="home.pages">صفحة محفوظة</span></div>
+        <div><b id="hWords">0</b><span data-i18n="home.words">كلمة</span></div>
+        <div><b id="hStreak">0</b><span data-i18n="home.streakDays">يوم متتالٍ</span></div>
+        <div><b id="hToday">0</b><span data-i18n="home.today">كلمة اليوم</span></div>
+      </div>
+      <div class="hprog"><span id="hProg"></span></div>
+      <p class="hsmall" id="hProgText"></p>
+    </div>
+
+    <div class="hcard">
+      <h2 data-i18n="groups.title">المجموعات</h2>
+      <div id="hGroups"></div>
+      <div class="hrow">
+        <button class="hbtn" id="hCreate" data-i18n="groups.create">أنشئ مجموعة</button>
+        <button class="hbtn" id="hJoin" data-i18n="groups.join">انضم لمجموعة</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- One group: everyone's progress together -->
+<section class="home group" id="groupView" hidden aria-labelledby="gTitle">
+  <div class="home-in">
+    <button class="hback" id="gBack" data-i18n="home.back">رجوع</button>
+    <h1 id="gTitle"></h1>
+    <p class="hsmall" id="gTogether"></p>
+    <div class="ginvite"><span data-i18n="groups.inviteCode">رمز الدعوة</span> <b id="gInvite"></b>
+      <button class="hbtn small" id="gShare" data-i18n="groups.inviteByLink">دعوة عبر رابط</button></div>
+    <ol class="gmembers" id="gMembers"></ol>
+    <button class="hlink" id="gLeave" data-i18n="groups.leave">مغادرة المجموعة</button>
+  </div>
+</section>
+
+<!-- On-device recitation engine: mandatory one-time download (or a polite "not on this device") -->
 <div class="odgate" id="odGate" hidden role="dialog" aria-modal="true" aria-labelledby="odTitle">
   <div class="odcard">
     <div class="odplanet" aria-hidden="true"></div>
@@ -116,6 +172,7 @@
   <p class="tajnote" data-i18n="tajweed.note"></p>
 </div>
 <div class="floatbar">
+    <button class="iconbtn homebtn" id="homeBtn" data-i18n-aria-label="home.brand">🏠</button>
     <button class="iconbtn setupbtn" id="setupBtn" data-i18n-aria-label="nav.settings">⚙️<span class="duebadge" id="dueBadge" hidden></span></button>
     <button class="recbtn" id="recBtn">🎙️</button>
     <button class="iconbtn tajbtn" id="tajBtn" hidden data-i18n="tajweed.check">افحص التجويد</button>
@@ -298,6 +355,7 @@
 <script src="listen.js" defer></script>
 <script src="recorder.js" defer></script>
 <script src="ondevice.js" defer></script>
+<script src="home.js" defer></script>
 <script src="app.js" defer></script>
 </body>
 </html>

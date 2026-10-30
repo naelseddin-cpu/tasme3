@@ -182,6 +182,21 @@
     }, SYNC_DEBOUNCE_MS);
   }
 
+  // ---- groups (memorize together) ----
+  function groupCall(code, path, method, body) {
+    if (!isEnabled()) return Promise.reject(new Error('server_disabled'));
+    var h = authHeaders(code); if (body) h['Content-Type'] = 'application/json';
+    return apiFetch(path, { method: method || 'GET', headers: h, body: body ? JSON.stringify(body) : undefined });
+  }
+  function localDate() { var d = new Date(), p = function (n) { return n < 10 ? '0' + n : '' + n; }; return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()); }
+  var Groups = {
+    list: function (code) { return groupCall(code, '/groups'); },
+    view: function (code, id) { return groupCall(code, '/groups/' + encodeURIComponent(id) + '?today=' + localDate()); },
+    create: function (code, name, nickname) { return groupCall(code, '/groups', 'POST', { name: name, nickname: nickname }); },
+    join: function (code, invite, nickname) { return groupCall(code, '/groups/join', 'POST', { invite: invite, nickname: nickname }); },
+    leave: function (code, id) { return groupCall(code, '/groups/' + encodeURIComponent(id) + '/leave', 'POST'); }
+  };
+
   function whatsAppUrl(text) {
     return 'https://wa.me/?text=' + encodeURIComponent(text);
   }
@@ -197,6 +212,7 @@
     putProgress: putProgress,
     mergeServerIntoLocal: mergeServerIntoLocal,
     scheduleSync: scheduleSync,
-    whatsAppUrl: whatsAppUrl
+    whatsAppUrl: whatsAppUrl,
+    Groups: Groups
   };
 })(window);

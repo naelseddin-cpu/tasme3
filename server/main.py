@@ -35,7 +35,7 @@ from .matching import fuzzy_equal, match_transcript, normalize_arabic, word_form
 from .streams import StreamError, StreamStore
 from .pagedata import MAX_PAGE, MIN_PAGE, PageNotFoundError, expected_words
 from .ratelimit import SlidingWindowLimiter
-from .store import Store
+from .store import GroupError, Store
 
 DEFAULT_DB_PATH = str(Path(__file__).resolve().parent / "data" / "tasme3.db")
 MAX_PROGRESS_BYTES = 64 * 1024
@@ -192,6 +192,55 @@ def create_app(
         enforce_rate_limit(account_limiter, request)
         code_hash = require_auth(request)
         return store.get_progress(code_hash)
+
+    # ------------------------------------------------------------------
+    # Groups (memorize together)
+    # ------------------------------------------------------------------
+
+    def _clean(text, field, limit):
+        t = (text or "").strip()
+        if not t or len(t) > limit:
+            raise HTTPException(status_code=400, detail=f"{field} must be 1-{limit} characters")
+        return t
+
+    def _group_call(fn, *args):
+        try:
+            return fn(*args)
+        except GroupError as e:
+            raise HTTPException(status_code=e.status, detail=e.detail)
+
+    @app.post("/groups")
+    async def create_group(request: Request):
+        enforce_rate_limit(account_limiter, request)
+        code_hash = require_auth(request)
+        body = await request.json()
+        return _group_call(store.create_group, code_hash, _clean(body.get("name"), "name", 60), _clean(body.get("nickname"), "nickname", 40))
+
+    @app.post("/groups/join")
+    async def join_group(request: Request):
+        enforce_rate_limit(account_limiter, request)
+        code_hash = require_auth(request)
+        body = await request.json()
+        return _group_call(store.join_group, code_hash, _clean(body.get("invite"), "invite", 16), _clean(body.get("nickname"), "nickname", 40))
+
+    @app.get("/groups")
+    def list_groups(request: Request):
+        enforce_rate_limit(evaluate_limiter, request)
+        return {"groups": store.my_groups(require_auth(request))}
+
+    @app.get("/groups/{gid}")
+    def view_group(gid: str, request: Request, today: Optional[str] = None):
+        enforce_rate_limit(evaluate_limiter, request)
+        code_hash = require_auth(request)
+        from datetime import date
+        day = today if (today and len(today) == 10) else date.today().isoformat()  # the member's local date
+        return _group_call(store.group_view, code_hash, gid, day)
+
+    @app.post("/groups/{gid}/leave")
+    def leave_group(gid: str, request: Request):
+        enforce_rate_limit(account_limiter, request)
+        store.leave_group(require_auth(request), gid)
+        return {"ok": True}
 
     # ------------------------------------------------------------------
     # ASR evaluation

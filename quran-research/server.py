@@ -39,10 +39,12 @@ TAJWEED_API = 'http://127.0.0.1:8011'  # server/tajweed_service.py (muaalem)
 # /hifz/engine/. For a public launch these should move to a CDN (Hugging Face) via config.js.
 ONDEVICE = os.path.expanduser('~/.local/share/tasme3-ondevice')
 HIFZ_CONFIG = (b"window.TASME3_CONFIG = { SERVER_URL: '/hifz-api', ON_DEVICE: true, "
-               # model from Hugging Face, engine from jsDelivr: the ~130 MB never crosses this PC's line
+               # the big files (model 103 MB + WASM runtime 27 MB) from Hugging Face (fast and reachable
+               # from the region, unlike jsDelivr), fetched by the app's resumable downloader; the two
+               # small engine scripts (0.7 MB) from this site
                b"MODEL_HOST: 'https://huggingface.co/', MODEL_ID: 'nael239/tasme3-whisper-base-ar-quran-web', "
-               b"ENGINE_BASE: 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/dist/', "
-               b"WASM_BASE: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.0-dev.20260914-8d85527a0/dist/' };\n")
+               b"WASM_URL: 'https://huggingface.co/nael239/tasme3-whisper-base-ar-quran-web/resolve/main/engine/ort-wasm-simd-threaded.asyncify.wasm', "
+               b"ENGINE_BASE: '/hifz/engine/' };\n")
 MAX_AUDIO = 16_000_000
 PW_FILE = os.path.join(HERE, '.chat-password')
 CLAUDE = shutil.which('claude')
@@ -174,6 +176,11 @@ class Handler(SimpleHTTPRequestHandler):
         self.send_header('Content-Length', str(len(data)))
         self.end_headers()
         self.wfile.write(data)
+
+    def do_PUT(self):  # progress sync (PUT /hifz-api/progress)
+        if self.path.startswith('/hifz-api/'):
+            return self._proxy()
+        self._json(405, {'error': 'method not allowed'})
 
     def do_POST(self):
         if self.path.startswith('/hifz-api/'):
