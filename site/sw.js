@@ -3,7 +3,7 @@
 // must be purged, not accumulate forever).
 //
 // Bump CACHE_VERSION on every deploy that changes any precached file.
-var CACHE_VERSION = 'tasme3-v37';
+var CACHE_VERSION = 'tasme3-v38';
 var SHELL_CACHE = CACHE_VERSION + '-shell';
 var RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 var RUNTIME_CAP = 50; // ~50-entry LRU-ish cap on runtime-cached page images/i18n/fonts
@@ -114,6 +114,15 @@ self.addEventListener('fetch', function (event) {
   // at /hifz/: they are not app-shell files and must never be cached.
   if (url.origin !== self.location.origin || url.href.indexOf(self.registration.scope) !== 0) {
     event.respondWith(fetch(request).catch(function () { return new Response('', { status: 503 }); }));
+    return;
+  }
+
+  // UI text: network-first (always the catalog that matches the page), cache only as the offline fallback
+  if (/\/i18n\/[a-z]{2}\.json$/.test(url.pathname)) {
+    event.respondWith(fetch(request).then(function (resp) {
+      if (resp && resp.ok) { var copy = resp.clone(); caches.open(RUNTIME_CACHE).then(function (c) { c.put(request, copy); }); }
+      return resp;
+    }).catch(function () { return caches.match(request, { ignoreSearch: true }); }));
     return;
   }
 

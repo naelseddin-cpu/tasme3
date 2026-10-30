@@ -75,7 +75,7 @@
   // setLanguage()'s own English pre-fetch (below) ask for it concurrently.
   function fetchCatalog(lang) {
     if (cache[lang]) return cache[lang];
-    cache[lang] = fetch('i18n/' + lang + '.json')
+    cache[lang] = fetch('i18n/' + lang + '.json?v=' + (global.TASME3_BUILD || ''))
       .then(function (r) { if (!r.ok) throw new Error('i18n fetch failed: ' + lang); return r.json(); })
       .catch(function () {
         if (lang === 'en') return {}; // English itself unreachable -- nothing left to fall back to here
