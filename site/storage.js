@@ -67,7 +67,8 @@
   function defaultToday() { return { date: todayKey(), wordsRevealed: 0, pagesCompleted: 0 }; }
   function defaultSettings() {
     return {
-      lang: null, // null = autodetect from browser on first run
+      lang: null,
+      langChosen: false, // true only after the user picks a language in settings; otherwise Arabic
       level: 2,
       listenRepeat: false,
       reciterSet: 'murattal',
@@ -228,6 +229,7 @@
     if (!isPlainObject(v)) return d;
     return {
       lang: typeof v.lang === 'string' ? v.lang : d.lang,
+      langChosen: v.langChosen === true,
       level: [1, 2, 3, 4].indexOf(v.level) !== -1 ? v.level : d.level,
       listenRepeat: typeof v.listenRepeat === 'boolean' ? v.listenRepeat : d.listenRepeat,
       reciterSet: (VALID_RECITER_SETS.indexOf(v.reciterSet) !== -1) ? v.reciterSet : d.reciterSet,

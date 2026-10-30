@@ -2375,7 +2375,10 @@
       el.langSelect.appendChild(opt);
     });
   }
-  el.langSelect.onchange = function () { window.Tasme3I18n.setLanguage(el.langSelect.value); };
+  el.langSelect.onchange = function () {
+    state.settings.langChosen = true; Storage.save(state); // an explicit choice; otherwise the app stays Arabic
+    window.Tasme3I18n.setLanguage(el.langSelect.value);
+  };
   document.addEventListener('tasme3:lang-changed', function () {
     t = window.Tasme3I18n.t;
     el.langSelect.value = window.Tasme3I18n.currentLang();

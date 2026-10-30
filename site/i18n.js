@@ -169,7 +169,10 @@
   function initialLanguage() {
     var stored = null;
     try { stored = global.Tasme3Storage.load().settings.lang; } catch (_) {}
-    return (stored && LANGS[stored]) ? stored : detectBrowserLang();
+    // Founder decision: the app is Arabic first. Other languages only when chosen in settings.
+    var chosen = false;
+    try { chosen = global.Tasme3Storage.load().settings.langChosen === true; } catch (_) {}
+    return (chosen && stored && LANGS[stored]) ? stored : 'ar';
   }
 
   global.Tasme3I18n = {
