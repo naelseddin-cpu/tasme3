@@ -230,6 +230,7 @@
     return {
       lang: typeof v.lang === 'string' ? v.lang : d.lang,
       langChosen: v.langChosen === true,
+      micPrimed: v.micPrimed === true,
       level: [1, 2, 3, 4].indexOf(v.level) !== -1 ? v.level : d.level,
       listenRepeat: typeof v.listenRepeat === 'boolean' ? v.listenRepeat : d.listenRepeat,
       reciterSet: (VALID_RECITER_SETS.indexOf(v.reciterSet) !== -1) ? v.reciterSet : d.reciterSet,

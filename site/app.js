@@ -1454,14 +1454,40 @@
     }).then(function () { tk.busy = false; });
   }
 
-  function odStart() {
+  // ---- microphone primer: explain first, then let the browser ask (pilot: the bare prompt got dismissed) ----
+  var micGranted = false;
+  function micState() { // 'granted' | 'denied' | 'prompt' | 'unknown' (iOS has no permissions query for the mic)
+    if (micGranted) return Promise.resolve('granted');
+    try { return navigator.permissions.query({ name: 'microphone' }).then(function (r) { return r.state; }, function () { return 'unknown'; }); }
+    catch (_) { return Promise.resolve('unknown'); }
+  }
+  function micSteps() {
+    var ua = navigator.userAgent, ios = /iPhone|iPad|iPod/.test(ua);
+    var key = ios ? (/CriOS/.test(ua) ? 'mic.stepsIosChrome' : 'mic.stepsIosSafari') : /Android/.test(ua) ? 'mic.stepsAndroid' : 'mic.stepsOther';
+    return t(key).split('|');
+  }
+  function showMicGate(kind) { // 'prime' | 'dismissed' | 'blocked'
+    var g = document.getElementById('micGate'), steps = document.getElementById('micSteps');
+    document.getElementById('micTitle').textContent = t(kind === 'prime' ? 'mic.primeTitle' : kind === 'dismissed' ? 'mic.dismissedTitle' : 'mic.blockedTitle');
+    document.getElementById('micBody').textContent = t(kind === 'prime' ? 'mic.primeBody' : kind === 'dismissed' ? 'mic.dismissedBody' : 'mic.blockedBody');
+    steps.hidden = kind !== 'blocked';
+    steps.innerHTML = kind === 'blocked' ? micSteps().map(function (x) { return '<li>' + x.replace(/[<>&]/g, '') + '</li>'; }).join('') : '';
+    document.getElementById('micAllow').textContent = t(kind === 'prime' ? 'mic.primeAllow' : kind === 'dismissed' ? 'mic.retry' : 'mic.blockedDone');
+    document.getElementById('micLater').textContent = t('mic.later');
+    document.getElementById('micAllow').onclick = function () { g.hidden = true; state.settings.micPrimed = true; Storage.save(state); odStart(true); }; // still inside the tap (iOS audio)
+    document.getElementById('micLater').onclick = function () { g.hidden = true; setRb('idle'); };
+    g.hidden = false;
+  }
+
+  function odStart(primed) {
     if (!odReady) { setRb('noEngine'); if (window.Tasme3Home) window.Tasme3Home.open(); else showOdGate(); return; }
+    if (!primed && !micGranted && !state.settings.micPrimed) { showMicGate('prime'); return; }
     var tk = odTake = { cap: new OD.Capture(), anchorPtr: pointer, startPtr: pointer, anchorSample: 0, busy: false, lastEnd: 0, advancedAt: 0, timer: null };
     hideTajweed(true);
     el.recBtn.classList.add('listening'); setStatus(t('record.tapToStop')); updateRecBtnLabel(); updateGuide();
     setRb('listening'); tk.startedAt = Date.now(); tk.lastAdvance = Date.now(); tk.voiceAt = 0;
     window.Tasme3Feedback.busy(t('fb.startingMic'));
-    tk.cap.start().then(function (v) { window.Tasme3Feedback.done(t('fb.startingMic')); return v; }, function (e) { window.Tasme3Feedback.done(t('fb.startingMic')); throw e; }).then(function () {
+    tk.cap.start().then(function (v) { micGranted = true; window.Tasme3Feedback.done(t('fb.startingMic')); return v; }, function (e) { window.Tasme3Feedback.done(t('fb.startingMic')); throw e; }).then(function () {
       if (odTake !== tk) { tk.cap.stop(); return; }
       tk.timer = setInterval(function () {
         if (odTake !== tk) return;
@@ -1473,7 +1499,14 @@
         else if (rbState === 'quiet' || rbState === 'stuck') setRb('listening');
         if (!tk.busy) odRun(tk, false);
       }, OD_TICK_MS);
-    }).catch(function (e) { clientLog('mic error: ' + (e && (e.name + ' ' + e.message))); odTake = null; el.recBtn.classList.remove('listening'); updateRecBtnLabel(); setRb('error'); showMicHelp(); });
+    }).catch(function (e) {
+      clientLog('mic error: ' + (e && (e.name + ' ' + e.message)));
+      odTake = null; el.recBtn.classList.remove('listening'); updateRecBtnLabel(); setRb('idle');
+      if (e && e.name === 'NotAllowedError') {
+        // dismissed: the browser can ask again; blocked: only the settings can undo it
+        micState().then(function (st) { showMicGate(st === 'denied' || /denied|blocked/i.test(e.message || '') ? 'blocked' : 'dismissed'); });
+      } else { setRb('error'); showMicHelp(); }
+    });
   }
 
   function odStop(silent, keepForTajweed) {
@@ -1598,7 +1631,7 @@
   }
 
   el.recBtn.onclick = function () {
-    if (ON_DEVICE) { odTake ? odStop(false) : odStart(); return; }
+    if (ON_DEVICE) { odTake ? odStop(false) : odStart(false); return; }
     if (SERVER_MODE) {
       if (recorder.isRecording()) {
         recorder.stop();

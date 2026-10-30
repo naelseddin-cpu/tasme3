@@ -22,8 +22,8 @@
      spec: the logo/drawer surah names may render in the system font for a
      brief moment before swapping to UthmanicHafs. -->
 <link rel="preload" href="fonts.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="fonts.css?v=44"></noscript>
-<link rel="stylesheet" href="style.css?v=44">
+<noscript><link rel="stylesheet" href="fonts.css?v=45"></noscript>
+<link rel="stylesheet" href="style.css?v=45">
 </head>
 <body>
 <div class="frame">
@@ -165,6 +165,17 @@
   <div class="guide-where" id="guideWhere"></div>
   <p class="guide-text" data-i18n="guide.text"></p>
   <div class="guide-cta" data-i18n="guide.cta"></div>
+</div>
+<!-- Microphone primer: explained BEFORE the browser asks (pilot: testers dismissed the bare prompt) -->
+<div class="odgate micgate" id="micGate" hidden role="dialog" aria-modal="true" aria-labelledby="micTitle">
+  <div class="odcard">
+    <div class="odplanet micplanet" aria-hidden="true">🎙️</div>
+    <h2 id="micTitle"></h2>
+    <p id="micBody"></p>
+    <ol class="micsteps" id="micSteps" hidden></ol>
+    <button class="odbtn" id="micAllow"></button>
+    <button class="hlink" id="micLater"></button>
+  </div>
 </div>
 <!-- Always-visible recite bar: where you are, what the app is doing, and a voice meter -->
 <div class="recbar" id="recBar" hidden>
@@ -350,20 +361,20 @@
      relies on (config -> utils -> storage -> i18n -> matcher -> account ->
      share -> certificate -> listen -> recorder -> app, verified against
      each file's own top-of-file `window.Tasme3X` reads) is unaffected. -->
-<script>window.TASME3_BUILD = '44'; // bump with sw.js CACHE_VERSION: an old offline cache can never mix with a new page</script>
-<script src="feedback.js?v=44"></script>
-<script src="config.js?v=44" defer></script>
-<script src="utils.js?v=44" defer></script>
-<script src="storage.js?v=44" defer></script>
-<script src="i18n.js?v=44" defer></script>
-<script src="vendor/matcher.js?v=44" defer></script>
-<script src="account.js?v=44" defer></script>
-<script src="share.js?v=44" defer></script>
-<script src="certificate.js?v=44" defer></script>
-<script src="listen.js?v=44" defer></script>
-<script src="recorder.js?v=44" defer></script>
-<script src="ondevice.js?v=44" defer></script>
-<script src="home.js?v=44" defer></script>
-<script src="app.js?v=44" defer></script>
+<script>window.TASME3_BUILD = '45'; // bump with sw.js CACHE_VERSION: an old offline cache can never mix with a new page</script>
+<script src="feedback.js?v=45"></script>
+<script src="config.js?v=45" defer></script>
+<script src="utils.js?v=45" defer></script>
+<script src="storage.js?v=45" defer></script>
+<script src="i18n.js?v=45" defer></script>
+<script src="vendor/matcher.js?v=45" defer></script>
+<script src="account.js?v=45" defer></script>
+<script src="share.js?v=45" defer></script>
+<script src="certificate.js?v=45" defer></script>
+<script src="listen.js?v=45" defer></script>
+<script src="recorder.js?v=45" defer></script>
+<script src="ondevice.js?v=45" defer></script>
+<script src="home.js?v=45" defer></script>
+<script src="app.js?v=45" defer></script>
 </body>
 </html>

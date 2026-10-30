@@ -663,3 +663,8 @@ button:active:not(:disabled), .hbtn:active:not(:disabled), .tosite:active, .gite
 .fbtoast[hidden] { display:none; }
 @keyframes fbin { from { opacity:0; transform:translate(-50%, 8px); } to { opacity:1; transform:translate(-50%, 0); } }
 @media (prefers-reduced-motion: reduce) { .busybar span { animation-duration:2.5s; } .fbtoast { animation:none; } }
+
+.micplanet { display:grid; place-items:center; font-size:2.6rem; }
+.micsteps { text-align:start; margin:6px 0 12px; padding-inline-start:22px; line-height:1.9; font-size:.98rem; }
+.micsteps li { margin-bottom:4px; } .micsteps b { color:var(--gold); }
+.micgate .hlink { display:block; margin:10px auto 0; color:#cfc4a6; }

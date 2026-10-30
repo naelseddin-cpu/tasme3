@@ -24,7 +24,7 @@
   "recite.pageComplete": "Masha'Allah! You completed the page",
   "recite.surahComplete": "Masha'Allah! You completed the surah",
   "mic.needPermission": "Microphone permission is needed",
-  "mic.blockedTitle": "Microphone is blocked — try the following:",
+  "mic.blockedTitle": "The microphone is blocked for this site",
   "mic.openNewWindow": "Open the page in its own window, then press the microphone",
   "mic.iosSteps": "iPhone (Safari): tap AA in the address bar → Website Settings → Microphone → Allow",
   "mic.androidSteps": "Android (Chrome): tap the lock icon → Permissions → Microphone → Allow",
@@ -255,5 +255,18 @@
   "fb.checkingTajweed": "Checking tajweed…",
   "fb.preparing": "Preparing the recitation engine…",
   "fb.startingMic": "Starting the microphone…",
-  "fb.loadingPage": "Loading the page…"
+  "fb.loadingPage": "Loading the page…",
+  "mic.primeTitle": "We need the microphone",
+  "mic.primeBody": "So the app can listen to your recitation and reveal each word in its place when you recite it correctly. Listening runs on your device only; your voice is never sent anywhere.\nAfter you tap, the browser will ask: choose \"Allow\".",
+  "mic.primeAllow": "Allow the microphone",
+  "mic.later": "Not now",
+  "mic.dismissedTitle": "The microphone is not allowed yet",
+  "mic.dismissedBody": "No problem. Tap \"Try again\" and choose \"Allow\" in the browser message.",
+  "mic.retry": "Try again",
+  "mic.blockedBody": "Turn it on once with these steps, then come back and tap \"Done, continue\":",
+  "mic.blockedDone": "Done, continue",
+  "mic.stepsIosChrome": "Tap the \"…\" menu at the bottom|Choose \"Site settings\" or \"Settings\" then \"Content settings\"|Open \"Microphone\" and choose \"Allow\" for this site|Or in the iPhone Settings app: Chrome → Microphone → On",
+  "mic.stepsIosSafari": "Tap \"aA\" in the address bar|Choose \"Website Settings\"|Set \"Microphone\" to \"Allow\"|Then reload the page",
+  "mic.stepsAndroid": "Tap the lock 🔒 or ⓘ next to the address|Choose \"Permissions\" or \"Site settings\"|Set \"Microphone\" to \"Allow\"|Then reload the page",
+  "mic.stepsOther": "Open the site settings from the address bar|Set \"Microphone\" to \"Allow\"|Then reload the page"
 }
