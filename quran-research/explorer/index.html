@@ -96,6 +96,7 @@ nav.tabs .s { display: none; }
 .legend { display: flex; flex-wrap: wrap; gap: 10px; font-size: .8rem; color: var(--space-muted); }
 .legend i { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-inline-end: 4px; vertical-align: middle; }
 .hint { position: absolute; bottom: 14px; inset-inline-start: max(16px, env(safe-area-inset-right, 0px)); color: var(--space-muted); font-size: .8rem; pointer-events: none; }
+.find-note { margin: 0; font-size: .85rem; color: #ffcf8a; }
 .tip { position: absolute; pointer-events: none; background: rgba(8, 16, 31, .92); border: 1px solid var(--space-line); color: var(--space-ink); padding: 4px 10px; border-radius: 8px; font-size: .85rem; transform: translate(-50%, -130%); white-space: nowrap; }
 .reset { position: absolute; bottom: 12px; inset-inline-end: max(16px, env(safe-area-inset-left, 0px)); }
 .nogl { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; color: var(--space-muted); }
@@ -473,6 +474,50 @@ function findRoots(q) {
   if (D.roots[b]) return [b];
   return Object.keys(D.roots).filter(r => norm(r) === n).sort((x, y) => D.roots[y].length - D.roots[x].length);
 }
+// One search for everything people type: a root (صبر), a word with or without the article
+// and attached prefixes (الصبر، والصبر، بالصبر، رحمة), a name (موسى) -> its story, and as a last
+// resort any word form in the mushaf. Returns {type, value, label} or null.
+const PREFIXES = ['وبال', 'فبال', 'وال', 'فال', 'بال', 'كال', 'لل', 'ال', 'و', 'ف', 'ب', 'ل', 'ك'];
+function lemmaByNorm(n, preferNoun) { // with the article (الصبر) the noun is meant, not the verb (صَبَرَ)
+  let best = null, bc = -1;
+  for (const l in D.lemmas) {
+    if (norm(l) !== n) continue;
+    const c = D.lemmas[l].codes.length + (preferNoun && D.lemmas[l].pos !== 'V' ? 1e6 : 0);
+    if (c > bc) { best = l; bc = c; }
+  }
+  return best;
+}
+function smartFind(q) {
+  q = bare((q || '').trim()).replace(/\s+/g, ' '); if (!q) return null;
+  const r0 = findRoots(q)[0]; if (r0) return { type: 'root', value: r0 };
+  const n = norm(q), cands = [n];
+  for (const p of PREFIXES) { const np = norm(p); if (n.startsWith(np) && n.length - np.length >= 2) cands.push(n.slice(np.length)); }
+  const plain = q.replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
+  const withArticle = /^(و|ف|ب|ك)?(ال|لل)/.test(plain); // on the plain text: norm() drops every alif
+  // exact spelling first (صبر -> صَبْر, not صابِر, which norm() makes identical), then the loose match
+  const exact = [plain]; for (const p of PREFIXES) if (plain.startsWith(p) && plain.length - p.length >= 2) exact.push(plain.slice(p.length));
+  const plainOf = l => bare(l).replace(/[أإآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
+  for (const c of exact) {
+    let best = null, bc = -1;
+    for (const l in D.lemmas) if (plainOf(l) === c) { const v = D.lemmas[l].codes.length + (withArticle && D.lemmas[l].pos !== 'V' ? 1e6 : 0); if (v > bc) { best = l; bc = v; } }
+    if (best) return NAMEKIND_OF[best] ? { type: 'name', value: best } : { type: 'lemma', value: best };
+  }
+  for (const c of cands) {
+    const l = lemmaByNorm(c, withArticle);
+    if (l) return NAMEKIND_OF[l] ? { type: 'name', value: l } : { type: 'lemma', value: l };
+  }
+  for (const c of cands.slice(1)) { const r = findRoots(c)[0]; if (r) return { type: 'root', value: r }; }
+  const codes = wordSearch(q, 'contains'); if (codes.length) return { type: 'words', value: q, codes };
+  return null;
+}
+function openFound(f) {
+  if (f.type === 'root') return openRoot(f.value);
+  if (f.type === 'name') return openLemma(f.value, 'story');
+  if (f.type === 'lemma') return openLemma(f.value);
+  const forms = new Map(); for (const c of f.codes) { const w = bare(D.text[c >> 8].split(' ')[(c & 255) - 1]); forms.set(w, (forms.get(w) || 0) + 1); }
+  showItem({ title: f.value, kind: 'كلمة تحتوي', codes: f.codes, roots: new Set(), forms: [...forms].sort((a, b) => b[1] - a[1]) });
+}
+const NOT_FOUND = q => `لم أجد «${esc(q)}» في المصحف. جرّب جذرًا مثل: صبر، أو كلمة كما في الآية.`;
 function findLemmas(q, k = 12) {
   const n = norm(q.trim()); if (n.length < 2) return [];
   return Object.keys(D.lemmas).filter(l => norm(l).startsWith(n)).sort((x, y) => D.lemmas[y].codes.length - D.lemmas[x].codes.length).slice(0, k);
@@ -813,7 +858,8 @@ function buildCount() {
   $('#sugg').onclick = e => { const b = e.target.closest('button'); if (!b) return; b.dataset.root ? openRoot(b.dataset.root) : openLemma(b.dataset.lemma); };
   $('#countForm').onsubmit = e => {
     e.preventDefault(); const q = $('#countIn').value.trim(); if (!q) return;
-    if (cm === 'root') { const r = findRoots(q)[0]; if (r) return openRoot(r); $('#sugg').innerHTML = `<span class="note">لا يوجد جذر بهذا الرسم. جرّب «كلمة تحتوي».</span>`; return; }
+    $('#countIn').blur();
+    if (cm === 'root') { const f = smartFind(q); if (f) return openFound(f); $('#sugg').innerHTML = `<span class="note">${NOT_FOUND(q)}</span>`; return; }
     const codes = wordSearch(q, cm);
     if (!codes.length) { $('#sugg').innerHTML = `<span class="note">لم ترد هذه الكلمة بهذا الرسم.</span>`; return; }
     const forms = new Map(); for (const c of codes) { const w = bare(D.text[c >> 8].split(' ')[(c & 255) - 1]); forms.set(w, (forms.get(w) || 0) + 1); }
@@ -1148,7 +1194,16 @@ async function buildSpace() {
   try { await document.fonts.ready; } catch {}
   space = new Space(cv);
   document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => { closePanel(); setMode(b.dataset.mode); });
-  $('#findForm').onsubmit = e => { e.preventDefault(); const q = $('#findIn').value; if (!space.find(q)) { const r = findRoots(q)[0]; if (r) openRoot(r); } };
+  $('#findForm').insertAdjacentHTML('afterend', '<p class="find-note" id="findNote" hidden></p>');
+  $('#findForm').onsubmit = e => {
+    e.preventDefault(); const q = $('#findIn').value.trim(), note = $('#findNote'); note.hidden = true; if (!q) return;
+    $('#findIn').blur(); // close the phone keyboard so the result is visible
+    const f = smartFind(q);
+    if (!f) { note.innerHTML = NOT_FOUND(q); note.hidden = false; return; }
+    const key = f.type === 'root' ? f.value : f.type === 'lemma' || f.type === 'name' ? (D.lemmas[f.value].root || '') : '';
+    const i = space.G.nodes.findIndex(x => x.key === key || x.key === f.value);
+    if (i >= 0) space.select(i); else openFound(f);   // a planet for it: fly there
+  };
   $('#resetBtn').onclick = () => { closePanel(); space.select(-1, false); };
   $('#hudInfo').onclick = () => { const on = $('#hud').classList.toggle('more'); $('#hudInfo').setAttribute('aria-expanded', on); };
   setMode('roots');
