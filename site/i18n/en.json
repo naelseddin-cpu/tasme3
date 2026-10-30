@@ -268,5 +268,19 @@
   "mic.stepsIosChrome": "Tap the \"…\" menu at the bottom|Choose \"Site settings\" or \"Settings\" then \"Content settings\"|Open \"Microphone\" and choose \"Allow\" for this site|Or in the iPhone Settings app: Chrome → Microphone → On",
   "mic.stepsIosSafari": "Tap \"aA\" in the address bar|Choose \"Website Settings\"|Set \"Microphone\" to \"Allow\"|Then reload the page",
   "mic.stepsAndroid": "Tap the lock 🔒 or ⓘ next to the address|Choose \"Permissions\" or \"Site settings\"|Set \"Microphone\" to \"Allow\"|Then reload the page",
-  "mic.stepsOther": "Open the site settings from the address bar|Set \"Microphone\" to \"Allow\"|Then reload the page"
+  "mic.stepsOther": "Open the site settings from the address bar|Set \"Microphone\" to \"Allow\"|Then reload the page",
+  "ob.how": "How does it work?",
+  "ob.skip": "Skip",
+  "ob.next": "Next",
+  "ob.back": "Back",
+  "ob.start": "Start",
+  "ob.t0": "Welcome to Tasme3",
+  "ob.b0": "Memorize the Quran by reciting it: you recite from memory and the words appear in their place on the mushaf page itself, as if a teacher were listening.",
+  "ob.t1": "How reciting works",
+  "ob.b1": "The words are hidden. Tap the microphone once and recite from memory; every word you recite correctly appears in its place, and the gold box shows the next word. Tap again to stop.",
+  "ob.t2": "And more",
+  "ob.f1": "Review: the app reminds you which pages are due so you never forget them.",
+  "ob.f2": "Daily streak: every day you recite adds to your streak.",
+  "ob.f3": "Check tajweed: guidance on madd and vowels after each verse.",
+  "ob.f4": "Groups: memorize with family and friends and follow your recitation together."
 }

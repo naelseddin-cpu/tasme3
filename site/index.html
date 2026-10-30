@@ -22,8 +22,8 @@
      spec: the logo/drawer surah names may render in the system font for a
      brief moment before swapping to UthmanicHafs. -->
 <link rel="preload" href="fonts.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="fonts.css?v=45"></noscript>
-<link rel="stylesheet" href="style.css?v=45">
+<noscript><link rel="stylesheet" href="fonts.css?v=46"></noscript>
+<link rel="stylesheet" href="style.css?v=46">
 </head>
 <body>
 <div class="frame">
@@ -111,6 +111,7 @@
 
     <button class="hbtn gold big" id="hContinue"></button>
     <button class="hbtn" id="hReview"></button>
+    <button class="hlink" id="hHow" data-i18n="ob.how">كيف يعمل؟</button>
 
     <div class="hcard">
       <h2 data-i18n="home.mine">لوحتي</h2>
@@ -165,6 +166,33 @@
   <div class="guide-where" id="guideWhere"></div>
   <p class="guide-text" data-i18n="guide.text"></p>
   <div class="guide-cta" data-i18n="guide.cta"></div>
+</div>
+<!-- First-run tour: how it works (onboarding.js) -->
+<div class="odgate onboard" id="onboard" hidden role="dialog" aria-modal="true" aria-label="كيف يعمل">
+  <div class="odcard">
+    <button class="hlink obskip" id="obSkip" data-i18n="ob.skip">تخطَّ</button>
+    <div id="obStep0">
+      <div class="odplanet" aria-hidden="true"></div>
+      <h2 data-i18n="ob.t0">مرحبًا بك في تسميع</h2>
+      <p data-i18n="ob.b0"></p>
+    </div>
+    <div id="obStep1" hidden>
+      <h2 data-i18n="ob.t1">كيف يعمل التسميع</h2>
+      <canvas id="obCanvas" class="obcanvas" aria-hidden="true"></canvas>
+      <p data-i18n="ob.b1"></p>
+    </div>
+    <div id="obStep2" hidden>
+      <h2 data-i18n="ob.t2">وأكثر من ذلك</h2>
+      <ul class="obfeat">
+        <li><i style="background-image:url(assets/ic-today.webp)"></i><span data-i18n="ob.f1"></span></li>
+        <li><i style="background-image:url(assets/ic-streak.webp)"></i><span data-i18n="ob.f2"></span></li>
+        <li><i style="background-image:url(assets/ic-words.webp)"></i><span data-i18n="ob.f3"></span></li>
+        <li><i style="background-image:url(assets/ic-pages.webp)"></i><span data-i18n="ob.f4"></span></li>
+      </ul>
+    </div>
+    <div class="obdots"><span class="obdot" id="obDot0"></span><span class="obdot" id="obDot1"></span><span class="obdot" id="obDot2"></span></div>
+    <div class="obnav"><button class="hbtn" id="obBack" data-i18n="ob.back">السابق</button><button class="odbtn" id="obNext"></button></div>
+  </div>
 </div>
 <!-- Microphone primer: explained BEFORE the browser asks (pilot: testers dismissed the bare prompt) -->
 <div class="odgate micgate" id="micGate" hidden role="dialog" aria-modal="true" aria-labelledby="micTitle">
@@ -361,20 +389,21 @@
      relies on (config -> utils -> storage -> i18n -> matcher -> account ->
      share -> certificate -> listen -> recorder -> app, verified against
      each file's own top-of-file `window.Tasme3X` reads) is unaffected. -->
-<script>window.TASME3_BUILD = '45'; // bump with sw.js CACHE_VERSION: an old offline cache can never mix with a new page</script>
-<script src="feedback.js?v=45"></script>
-<script src="config.js?v=45" defer></script>
-<script src="utils.js?v=45" defer></script>
-<script src="storage.js?v=45" defer></script>
-<script src="i18n.js?v=45" defer></script>
-<script src="vendor/matcher.js?v=45" defer></script>
-<script src="account.js?v=45" defer></script>
-<script src="share.js?v=45" defer></script>
-<script src="certificate.js?v=45" defer></script>
-<script src="listen.js?v=45" defer></script>
-<script src="recorder.js?v=45" defer></script>
-<script src="ondevice.js?v=45" defer></script>
-<script src="home.js?v=45" defer></script>
-<script src="app.js?v=45" defer></script>
+<script>window.TASME3_BUILD = '46'; // bump with sw.js CACHE_VERSION: an old offline cache can never mix with a new page</script>
+<script src="feedback.js?v=46"></script>
+<script src="config.js?v=46" defer></script>
+<script src="utils.js?v=46" defer></script>
+<script src="storage.js?v=46" defer></script>
+<script src="i18n.js?v=46" defer></script>
+<script src="vendor/matcher.js?v=46" defer></script>
+<script src="account.js?v=46" defer></script>
+<script src="share.js?v=46" defer></script>
+<script src="certificate.js?v=46" defer></script>
+<script src="listen.js?v=46" defer></script>
+<script src="recorder.js?v=46" defer></script>
+<script src="ondevice.js?v=46" defer></script>
+<script src="home.js?v=46" defer></script>
+<script src="onboarding.js?v=46" defer></script>
+<script src="app.js?v=46" defer></script>
 </body>
 </html>

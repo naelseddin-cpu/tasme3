@@ -3,7 +3,7 @@
 // must be purged, not accumulate forever).
 //
 // Bump CACHE_VERSION on every deploy that changes any precached file.
-var CACHE_VERSION = 'tasme3-v45';
+var CACHE_VERSION = 'tasme3-v46';
 var SHELL_CACHE = CACHE_VERSION + '-shell';
 var RUNTIME_CACHE = CACHE_VERSION + '-runtime';
 var RUNTIME_CAP = 50; // ~50-entry LRU-ish cap on runtime-cached page images/i18n/fonts
@@ -27,6 +27,7 @@ var SHELL_URLS = [
   'ondevice.js',
   'feedback.js',
   'home.js',
+  'onboarding.js',
   'asr-worker.js',
   'app.js',
   'manifest.webmanifest',

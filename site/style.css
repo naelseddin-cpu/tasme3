@@ -668,3 +668,14 @@ button:active:not(:disabled), .hbtn:active:not(:disabled), .tosite:active, .gite
 .micsteps { text-align:start; margin:6px 0 12px; padding-inline-start:22px; line-height:1.9; font-size:.98rem; }
 .micsteps li { margin-bottom:4px; } .micsteps b { color:var(--gold); }
 .micgate .hlink { display:block; margin:10px auto 0; color:#cfc4a6; }
+
+/* ---- First-run tour ---- */
+.onboard .odcard { position:relative; padding-top:34px; }
+.obskip { position:absolute; top:8px; inset-inline-end:12px; font-size:.9rem; color:#cfc4a6; }
+.obcanvas { display:block; width:100%; border-radius:10px; background:#fffdf5; margin:6px 0 12px; box-shadow:0 0 0 1px rgba(212,185,106,.5); }
+.obfeat { list-style:none; margin:4px 0 8px; padding:0; text-align:start; display:grid; gap:10px; }
+.obfeat li { display:flex; gap:10px; align-items:center; line-height:1.7; }
+.obfeat i { flex:none; width:34px; height:34px; background:center / contain no-repeat; }
+.obdots { display:flex; justify-content:center; gap:8px; margin:6px 0 12px; }
+.obdot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.25); } .obdot.on { background:var(--gold); width:22px; border-radius:999px; }
+.obnav { display:grid; grid-template-columns:1fr 2fr; gap:10px; } .obnav .odbtn { margin-top:0; }
