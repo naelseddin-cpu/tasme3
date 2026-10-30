@@ -628,3 +628,18 @@ body { background:#050a18 url(assets/space.webp) center top / cover no-repeat; }
 .tosite { position:absolute; top:calc(env(safe-area-inset-top) + 14px); inset-inline-start:16px; z-index:2; min-height:40px; display:inline-flex; align-items:center;
   padding:6px 14px; border-radius:999px; background:rgba(5,10,24,.7); border:1px solid rgba(212,185,106,.55); color:var(--gold); text-decoration:none; font-weight:700; font-size:.95rem; backdrop-filter:blur(6px); }
 .home-in { position:relative; }
+
+/* ---- Recite bar above the mic ---- */
+.recbar { position:fixed; inset-inline:12px; bottom:calc(env(safe-area-inset-bottom) + var(--fab-clear) + 4px); z-index:21; text-align:center;
+  background:rgba(5,10,24,.92); color:#f3ead2; border:1px solid rgba(212,185,106,.55); border-radius:16px; padding:10px 14px 9px;
+  box-shadow:0 8px 24px rgba(0,0,0,.4); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+.recbar[hidden] { display:none; }
+.rb-where { font-family:'UthmanicHafs',serif; color:var(--gold); font-size:1.15rem; line-height:1.5; }
+.rb-state { font-size:.95rem; line-height:1.6; margin-top:2px; }
+.rb-state.warn { color:#ffcf8a; } .rb-state.err { color:#ff9c8a; }
+.rb-meter { height:6px; margin:7px auto 0; width:70%; border-radius:999px; background:rgba(255,255,255,.12); overflow:hidden; }
+.rb-meter span { display:block; height:100%; width:0; background:linear-gradient(90deg,#5ad08a,var(--gold)); transition:width .12s; }
+
+/* The install card is modal (the overlay stack makes everything else inert), so it must sit
+   above the home screen (z 50) -- under it, every button looked dead (pilot, iPhone). */
+.install-promo { z-index:70 !important; }

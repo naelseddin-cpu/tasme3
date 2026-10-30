@@ -685,8 +685,25 @@
     var s = currentSurah(), k = words[Math.min(pointer, words.length - 1)].k || '';
     document.getElementById('guideWhere').textContent = s ? t('guide.where', { surah: s.name, ayah: digits(k.split(':')[1] || '') }) : pageLabel(pageNum);
   }
+  // ---- the recite bar: always says where you are and what the app is doing ----
+  var rbState = 'idle';
+  function clientLog(msg) { try { (navigator.sendBeacon || function () {}).call(navigator, '/api/clientlog', msg); } catch (_) {} }
+  function setRb(kind) {
+    rbState = kind;
+    var el2 = document.getElementById('rbState'); if (!el2 || !t) return;
+    el2.textContent = t('rb.' + kind);
+    el2.className = 'rb-state' + (kind === 'stuck' || kind === 'quiet' ? ' warn' : kind === 'error' ? ' err' : '');
+  }
+  function updateRecBar() {
+    var bar = document.getElementById('recBar'); if (!bar || !t) return;
+    bar.hidden = !ON_DEVICE || !words.length;
+    if (bar.hidden) return;
+    var s = currentSurah(), k = (words[Math.min(pointer, words.length - 1)] || {}).k || '';
+    document.getElementById('rbWhere').textContent = s ? t('rb.where', { surah: s.name, ayah: digits(k.split(':')[1] || ''), page: digits(pageNum) }) : pageLabel(pageNum);
+    if (!odTake) setRb(odReady ? (rbState === 'stopped' ? 'stopped' : 'idle') : 'noEngine');
+  }
   function updatePageChip() {
-    updateGuide();
+    updateGuide(); updateRecBar();
     // Guards a real race: surah-index.json can resolve before the initial
     // i18n setLanguage() promise does (see the "surah-index" fetch below,
     // which is independent of the init chain and calls this eagerly the
@@ -1423,30 +1440,45 @@
       if (res.pointer > pointer) {
         var from = pointer;
         applyMatches({ matched: (res.matched || []).filter(function (i) { return i >= from; }), pointer: res.pointer, done: res.pointer >= expected.length });
-        tk.advancedAt = end;
+        tk.advancedAt = end; tk.lastAdvance = Date.now(); setRb('heard');
       }
       if (pointer === res.pointer && pointer > tk.anchorPtr) {
         var we = odWordEnd(r.text, audio, level);
         tk.anchorPtr = pointer;
         if (we >= 0) tk.anchorSample = Math.max(tk.anchorSample, start + we - OD_EARLY);
       }
-    }).catch(function () {}).then(function () { tk.busy = false; });
+      if (!tk.logged) { tk.logged = true; clientLog('asr ok ' + Math.round(r.ms) + 'ms len=' + (r.text || '').length + ' samples=' + audio.length); }
+    }).catch(function (e) {
+      if (!tk.errLogged) { tk.errLogged = true; clientLog('asr error: ' + (e && (e.message || e))); }
+      setRb('error');
+    }).then(function () { tk.busy = false; });
   }
 
   function odStart() {
-    if (!odReady) { showOdGate(); return; }
+    if (!odReady) { setRb('noEngine'); if (window.Tasme3Home) window.Tasme3Home.open(); else showOdGate(); return; }
     var tk = odTake = { cap: new OD.Capture(), anchorPtr: pointer, startPtr: pointer, anchorSample: 0, busy: false, lastEnd: 0, advancedAt: 0, timer: null };
     hideTajweed(true);
     el.recBtn.classList.add('listening'); setStatus(t('record.tapToStop')); updateRecBtnLabel(); updateGuide();
+    setRb('listening'); tk.startedAt = Date.now(); tk.lastAdvance = Date.now(); tk.voiceAt = 0;
     tk.cap.start().then(function () {
       if (odTake !== tk) { tk.cap.stop(); return; }
-      tk.timer = setInterval(function () { if (!tk.busy && odTake === tk) odRun(tk, false); }, OD_TICK_MS);
-    }).catch(function () { odTake = null; el.recBtn.classList.remove('listening'); updateRecBtnLabel(); showMicHelp(); });
+      tk.timer = setInterval(function () {
+        if (odTake !== tk) return;
+        var lv = tk.cap.level || 0, now = Date.now();
+        document.getElementById('rbMeter').style.width = Math.min(100, Math.round(lv * 900)) + '%';
+        if (lv > 0.02) tk.voiceAt = now;
+        if (now - tk.startedAt > 6000 && (!tk.voiceAt || now - tk.voiceAt > 6000)) { if (rbState !== 'quiet') setRb('quiet'); }
+        else if (tk.voiceAt && now - tk.lastAdvance > 12000) { if (rbState !== 'stuck') setRb('stuck'); }
+        else if (rbState === 'quiet' || rbState === 'stuck') setRb('listening');
+        if (!tk.busy) odRun(tk, false);
+      }, OD_TICK_MS);
+    }).catch(function (e) { clientLog('mic error: ' + (e && (e.name + ' ' + e.message))); odTake = null; el.recBtn.classList.remove('listening'); updateRecBtnLabel(); setRb('error'); showMicHelp(); });
   }
 
   function odStop(silent, keepForTajweed) {
     var tk = odTake; if (!tk) return;
     odTake = null; clearInterval(tk.timer); tk.cap.stop(); updateGuide();
+    document.getElementById('rbMeter').style.width = '0'; if (!silent) setRb('stopped');
     window.Tasme3Account.scheduleSync(function () { return state; });
     odLast = silent && !keepForTajweed ? null : { cap: tk.cap, from: tk.startPtr, page: pageNum };
     if (keepForTajweed && SERVER_URL && fullAyat(tk.startPtr, pointer).length) document.getElementById('tajBtn').hidden = false;
@@ -1550,7 +1582,7 @@
     OD.isDownloaded().then(function (have) {
       if (!have) return;                  // the home screen offers the download
       el.recBtn.disabled = true; setStatus(t('ondevice.preparing'));   // from the browser cache: ~1-2 s
-      OD.load().then(function () { odReady = true; el.recBtn.disabled = false; renderStatusIdle(); document.dispatchEvent(new Event('tasme3:engine-ready')); })
+      OD.load().then(function () { odReady = true; el.recBtn.disabled = false; renderStatusIdle(); updateRecBar(); document.dispatchEvent(new Event('tasme3:engine-ready')); })
         .catch(function () { el.recBtn.disabled = false; showOdGate(); });
     });
   }
@@ -2530,7 +2562,7 @@
       loadPage: function (p) { loadPage(p); }, startReview: startReview, dueReviews: function () { return Storage.dueReviews(state); },
       currentPage: function () { return pageNum; }, surahForPage: function (p) { return surahForPage(p); },
       engineReady: function () { return odReady; }, onDevice: ON_DEVICE,
-      setEngineReady: function () { odReady = true; el.recBtn.disabled = false; renderStatusIdle(); updateGuide(); },
+      setEngineReady: function () { odReady = true; el.recBtn.disabled = false; renderStatusIdle(); updateGuide(); updateRecBar(); },
       totalWords: function () { return Storage.totalWordsRevealed(state); }, sync: function () { window.Tasme3Account.scheduleSync(function () { return state; }); }
     };
     document.dispatchEvent(new Event('tasme3:ready'));

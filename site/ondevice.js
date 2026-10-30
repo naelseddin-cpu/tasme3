@@ -191,17 +191,31 @@
   var WORKLET = 'registerProcessor("tap",class extends AudioWorkletProcessor{process(i){var c=i[0]&&i[0][0];if(c)this.port.postMessage(c.slice(0));return true}})';
 
   function Capture() { this.chunks = []; this.length = 0; this.ctx = null; this.stream = null; }
+  // iOS (Safari and Chrome on iPhone) only runs audio for an AudioContext created and
+  // resumed inside the tap itself, so the context is made synchronously here, before the
+  // microphone permission is awaited. It runs at the device rate (forcing 16 kHz can give
+  // silence on iOS) and the worklet's output goes to a muted gain on the destination,
+  // because WebKit may not process a node that is not connected to the output.
   Capture.prototype.start = function () {
     var self = this, AC = global.AudioContext || global.webkitAudioContext;
+    try { self.ctx = new AC(); } catch (e) { return Promise.reject(e); }
+    var resumed = self.ctx.state === 'suspended' ? self.ctx.resume() : Promise.resolve();
+    self.level = 0;
     return global.navigator.mediaDevices.getUserMedia({ audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true } }).then(function (stream) {
       self.stream = stream;
-      try { self.ctx = new AC({ sampleRate: SR }); } catch (_) { self.ctx = new AC(); }
       var url = URL.createObjectURL(new Blob([WORKLET], { type: 'text/javascript' }));
-      return self.ctx.audioWorklet.addModule(url).then(function () {
+      return Promise.all([resumed, self.ctx.audioWorklet.addModule(url)]).then(function () {
+        if (self.ctx.state === 'suspended') return self.ctx.resume();
+      }).then(function () {
         var src = self.ctx.createMediaStreamSource(stream), node = new AudioWorkletNode(self.ctx, 'tap');
+        var mute = self.ctx.createGain(); mute.gain.value = 0;
         var ratio = self.ctx.sampleRate / SR;
-        node.port.onmessage = function (e) { self._push(ratio === 1 ? e.data : resample(e.data, ratio)); };
-        src.connect(node);
+        node.port.onmessage = function (e) {
+          var x = e.data, sq = 0; for (var i = 0; i < x.length; i++) sq += x[i] * x[i];
+          self.level = Math.sqrt(sq / x.length);
+          self._push(ratio === 1 ? x : resample(x, ratio));
+        };
+        src.connect(node); node.connect(mute); mute.connect(self.ctx.destination);
         self.node = node;
       });
     });

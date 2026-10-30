@@ -137,6 +137,7 @@
 
   // ---- wiring ----
   function openHome() { show('home'); render(); }
+  global.Tasme3Home = { open: function () { openHome(); } };
 
   document.addEventListener('tasme3:ready', function () {
     A = global.Tasme3App;
