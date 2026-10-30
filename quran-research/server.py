@@ -39,7 +39,10 @@ TAJWEED_API = 'http://127.0.0.1:8011'  # server/tajweed_service.py (muaalem)
 # /hifz/engine/. For a public launch these should move to a CDN (Hugging Face) via config.js.
 ONDEVICE = os.path.expanduser('~/.local/share/tasme3-ondevice')
 HIFZ_CONFIG = (b"window.TASME3_CONFIG = { SERVER_URL: '/hifz-api', ON_DEVICE: true, "
-               b"MODEL_BASE: '/hifz/models/', ENGINE_BASE: '/hifz/engine/', MODEL_ID: 'tasme3/whisper-base-ar-quran' };\n")
+               # model from Hugging Face, engine from jsDelivr: the ~130 MB never crosses this PC's line
+               b"MODEL_HOST: 'https://huggingface.co/', MODEL_ID: 'nael239/tasme3-whisper-base-ar-quran-web', "
+               b"ENGINE_BASE: 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.2/dist/', "
+               b"WASM_BASE: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.31.0-dev.20260914-8d85527a0/dist/' };\n")
 MAX_AUDIO = 16_000_000
 PW_FILE = os.path.join(HERE, '.chat-password')
 CLAUDE = shutil.which('claude')

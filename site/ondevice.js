@@ -31,7 +31,9 @@
     if (!global.caches) return Promise.resolve(false);
     return global.caches.open('transformers-cache').then(function (c) {
       return Promise.all(FILES.map(function (f) {
-        return c.match(new URL(cfg.MODEL_BASE + cfg.MODEL_ID + '/' + f, global.location.href).href);
+        var url = cfg.MODEL_HOST ? cfg.MODEL_HOST + cfg.MODEL_ID + '/resolve/main/' + f
+          : new URL(cfg.MODEL_BASE + cfg.MODEL_ID + '/' + f, global.location.href).href;
+        return c.match(url);
       }));
     }).then(function (hits) { return hits.every(Boolean); }).catch(function () { return false; });
   }
@@ -59,7 +61,7 @@
       };
       worker.onerror = function (e) { ready = null; reject(new Error(e.message || 'worker')); };
       var abs = function (p) { return new URL(p, global.location.href).href; };
-      worker.postMessage({ type: 'load', engineBase: abs(cfg.ENGINE_BASE), modelBase: cfg.MODEL_BASE, modelId: cfg.MODEL_ID, threads: threads });
+      worker.postMessage({ type: 'load', engineBase: abs(cfg.ENGINE_BASE), wasmBase: cfg.WASM_BASE ? abs(cfg.WASM_BASE) : '', modelHost: cfg.MODEL_HOST || '', modelBase: cfg.MODEL_BASE, modelId: cfg.MODEL_ID, threads: threads });
     });
     return ready;
   }

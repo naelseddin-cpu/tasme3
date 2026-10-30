@@ -2,7 +2,7 @@
 // model (tarteel-ai/whisper-base-ar-quran, 8-bit ONNX browser build) with
 // transformers.js + ONNX Runtime Web, off the page's main thread.
 //
-// Messages in:  {type:'load', engineBase, modelBase, modelId, threads}
+// Messages in:  {type:'load', engineBase, wasmBase?, modelHost? | modelBase, modelId, threads}
 //               {type:'run', id, audio: Float32Array (16 kHz mono)}
 // Messages out: {type:'progress', file, loaded, total} | {type:'ready'} |
 //               {type:'result', id, text, ms} | {type:'error', error}
@@ -21,9 +21,13 @@ self.onmessage = async (e) => {
   try {
     if (m.type === 'load') {
       const T = await import(m.engineBase + 'transformers.min.js');
-      T.env.allowLocalModels = true; T.env.allowRemoteModels = false;
-      T.env.localModelPath = m.modelBase; T.env.useBrowserCache = true;
-      T.env.backends.onnx.wasm.wasmPaths = m.engineBase;
+      if (m.modelHost) { // model on a CDN (Hugging Face): cached by the browser after the first download
+        T.env.allowLocalModels = false; T.env.allowRemoteModels = true; T.env.remoteHost = m.modelHost;
+      } else {             // model served by the site itself
+        T.env.allowLocalModels = true; T.env.allowRemoteModels = false; T.env.localModelPath = m.modelBase;
+      }
+      T.env.useBrowserCache = true;
+      T.env.backends.onnx.wasm.wasmPaths = m.wasmBase || m.engineBase;
       T.env.backends.onnx.wasm.numThreads = m.threads;
       const progress_callback = (p) => {
         if (p.status === 'progress') self.postMessage({ type: 'progress', file: p.file, loaded: p.loaded, total: p.total });
