@@ -66,13 +66,17 @@
       });
     })();
   }
-  function sizeOf(url) { // ranged request for 1 byte: Content-Range gives the full size
+  // Hugging Face answers with a redirect to its CDN, and iOS WebKit (Safari and Chrome on
+  // iPhone) drops the Range header across that redirect, returning the whole file (seen in
+  // the pilot: "range 200"). So resolve the redirect once (HEAD) and send the ranges to the
+  // final CDN address. Signed CDN addresses expire, so a 403 re-resolves.
+  function resolve(url) {
     return withRetry(function () {
-      return fetch(url, { headers: { Range: 'bytes=0-0' } }).then(function (r) {
-        var cr = r.headers.get('Content-Range'), m = cr && cr.match(/\/(\d+)$/);
-        if (r.status === 206 && m) return +m[1];
-        if (r.ok && r.headers.get('Content-Length')) return +r.headers.get('Content-Length'); // no range support
-        throw new Error('size ' + r.status + ' ' + url.split('/').pop());
+      return fetch(url, { method: 'HEAD' }).then(function (r) {
+        if (!r.ok) throw new Error('head ' + r.status + ' ' + url.split('/').pop());
+        var len = +(r.headers.get('Content-Length') || 0) || +(r.headers.get('X-Linked-Size') || 0);
+        if (!len) throw new Error('no size ' + url.split('/').pop());
+        return { url: r.url || url, size: len };
       });
     });
   }
@@ -82,8 +86,10 @@
       var got = done.reduce(function (a, b) { return a + b; }, 0), all = sizes.reduce(function (a, b) { return a + b; }, 0);
       if (onProgress) onProgress(got, all);
     };
-    return Promise.all(files.map(function (b) { return sizeOf(b.url); })).then(function (sz) {
-      sizes = sz; done = sz.map(function () { return 0; });
+    var direct = [];
+    return Promise.all(files.map(function (b) { return resolve(b.url); })).then(function (rs) {
+      direct = rs.map(function (r) { return r.url; });
+      sizes = rs.map(function (r) { return r.size; }); done = sizes.map(function () { return 0; });
       return global.caches.open(PART);
     }).then(function (parts) {
       var chain = Promise.resolve();
@@ -94,29 +100,43 @@
               if (have) { done[fi] = sizes[fi]; report(); return; }
               var n = Math.ceil(sizes[fi] / CHUNK), blobs = new Array(n), next = 0;
               function partKey(i) { return b.url + (b.url.indexOf('?') < 0 ? '?' : '&') + '__part=' + i; }
+              var whole = null; // set if the server sent the full file instead of a range
               function one(i) {
+                if (whole) return Promise.resolve();
                 return parts.match(partKey(i)).then(function (hit) {
                   if (hit) return hit.blob();
                   var a = i * CHUNK, z = Math.min(sizes[fi], a + CHUNK) - 1;
                   return withRetry(function () {
-                    return fetch(b.url, { headers: { Range: 'bytes=' + a + '-' + z } }).then(function (r) {
-                      if (r.status !== 206 && !(r.ok && n === 1)) throw new Error('range ' + r.status);
+                    return fetch(direct[fi], { headers: { Range: 'bytes=' + a + '-' + z } }).then(function (r) {
+                      if (r.status === 403 || r.status === 410) { // the signed CDN address expired
+                        return resolve(b.url).then(function (x) { direct[fi] = x.url; throw new Error('re-resolved'); });
+                      }
+                      if (r.status === 200) return r.blob().then(function (all) { // range ignored: keep the full file
+                        if (all.size !== sizes[fi]) throw new Error('full ' + all.size + '/' + sizes[fi]);
+                        whole = all; return null;
+                      });
+                      if (r.status !== 206) throw new Error('range ' + r.status);
                       return r.blob();
                     }).then(function (blob) {
+                      if (!blob) return null;
                       if (blob.size !== z - a + 1) throw new Error('short ' + blob.size);
                       return parts.put(partKey(i), new Response(blob)).then(function () { return blob; },
                         function (e) { var x = new Error('part ' + i + ': ' + (e && (e.name + ' ' + e.message))); x.fatal = true; throw x; });
                     });
                   });
-                }).then(function (blob) { blobs[i] = blob; done[fi] += blob.size; report(); });
+                }).then(function (blob) {
+                  if (whole) { done[fi] = sizes[fi]; report(); return; }
+                  if (blob) { blobs[i] = blob; done[fi] += blob.size; report(); }
+                });
               }
               function worker() { return next < n ? one(next++).then(worker) : null; }
               return Promise.all([worker(), worker(), worker()]).then(function () {   // 3 ranges at a time
-                var whole = new Blob(blobs, { type: 'application/octet-stream' });
+                whole = whole || new Blob(blobs, { type: 'application/octet-stream' });
                 return target.put(b.url, new Response(whole, { headers: { 'Content-Type': 'application/octet-stream', 'Content-Length': String(whole.size) } }))
                   .catch(function (e) { throw new Error('store ' + b.url.split('/').pop() + ' ' + whole.size + ': ' + (e && (e.name + ' ' + e.message))); });
               }).then(function () {
-                return Promise.all(blobs.map(function (_, i) { return parts.delete(partKey(i)); }));
+                var keys = []; for (var i = 0; i < n; i++) keys.push(parts.delete(partKey(i)));
+                return Promise.all(keys);
               });
             });
           });
