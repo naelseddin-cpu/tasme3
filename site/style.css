@@ -679,3 +679,6 @@ button:active:not(:disabled), .hbtn:active:not(:disabled), .tosite:active, .gite
 .obdots { display:flex; justify-content:center; gap:8px; margin:6px 0 12px; }
 .obdot { width:8px; height:8px; border-radius:50%; background:rgba(255,255,255,.25); } .obdot.on { background:var(--gold); width:22px; border-radius:999px; }
 .obnav { display:grid; grid-template-columns:1fr 2fr; gap:10px; } .obnav .odbtn { margin-top:0; }
+
+/* link to voice training on the home screen */
+.hbtn.hvoice { display:flex; align-items:center; justify-content:center; text-decoration:none; box-sizing:border-box; }

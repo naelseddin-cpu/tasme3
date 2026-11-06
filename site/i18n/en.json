@@ -269,6 +269,7 @@
   "mic.stepsIosSafari": "Tap \"aA\" in the address bar|Choose \"Website Settings\"|Set \"Microphone\" to \"Allow\"|Then reload the page",
   "mic.stepsAndroid": "Tap the lock 🔒 or ⓘ next to the address|Choose \"Permissions\" or \"Site settings\"|Set \"Microphone\" to \"Allow\"|Then reload the page",
   "mic.stepsOther": "Open the site settings from the address bar|Set \"Microphone\" to \"Allow\"|Then reload the page",
+  "home.voice": "Voice training: depth, steadiness, breath",
   "ob.how": "How does it work?",
   "ob.skip": "Skip",
   "ob.next": "Next",
